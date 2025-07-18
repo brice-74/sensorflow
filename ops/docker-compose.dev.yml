@@ -1,0 +1,69 @@
+services:
+  gateway-api:
+    image: golang:1.24.5
+    container_name: sensorflow-gateway-api
+    working_dir: /src
+    ports:
+      - "8000:8000"
+    environment:
+      GO_SOURCE_FILE: /src/cmd/gateway/main.go
+      GO_BIN_PATH: /usr/local/bin/gateway
+      GO_BUILD_FLAGS: -buildvcs=false -gcflags "all=-N -l"
+    volumes:
+      - ../back:/src
+      - ../ops/run.dev.sh:/run.dev.sh
+    networks:
+      - sensorflow-net
+    command: [ "bash", "/run.dev.sh" ]
+  
+  kafka:
+    image: apache/kafka:4.0.0
+    container_name: sensorflow-kafka
+    ports:
+      - "9092:9092" # Gateway
+      - "9093:9093" # KRaft internal quorum (cluster usage)
+    volumes:
+      - kafka_volume:/var/lib/kafka/data
+    env_file:
+      - ./kafka/.env.dev
+    networks:
+      - sensorflow-net
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:v0.7.2
+    container_name: sensorflow-kafka-ui
+    ports:
+      - "8001:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: "Local"
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:9092"
+    networks:
+      - sensorflow-net
+    depends_on:
+      - kafka
+
+  influxdb:
+    image: influxdb:3.2-core
+    container_name: sensorflow-influxdb3-core
+    platform: linux/amd64
+    user: "1500:1500" 
+    ports:
+      - "8181:8181" # Gateway gRPC/HTTP/SQL
+    volumes:
+      - influxdb3_data:/var/lib/influxdb
+      - influxdb3_config:/etc/influxdb
+      - ./influxdb/entrypoint.sh:/entrypoint.sh
+    env_file:
+      - ./influxdb/.env.dev
+    command: ["/bin/bash", "entrypoint.sh"]
+    networks:
+      - sensorflow-net
+  
+networks:
+  sensorflow-net:
+    driver: bridge
+
+volumes:
+  kafka_volume:
+  influxdb3_data:
+  influxdb3_config:
