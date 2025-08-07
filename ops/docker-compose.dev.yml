@@ -4,24 +4,24 @@ services:
     container_name: sensorflow-gateway-api
     working_dir: /src
     ports:
-      - "8000:8000"
+      - 8000:8000
     environment:
       GO_SOURCE_FILE: /src/cmd/gateway/main.go
       GO_BIN_PATH: /usr/local/bin/gateway
-      GO_BUILD_FLAGS: -buildvcs=false -gcflags "all=-N -l"
+      GO_BUILD_FLAGS: -buildvcs=false -gcflags="all=-N -l"
     volumes:
       - ../back:/src
-      - ../ops/run.dev.sh:/run.dev.sh
+      - ../ops/run.dev.sh:/run.dev.sh:ro
     networks:
       - sensorflow-net
-    command: [ "bash", "/run.dev.sh" ]
-  
+    entrypoint: [ "bash", "/run.dev.sh" ]
+    
   kafka:
     image: apache/kafka:4.0.0
     container_name: sensorflow-kafka
     ports:
-      - "9092:9092" # Gateway
-      - "9093:9093" # KRaft internal quorum (cluster usage)
+      - 9092:9092 # Gateway
+      - 9093:9093 # KRaft internal quorum (cluster usage)
     volumes:
       - kafka_volume:/var/lib/kafka/data
     env_file:
@@ -33,31 +33,48 @@ services:
     image: provectuslabs/kafka-ui:v0.7.2
     container_name: sensorflow-kafka-ui
     ports:
-      - "8001:8080"
+      - 8001:8080
     environment:
-      KAFKA_CLUSTERS_0_NAME: "Local"
-      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: "kafka:9092"
+      KAFKA_CLUSTERS_0_NAME: Local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
     networks:
       - sensorflow-net
     depends_on:
       - kafka
 
   influxdb:
-    image: influxdb:3.2-core
+    image: influxdb:3.3-core
     container_name: sensorflow-influxdb3-core
     platform: linux/amd64
-    user: "1500:1500" 
+    user: 0:0 # Using root user for dev to avoid volume permission issues
     ports:
-      - "8181:8181" # Gateway gRPC/HTTP/SQL
+      - 8181:8181 # Gateway gRPC/HTTP/SQL
     volumes:
-      - influxdb3_data:/var/lib/influxdb
-      - influxdb3_config:/etc/influxdb
-      - ./influxdb/entrypoint.sh:/entrypoint.sh
+      - influxdb_data:/var/lib/influxdb
+      - ./influxdb/entrypoint.sh:/entrypoint.sh:ro
+      - ./lib:/script:ro
     env_file:
       - ./influxdb/.env.dev
-    command: ["/bin/bash", "entrypoint.sh"]
+    environment:
+      SCRIPT_WAITNET_PATH: /script/waitnet.sh
+      SCRIPT_ARGPARSER_PATH: /script/argparser.sh
     networks:
       - sensorflow-net
+    entrypoint: [ "/entrypoint.sh", "--token-path", "/var/lib/influxdb" ]
+
+  influxdb-ui:
+    image: influxdata/influxdb3-ui:1.1.0
+    container_name: sensorflow-influxdb3-ui
+    platform: linux/amd64
+    ports:
+      - 8002:80
+    #volumes:
+    #- ./influxdb/config-ui.json:/app-root/config/config.json:ro
+    command: [ "--mode=admin" ]
+    networks:
+      - sensorflow-net
+    depends_on:
+      - influxdb
   
 networks:
   sensorflow-net:
@@ -65,5 +82,4 @@ networks:
 
 volumes:
   kafka_volume:
-  influxdb3_data:
-  influxdb3_config:
+  influxdb_data:

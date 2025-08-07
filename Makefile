@@ -3,12 +3,12 @@ SHELL := /bin/bash
 # - Commands are executed in a single shell (-c).
 .SHELLFLAGS = -o pipefail -c
 
-gateway_api_container_name := gateway-api
+gateway_api_container_name := sensorflow-gateway-api
 
 .PHONY: dev/up dev/down dev/reset dev/reload/gateway
 
 dev/up:
-	@docker compose -f ./ops/docker-compose.dev.yml up -d 
+	@docker compose -f ./ops/docker-compose.dev.yml up -d vault
 
 dev/down:
 	@docker compose -f ./ops/docker-compose.dev.yml down

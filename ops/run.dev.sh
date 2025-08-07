@@ -39,7 +39,7 @@ buildProcess() {
    fi
 
    echoc "building process at $GO_BIN_PATH from source $GO_SOURCE_FILE"
-   go build $GO_BUILD_FLAGS -o $GO_BIN_PATH "$GO_SOURCE_FILE"
+   eval go build $GO_BUILD_FLAGS -o $GO_BIN_PATH "$GO_SOURCE_FILE"
 }
 
 restart() {
@@ -62,6 +62,8 @@ buildProcess
 runProcess
 
 echoc "awaiting signal SIGUSR1 - SIGINT - SIGTERM"
-while true ; do
-  sleep 1
+
+while true; do
+  sleep 1 &
+  wait $!
 done

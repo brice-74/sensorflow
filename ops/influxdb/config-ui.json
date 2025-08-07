@@ -1,0 +1,6 @@
+{
+  "DEFAULT_INFLUX_SERVER": "http://influxdb:8181",
+  "DEFAULT_INFLUX_DATABASE": "measurements",
+  "DEFAULT_API_TOKEN": "apiv3_e5UzOTm6YZu6DbIuzlKGGJHhX4g_aRbrm5BJ184gjRBczPLvYRxCppZ8CIvy0XV-8KbGCac-zfOMJJC2fwUc0A",
+  "DEFAULT_SERVER_NAME": "sensorflow-influxdb"
+}
