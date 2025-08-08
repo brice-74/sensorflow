@@ -14,6 +14,7 @@ dev/down:
 	@docker compose -f ./ops/docker-compose.dev.yml down
 
 dev/reset:
+	@sudo rm -rf ./ops/shared/
 	@docker compose -f ./ops/docker-compose.dev.yml down --volumes --remove-orphans
 
 dev/reload/gateway:

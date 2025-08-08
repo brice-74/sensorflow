@@ -11,10 +11,19 @@ services:
       GO_BUILD_FLAGS: -buildvcs=false -gcflags="all=-N -l"
     volumes:
       - ../back:/src
-      - ../ops/run.dev.sh:/run.dev.sh:ro
+      - ./shared:/shared
+      - ./run.dev.sh:/run.dev.sh:ro
+      - ./lib/waitfile.sh:/waitfile.sh:ro
     networks:
       - sensorflow-net
-    entrypoint: [ "bash", "/run.dev.sh" ]
+    depends_on:
+      - influxdb
+    entrypoint: [ 
+      "bash", "/waitfile.sh", 
+      "--file", "/shared/admin.token",
+      "--cmd", "export INFLUXDB3_TOKEN=$(cat /shared/admin.token)",
+      "--exec", "/run.dev.sh"
+    ]
     
   kafka:
     image: apache/kafka:4.0.0
@@ -51,8 +60,10 @@ services:
       - 8181:8181 # Gateway gRPC/HTTP/SQL
     volumes:
       - influxdb_data:/var/lib/influxdb
+      - ./shared:/shared
       - ./influxdb/entrypoint.sh:/entrypoint.sh:ro
-      - ./lib:/script:ro
+      - ./lib/argparser.sh:/script/argparser.sh:ro
+      - ./lib/waitnet.sh:/script/waitnet.sh:ro
     env_file:
       - ./influxdb/.env.dev
     environment:
@@ -60,7 +71,7 @@ services:
       SCRIPT_ARGPARSER_PATH: /script/argparser.sh
     networks:
       - sensorflow-net
-    entrypoint: [ "/entrypoint.sh", "--token-path", "/var/lib/influxdb" ]
+    entrypoint: [ "/entrypoint.sh", "--token-path", "/shared/admin.token" ]
 
   influxdb-ui:
     image: influxdata/influxdb3-ui:1.1.0
@@ -68,9 +79,16 @@ services:
     platform: linux/amd64
     ports:
       - 8002:80
-    #volumes:
-    #- ./influxdb/config-ui.json:/app-root/config/config.json:ro
-    command: [ "--mode=admin" ]
+    volumes:
+      - ./shared:/shared
+      - ./lib/argparser.sh:/argparser.sh:ro
+      - ./lib/waitfile.sh:/waitfile.sh:ro
+      - ./influxdb/entrypoint-ui.sh:/init.sh:ro
+    entrypoint: [
+      "sh", "/init.sh", 
+      "--token-path", "/shared/admin.token",
+      "--db-name", "measurements"
+    ]
     networks:
       - sensorflow-net
     depends_on:

@@ -10,18 +10,17 @@ waitnet() {
    local max_attempts="${3:-10}"
    local sleep_seconds="${4:-1}"
 
-   echo "⏳  Waiting for $host:$port to become available..."
+   echo "[waitnet]  ⏳  Waiting for $host:$port to become available..."
 
    for attempt in $(seq 1 "$max_attempts"); do
       if timeout 1 bash -c ">/dev/tcp/$host/$port" 2>/dev/null; then
-         echo "✅  Port $port on $host is available."
+         echo "[waitnet]  ✅  Port $port on $host is available."
          return 0
       fi
-
-      echo "❌  Port not available yet... attempt $attempt/$max_attempts"
+      
       sleep "$sleep_seconds"
    done
 
-   echo "❌  Timeout: $host:$port is still not reachable after $max_attempts attempts."
+   echo "[waitnet]  ❌  Timeout: $host:$port is still not reachable after $max_attempts attempts."
    return 1
 }

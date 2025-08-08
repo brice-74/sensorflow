@@ -1,145 +1,178 @@
-#!/bin/bash
+#!/bin/sh
 
 # --------------------------------------------------------
-# args_parser.sh — Minimal argument parser for shell scripts
+# Minimal argument parser shell script (POSIX compliant)
 #
 # Usage:
-#   source /args_parser.sh
+#   source argparser.sh
 #
-#   define_option "key" "default_value" "required|optional"
-#   define_flag "flag_name"
-#   parse_args "$@" or parse_args_and_validate "$@" || exit 1
-#
-#   get_option "key"    → returns value
-#   has_flag "flag"     → returns true/false
-#
-# Supported formats:
+# Define options with define_option "key" "default_value" "required|optional"
+# Define flags with define_flag "flag_name"
+# Parse args with parse_args_and_validate "$@" || exit 1
+# Retrieve option value: get_option "key"
+# Check flag presence: has_flag "flag"
+# Supports:
 #   --key value
 #   key=value
-#   --flag              (boolean flag)
-#
-# Supports --help to display this message and exit.
+#   --flag
+#   --help
 # --------------------------------------------------------
 
-# Internal storage
-declare -A OPTIONS_DEFAULTS
-declare -A OPTIONS_VALUES
-declare -A OPTIONS_FLAGS
-declare -A OPTIONS_REQUIRED
+set -eo pipefail
+
+OPTIONS_DEFAULTS=
+OPTIONS_VALUES=
+OPTIONS_REQUIRED=
+FLAGS=
 
 define_option() {
-   local name="$1"
-   local default="$2"
-   local required="${3:-optional}"
-   OPTIONS_DEFAULTS["$name"]="$default"
-   OPTIONS_VALUES["$name"]="$default"
-   OPTIONS_REQUIRED["$name"]="$required"
+   key=$1
+   val=$2
+   req=${3:-optional}
+   key_var=$(echo "$key" | tr '-' '_')
+   eval OPTIONS_DEFAULTS_$key_var=\$val
+   eval OPTIONS_VALUES_$key_var=\$val
+   eval OPTIONS_REQUIRED_$key_var=\$req
+   eval OPTIONS_KEYS_$key_var=\$key
 }
 
 define_flag() {
-   local name="$1"
-   OPTIONS_FLAGS["$name"]=false
+  flag=$1
+  flag_var=$(echo "$flag" | tr '-' '_')
+  eval FLAGS_$flag_var=0
 }
 
 get_option() {
-   echo "${OPTIONS_VALUES[$1]}"
+   key=$1
+   key_var=$(echo "$key" | tr '-' '_')
+   eval "echo \"\$OPTIONS_VALUES_$key_var\""
 }
 
 has_flag() {
-   [[ "${OPTIONS_FLAGS[$1]}" == "true" ]]
+   flag=$1
+   flag_var=$(echo "$flag" | tr '-' '_')
+   eval "[ \"\$FLAGS_$flag_var\" = 1 ]"
 }
 
 print_usage() {
    echo "Usage: $0 [options]"
    echo
    echo "Options:"
-   for key in "${!OPTIONS_DEFAULTS[@]}"; do
-      local req="${OPTIONS_REQUIRED[$key]}"
-      local def="${OPTIONS_DEFAULTS[$key]}"
+   set | grep '^OPTIONS_DEFAULTS_' | while IFS= read -r line; do
+      varname=${line%%=*}
+      key=${varname#OPTIONS_DEFAULTS_}
+      eval "def=\${$varname}"
+      eval "req=\${OPTIONS_REQUIRED_$key}"
       printf "  --%-15s %s%s\n" "$key" \
-         "$( [[ "$req" == "required" ]] && echo "(required) " )" \
-         "$( [[ -n "$def" ]] && echo "default: $def" )"
+         "$( [ "$req" = "required" ] && echo "(required) " )" \
+         "$( [ -n "$def" ] && echo "default: $def" )"
    done
    echo
    echo "Flags:"
-   for flag in "${!OPTIONS_FLAGS[@]}"; do
+   set | grep '^FLAGS_' | while IFS= read -r line; do
+      varname=${line%%=*}
+      flag=${varname#FLAGS_}
       printf "  --%s\n" "$flag"
    done
-   echo
    echo "  --help            Display this help and exit"
 }
 
-error_exit() {
-   echo "❌ Error: $1" >&2
+error_msg() {
+   key_var=$1
+   msg=$2
+   eval key_orig=\${OPTIONS_KEYS_$key_var:-$key_var}
+   echo "[argparser] ❌   Error: $msg: --$key_orig" >&2
    echo
    print_usage
-   exit 1
 }
 
 parse_args() {
-   while [[ $# -gt 0 ]]; do
-      arg="$1"
+   while [ $# -gt 0 ]; do
+      arg=$1
       shift
 
-      # Handle --help
-      if [[ "$arg" == "--help" ]]; then
+      if [ "$arg" = "--help" ]; then
          print_usage
-         exit 0
+         return 2
       fi
 
-      if [[ "$arg" == --* ]]; then
-         key="${arg:2}"
-
-         if [[ ${OPTIONS_FLAGS[$key]+_} ]]; then
-            OPTIONS_FLAGS["$key"]=true
-         elif [[ ${OPTIONS_DEFAULTS[$key]+_} ]]; then
-            if [[ $# -gt 0 ]]; then
-               OPTIONS_VALUES["$key"]="$1"
-               shift
+      case "$arg" in
+         --*=*)
+            key="${arg%%=*}"
+            key="${key#--}"
+            value="${arg#*=}"
+            key_var=$(echo "$key" | tr '-' '_')
+            if eval "[ \"\${OPTIONS_DEFAULTS_$key_var+x}\" ]"; then
+               eval OPTIONS_VALUES_$key_var=\$value
             else
-               error_exit "Missing value for option --$key"
+               error_msg "$key" "Unknown option"
+               return 1
             fi
-         else
-            error_exit "Unknown option: --$key"
-         fi
-
-      elif [[ "$arg" == *=* ]]; then
-         key="${arg%%=*}"
-         value="${arg#*=}"
-
-         if [[ ${OPTIONS_DEFAULTS[$key]+_} ]]; then
-            OPTIONS_VALUES["$key"]="$value"
-         else
-            error_exit "Unknown option: $key"
-         fi
-
-      else
-         error_exit "Unknown argument: $arg"
-      fi
+            ;;
+         --*)
+            key="${arg#--}"
+            key_var=$(echo "$key" | tr '-' '_')
+            if eval "[ \"\${FLAGS_$key_var+x}\" ]"; then
+               eval FLAGS_$key_var=1
+            elif eval "[ \"\${OPTIONS_DEFAULTS_$key_var+x}\" ]"; then
+               if [ $# -eq 0 ]; then
+                  error_msg "$key" "Missing value for option"
+                  return 1
+               fi
+               val=$1
+               shift
+               eval OPTIONS_VALUES_$key_var=\$val
+            else
+               error_msg "$key" "Unknown option"
+               return 1
+            fi
+            ;;
+         *=*)
+            key="${arg%%=*}"
+            value="${arg#*=}"
+            key_var=$(echo "$key" | tr '-' '_')
+            if eval "[ \"\${OPTIONS_DEFAULTS_$key_var+x}\" ]"; then
+               eval OPTIONS_VALUES_$key_var=\$value
+            else
+               error_msg "$key" "Unknown option"
+               return 1
+            fi
+            ;;
+         *)
+            error_msg "$key" "Unknown argument"
+            return 1
+            ;;
+      esac
    done
+   return 0
 }
 
 validate_required_options() {
-   local missing=false
-   for key in "${!OPTIONS_REQUIRED[@]}"; do
-      if [[ "${OPTIONS_REQUIRED[$key]}" == "required" ]]; then
-         if [[ -z "${OPTIONS_VALUES[$key]}" ]]; then
-            echo "❌ Missing required option: --$key" >&2
-            missing=true
+   missing=0
+   errors=""
+   for varname in $(set | grep '^OPTIONS_REQUIRED_' | cut -d= -f1); do
+      req=$(eval "echo \${$varname}")
+      if [ "$req" = "required" ]; then
+         key=${varname#OPTIONS_REQUIRED_}
+         val=$(eval "echo \${OPTIONS_VALUES_$key}")
+         if [ -z "$val" ]; then
+            eval key_orig=\${OPTIONS_KEYS_$key:-$key}
+            errors="${errors}[argparser] ❌   Error: Missing required option: --${key_orig}\n"
+            missing=1
          fi
       fi
    done
-
-   if $missing; then
-      echo
-      print_usage
+   if [ "$missing" -eq 1 ]; then
+      printf "$errors" >&2
+      echo >&2
+      print_usage >&2
       return 1
    fi
-
    return 0
 }
 
 parse_args_and_validate() {
-  parse_args "$@" || exit 1
-  validate_required_options || exit 1
+   parse_args "$@" || return $?
+   validate_required_options || return 1
+   return 0
 }
