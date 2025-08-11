@@ -16,9 +16,9 @@ define_option http-bind ${INFLUXDB3_HTTP_BIND_ADDR:-"0.0.0.0:8181"}
 define_option host ${INFLUXDB3_HOST:-"0.0.0.0"}
 define_option port ${INFLUXDB3_PORT:-"8181"}
 define_option proto ${INFLUXDB3_HTTP_PROTO:-"http"}
-define_option token-path "${INFLUXDB3_ADMIN_TOKEN_PATH}" required
-define_option db-name "${INFLUXDB3_DATABASE_NAME}" required
-define_option retention "${INFLUXDB3_DATABASE_RETENTION}" required
+define_option token-path "${INFLUXDB3_ADMIN_TOKEN_PATH:-}" required
+define_option db-name "${INFLUXDB3_DATABASE_NAME:-}" required
+define_option retention "${INFLUXDB3_DATABASE_RETENTION:-}" required
 
 parse_args_and_validate "$@" || exit 1
 
