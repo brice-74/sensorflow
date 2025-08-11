@@ -1,8 +1,10 @@
 package config
 
 import (
+	"flag"
 	"fmt"
 	"os"
+	"slices"
 )
 
 type Option[T comparable] struct {
@@ -11,31 +13,48 @@ type Option[T comparable] struct {
 	desc       string
 	defaultVal T
 	dst        *T
-	flagPtr    *T
-	parseEnv   func(string) (T, error)
+	flagPtr    *string
+	fromString func(string) (T, error)
 	required   bool
+	enum       []T
 }
 
 // parse implements configOption for Option[T]
 func (o *Option[T]) parse(mode Mode) error {
+	var raw string
 	switch mode {
-	case FlagOnly, Both:
-		// flagPtr always contains default or overridden by flag.Parse()
-		*o.dst = *o.flagPtr
 	case EnvOnly:
-		if raw := os.Getenv(o.envName); raw != "" {
-			parsed, err := o.parseEnv(raw)
-			if err != nil {
-				return fmt.Errorf("parsing %s: %w", o.envName, err)
-			}
-			*o.dst = parsed
+		raw = os.Getenv(o.envName)
+	case FlagOnly:
+		raw = *o.flagPtr
+	case Both:
+		if *o.flagPtr != "" && *o.flagPtr != fmt.Sprint(o.defaultVal) {
+			raw = *o.flagPtr
 		} else {
-			*o.dst = o.defaultVal
+			raw = os.Getenv(o.envName)
 		}
 	}
 
-	if o.required && isZero(*o.dst) {
+	if raw == "" {
+		*o.dst = o.defaultVal
+	} else {
+		val, err := o.fromString(raw)
+		if err != nil {
+			return fmt.Errorf("parsing %s: %w", o.envName, err)
+		}
+		*o.dst = val
+	}
+
+	isZero := isZero(*o.dst)
+	if o.required && isZero {
 		return fmt.Errorf("missing required config %s (env=%s)", o.flagName, o.envName)
+	}
+
+	if !isZero && len(o.enum) > 0 && !slices.Contains(o.enum, *o.dst) {
+		return fmt.Errorf(
+			"invalid value for config %s (env=%s): got %v, expected one of %v",
+			o.flagName, o.envName, *o.dst, o.enum,
+		)
 	}
 
 	return nil
@@ -46,7 +65,42 @@ func (o *Option[T]) Required() *Option[T] {
 	return o
 }
 
+func (o *Option[T]) Enum(values ...T) *Option[T] {
+	o.enum = values
+	return o
+}
+
 func isZero[T comparable](val T) bool {
 	var zero T
 	return val == zero
+}
+
+// AddOption registers a generic Option[T]
+func AddOption[T comparable](
+	l *Loader,
+	dst *T,
+	flagName, envName, desc string,
+	defaultVal T,
+	// parseEnv converts a string to T
+	fromString func(string) (T, error),
+) *Option[T] {
+	if dst == nil {
+		panic("config: destination pointer is nil")
+	}
+
+	opt := &Option[T]{
+		flagName:   flagName,
+		envName:    envName,
+		desc:       desc,
+		defaultVal: defaultVal,
+		dst:        dst,
+		fromString: fromString,
+	}
+
+	if l.mode != EnvOnly {
+		opt.flagPtr = flag.String(flagName, "", desc)
+	}
+
+	l.options = append(l.options, opt)
+	return opt
 }

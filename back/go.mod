@@ -3,20 +3,20 @@ module github.com/brice-74/sensorflow
 go 1.24.5
 
 require (
+	github.com/InfluxCommunity/influxdb3-go/v2 v2.8.0
 	github.com/getsentry/sentry-go v0.34.1
 	github.com/getsentry/sentry-go/fiber v0.34.1
 	github.com/gofiber/fiber/v2 v2.52.8
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.10.0
 	github.com/valyala/fasthttp v1.57.0
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
 require (
-	github.com/InfluxCommunity/influxdb3-go/v2 v2.8.0 // indirect
 	github.com/apache/arrow-go/v18 v18.3.0 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/google/flatbuffers v25.2.10+incompatible // indirect
-	github.com/google/go-cmp v0.7.0 // indirect
 	github.com/influxdata/line-protocol/v2 v2.2.1 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
@@ -37,7 +37,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
-	github.com/kr/text v0.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect

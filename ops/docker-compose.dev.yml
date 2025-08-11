@@ -21,7 +21,7 @@ services:
     entrypoint: [ 
       "bash", "/waitfile.sh", 
       "--file", "/shared/influx/admin.token",
-      "--cmd", "export INFLUXDB3_TOKEN=$(cat /shared/influx/admin.token)",
+      "--cmd", "export INFLUXDB_TOKEN=$(cat /shared/influx/admin.token)",
       "--exec", "/run.dev.sh"
     ]
     

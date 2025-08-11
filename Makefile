@@ -5,16 +5,18 @@ SHELL := /bin/bash
 
 gateway_api_container_name := sensorflow-gateway-api
 
-.PHONY: dev/up dev/down dev/reset dev/reload/gateway
+.PHONY: dev/start dev/start/core dev/stop dev/reset dev/reload/gateway
 
-dev/up:
-	@docker compose -f ./ops/docker-compose.dev.yml up -d vault
+dev/start:
+	@docker compose -f ./ops/docker-compose.dev.yml up -d 
 
-dev/down:
+dev/start/core:
+	@docker compose -f ./ops/docker-compose.dev.yml up -d gateway-api kafka influxdb
+
+dev/stop:
 	@docker compose -f ./ops/docker-compose.dev.yml down
 
 dev/reset:
-	@sudo rm -rf ./ops/shared/
 	@docker compose -f ./ops/docker-compose.dev.yml down --volumes --remove-orphans
 
 dev/reload/gateway:

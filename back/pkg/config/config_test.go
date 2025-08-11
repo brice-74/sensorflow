@@ -91,4 +91,45 @@ func TestLoader(t *testing.T) {
 		require.Error(t, err)
 		require.Zero(t, port)
 	})
+
+	t.Run("Enum_ValidValue", func(t *testing.T) {
+		resetEnvAndFlags()
+		os.Setenv("COLOR", "red")
+
+		loader := config.NewLoader(config.EnvOnly)
+		var color string
+		loader.String(&color, "color", "COLOR", "", "favorite color").
+			Enum("red", "green", "blue")
+
+		err := loader.Parse()
+		require.NoError(t, err)
+		require.Equal(t, "red", color)
+	})
+
+	t.Run("Enum_InvalidValue", func(t *testing.T) {
+		resetEnvAndFlags()
+		os.Setenv("COLOR", "yellow")
+
+		loader := config.NewLoader(config.EnvOnly)
+		var color string
+		loader.String(&color, "color", "COLOR", "", "favorite color").
+			Enum("red", "green", "blue")
+
+		err := loader.Parse()
+		require.Error(t, err)
+	})
+
+	t.Run("Enum_EmptyAllowedButRequired", func(t *testing.T) {
+		resetEnvAndFlags()
+
+		loader := config.NewLoader(config.EnvOnly)
+		var mode string
+		loader.String(&mode, "mode", "MODE", "", "mode of operation").
+			Enum("prod", "dev").Required()
+
+		err := loader.Parse()
+		require.Error(t, err)
+		require.Zero(t, mode)
+	})
+
 }
