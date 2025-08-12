@@ -4,6 +4,7 @@ SHELL := /bin/bash
 .SHELLFLAGS = -o pipefail -c
 
 gateway_api_container_name := sensorflow-gateway-api
+ingestion_api_container_name := sensorflow-ingestion-api
 
 .PHONY: dev/start dev/start/core dev/stop dev/reset dev/reload/gateway
 
@@ -21,6 +22,9 @@ dev/reset:
 
 dev/reload/gateway:
 	$(call reload_process,$(gateway_api_container_name),run.dev.sh)
+
+dev/reload/ingestion:
+	$(call reload_process,$(ingestion_api_container_name),run.dev.sh)
 
 # generic function to send USR1 signal to containerize process
 # parameters: 

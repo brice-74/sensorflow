@@ -1,4 +1,30 @@
 services:
+  ingestion-api:
+    image: golang:1.24.5
+    container_name: sensorflow-ingestion-api
+    working_dir: /src
+    environment:
+      GO_SOURCE_FILE: /src/cmd/ingestion/main.go
+      GO_BIN_PATH: /usr/local/bin/ingestion
+      GO_BUILD_FLAGS: -buildvcs=false -gcflags="all=-N -l"
+    volumes:
+      - ../back:/src
+      - shared:/shared/influx:ro
+      - ./run.dev.sh:/run.dev.sh:ro
+      - ./lib/waitfile.sh:/waitfile.sh:ro
+    env_file:
+      - ./ingestion/.env.dev
+    networks:
+      - sensorflow-net
+    depends_on:
+      - influxdb
+    entrypoint: [ 
+      "bash", "/waitfile.sh", 
+      "--file", "/shared/influx/admin.token",
+      "--cmd", "export INFLUXDB_TOKEN=$(cat /shared/influx/admin.token)",
+      "--exec", "/run.dev.sh"
+    ]
+
   gateway-api:
     image: golang:1.24.5
     container_name: sensorflow-gateway-api
@@ -14,6 +40,8 @@ services:
       - shared:/shared/influx:ro
       - ./run.dev.sh:/run.dev.sh:ro
       - ./lib/waitfile.sh:/waitfile.sh:ro
+    env_file:
+      - ./gateway/.env.dev
     networks:
       - sensorflow-net
     depends_on:

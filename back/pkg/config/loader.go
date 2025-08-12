@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+type Configurable interface {
+	Define(*Loader)
+}
+
 type Mode uint8
 
 const (
@@ -24,8 +28,12 @@ type Loader struct {
 	options []configOption
 }
 
-func NewLoader(mode Mode) *Loader {
-	return &Loader{mode: mode}
+func NewLoader(mode Mode, configurators ...Configurable) *Loader {
+	loader := &Loader{mode: mode}
+	for _, c := range configurators {
+		c.Define(loader)
+	}
+	return loader
 }
 
 func (l *Loader) Parse() error {
@@ -77,6 +85,15 @@ func (l *Loader) Uint(dst *uint, flagName, envName string, defaultVal uint, desc
 		func(s string) (uint, error) {
 			u64, err := strconv.ParseUint(s, 10, 64)
 			return uint(u64), err
+		},
+	)
+}
+
+func (l *Loader) Uint16(dst *uint16, flagName, envName string, defaultVal uint16, desc string) *Option[uint16] {
+	return AddOption(l, dst, flagName, envName, desc, defaultVal,
+		func(s string) (uint16, error) {
+			u64, err := strconv.ParseUint(s, 10, 16)
+			return uint16(u64), err
 		},
 	)
 }

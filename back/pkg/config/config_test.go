@@ -2,7 +2,9 @@ package config_test
 
 import (
 	"flag"
+	"fmt"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/brice-74/sensorflow/pkg/config"
@@ -92,44 +94,40 @@ func TestLoader(t *testing.T) {
 		require.Zero(t, port)
 	})
 
-	t.Run("Enum_ValidValue", func(t *testing.T) {
+	t.Run("ValidationFail", func(t *testing.T) {
 		resetEnvAndFlags()
-		os.Setenv("COLOR", "red")
+		os.Setenv("MY_VAR", "xyz")
 
 		loader := config.NewLoader(config.EnvOnly)
-		var color string
-		loader.String(&color, "color", "COLOR", "", "favorite color").
-			Enum("red", "green", "blue")
+		var myVar string
+		loader.String(&myVar, "my_var", "MY_VAR", "", "test").
+			Validate(func(s string) error {
+				if !strings.HasPrefix(s, "abc") {
+					return fmt.Errorf("must start with 'abc'")
+				}
+				return nil
+			})
+
+		err := loader.Parse()
+		require.Error(t, err)
+	})
+
+	t.Run("ValidationPass", func(t *testing.T) {
+		resetEnvAndFlags()
+		os.Setenv("MY_VAR", "abc123")
+
+		loader := config.NewLoader(config.EnvOnly)
+		var myVar string
+		loader.String(&myVar, "my_var", "MY_VAR", "", "test").
+			Validate(func(s string) error {
+				if !strings.HasPrefix(s, "abc") {
+					return fmt.Errorf("must start with 'abc'")
+				}
+				return nil
+			})
 
 		err := loader.Parse()
 		require.NoError(t, err)
-		require.Equal(t, "red", color)
+		require.Equal(t, "abc123", myVar)
 	})
-
-	t.Run("Enum_InvalidValue", func(t *testing.T) {
-		resetEnvAndFlags()
-		os.Setenv("COLOR", "yellow")
-
-		loader := config.NewLoader(config.EnvOnly)
-		var color string
-		loader.String(&color, "color", "COLOR", "", "favorite color").
-			Enum("red", "green", "blue")
-
-		err := loader.Parse()
-		require.Error(t, err)
-	})
-
-	t.Run("Enum_EmptyAllowedButRequired", func(t *testing.T) {
-		resetEnvAndFlags()
-
-		loader := config.NewLoader(config.EnvOnly)
-		var mode string
-		loader.String(&mode, "mode", "MODE", "", "mode of operation").
-			Enum("prod", "dev").Required()
-
-		err := loader.Parse()
-		require.Error(t, err)
-		require.Zero(t, mode)
-	})
-
 }

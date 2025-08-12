@@ -4,19 +4,18 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"slices"
 )
 
 type Option[T comparable] struct {
-	flagName   string
-	envName    string
-	desc       string
-	defaultVal T
-	dst        *T
-	flagPtr    *string
-	fromString func(string) (T, error)
-	required   bool
-	enum       []T
+	flagName     string
+	envName      string
+	desc         string
+	defaultVal   T
+	dst          *T
+	flagPtr      *string
+	fromString   func(string) (T, error)
+	required     bool
+	validationFn func(T) error
 }
 
 // parse implements configOption for Option[T]
@@ -50,11 +49,13 @@ func (o *Option[T]) parse(mode Mode) error {
 		return fmt.Errorf("missing required config %s (env=%s)", o.flagName, o.envName)
 	}
 
-	if !isZero && len(o.enum) > 0 && !slices.Contains(o.enum, *o.dst) {
-		return fmt.Errorf(
-			"invalid value for config %s (env=%s): got %v, expected one of %v",
-			o.flagName, o.envName, *o.dst, o.enum,
-		)
+	if o.validationFn != nil {
+		if err := o.validationFn(*o.dst); err != nil {
+			return fmt.Errorf(
+				"validation config %s (env=%s): value %v, error: %s",
+				o.flagName, o.envName, *o.dst, err,
+			)
+		}
 	}
 
 	return nil
@@ -65,8 +66,8 @@ func (o *Option[T]) Required() *Option[T] {
 	return o
 }
 
-func (o *Option[T]) Enum(values ...T) *Option[T] {
-	o.enum = values
+func (o *Option[T]) Validate(fn func(T) error) *Option[T] {
+	o.validationFn = fn
 	return o
 }
 

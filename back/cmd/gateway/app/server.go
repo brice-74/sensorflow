@@ -18,41 +18,36 @@ type Server struct {
 	logger log.FiberLoggerInterface
 }
 
-func NewFiberServer(logger log.FiberLoggerInterface) *Server {
-	return &Server{
-		logger: logger,
-		App: fiber.New(
-			fiber.Config{
-				JSONDecoder: func(data []byte, v any) error {
-					decoder := json.NewDecoder(bytes.NewReader(data))
-					decoder.DisallowUnknownFields()
-					return decoder.Decode(v)
-				},
-				ReadTimeout: time.Second * 5,
-				BodyLimit:   5 * 1024 * 1024, // 5 Mo
-				ErrorHandler: func(c *fiber.Ctx, err error) error {
-					logger.WithFiberCtx(c).Error(err)
-					return http.JSONInternalError(c, "fiber_unexpected_error", "Unexpected server error", nil)
-				},
+func RunServer(logger log.FiberLoggerInterface, port string) error {
+	fiberApp := fiber.New(
+		fiber.Config{
+			JSONDecoder: func(data []byte, v any) error {
+				decoder := json.NewDecoder(bytes.NewReader(data))
+				decoder.DisallowUnknownFields()
+				return decoder.Decode(v)
 			},
-		),
-	}
-}
+			ReadTimeout: time.Second * 5,
+			BodyLimit:   5 * 1024 * 1024, // 5 Mo
+			ErrorHandler: func(c *fiber.Ctx, err error) error {
+				logger.WithFiberCtx(c).Error(err)
+				return http.JSONInternalError(c, "fiber_unexpected_error", "Unexpected server error", nil)
+			},
+		},
+	)
 
-func (srv *Server) Serve(port string) error {
 	shutdownError := make(chan error)
 
-	go func(srv *Server) {
+	go func(srv *fiber.App, logger log.FiberLoggerInterface) {
 		listenSignalOS := make(chan os.Signal, 1)
 		signal.Notify(listenSignalOS, syscall.SIGINT, syscall.SIGTERM)
 		signalOS := <-listenSignalOS
 
-		srv.logger.Info("shutting down server", log.Tags{"signal": signalOS.String()})
+		logger.Info("shutting down server", log.Tags{"server_signal": signalOS.String()})
 
 		shutdownError <- srv.Shutdown()
-	}(srv)
+	}(fiberApp, logger)
 
-	if err := srv.Listen(":" + port); err != nil {
+	if err := fiberApp.Listen(":" + port); err != nil {
 		return err
 	}
 
