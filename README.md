@@ -20,3 +20,10 @@ ClickHouse (cold storage)
 https://github.com/ClickHouse/clickhouse-go
 https://github.com/InfluxCommunity/influxdb3-go
 https://github.com/segmentio/kafka-go
+
+| Catégorie                               | Fields (mesures)                                                      | Unités / Type                          | Tags conseillés                                                            |
+| --------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------- | --------------------------------------------------------------------------- |
+| **Accéléromètre / Gyroscope**           | accel_x, accel_y, accel_z, gyro_x, gyro_y, gyro_z, temperature*        | g, °/s, °C*                             | device_id, location, sensor_id, firmware_version                            |
+| **Détecteur de mouvement / Impulsions** | motion_detected, pulse_count, pulse_rate*                              | bool/int (0-1), int, Hz*                | device_id, sensor_id, type (motion/pulse), location                         |
+| **Vibration / Son**                     | vib_rms, vib_peak, vib_freq, sound_db, sound_freq, sound_peak*         | m/s², Hz, dB SPL*                       | device_id, sensor_id, mounting_point                                        |
+| **GPS / Position**                      | latitude, longitude, altitude, speed, heading, accuracy*               | °, m, m/s ou km/h*                      | device_id, source (GPS/GLONASS/etc.), mode (fix/float), firmware_version    |
