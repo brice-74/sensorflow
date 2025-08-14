@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"github.com/brice-74/sensorflow/internal/core/domain/common"
 	"github.com/brice-74/sensorflow/pkg/ulid"
 )
 
@@ -8,6 +9,6 @@ import (
 type Tenant struct {
 	ID   ulid.ULID `json:"id"`
 	Name string    `json:"name"`
-	Timestamps
-	SoftDelete
+	common.Timestamps
+	common.SoftDelete
 }

@@ -1,0 +1,36 @@
+# Guards available
+guards:
+  - name: User
+    description: User access through an interface
+  - name: API
+    description: Access from the public API
+  - name: Sensor
+    description: Access from a sensor gateway
+
+# Scopes available
+scopes:
+  - name: Own
+    description: 
+  - name: All
+    description: 
+
+# Actions available
+actions:
+  - name: Read
+    description: 
+  - name: Create
+    description:
+  - name: Update
+    description:
+  - name: SoftDelete
+    description:
+  - name: HardDelete
+    description:
+  - name: Restore
+    description:
+  - name: Execute
+    description:
+
+resources:
+  - name: 
+    description: 

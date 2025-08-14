@@ -1,8 +1,13 @@
-package domain
+package common
 
-import (
-	"time"
-)
+import "time"
+
+type Timestamped interface {
+	GetCreatedAt() time.Time
+	GetUpdatedAt() time.Time
+	SetCreatedAt(time.Time)
+	SetUpdatedAt(time.Time)
+}
 
 type Timestamps struct {
 	CreatedAt time.Time `json:"created_at"`
@@ -22,6 +27,11 @@ func (ts *Timestamps) SetUpdatedAt(t time.Time) {
 	ts.UpdatedAt = t
 }
 
+type SoftDeleted interface {
+	GetDeletedAt() *time.Time
+	SetDeletedAt(*time.Time)
+}
+
 type SoftDelete struct {
 	DeletedAt *time.Time `json:"deleted_at"`
 }
@@ -31,16 +41,4 @@ func (s *SoftDelete) GetDeletedAt() *time.Time {
 }
 func (s *SoftDelete) SetDeletedAt(t *time.Time) {
 	s.DeletedAt = t
-}
-
-type Timestamped interface {
-	GetCreatedAt() time.Time
-	GetUpdatedAt() time.Time
-	SetCreatedAt(time.Time)
-	SetUpdatedAt(time.Time)
-}
-
-type SoftDeleted interface {
-	GetDeletedAt() *time.Time
-	SetDeletedAt(*time.Time)
 }

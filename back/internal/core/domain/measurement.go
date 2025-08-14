@@ -1,6 +1,9 @@
 package domain
 
-import "github.com/brice-74/sensorflow/pkg/ulid"
+import (
+	"github.com/brice-74/sensorflow/internal/core/domain/common"
+	"github.com/brice-74/sensorflow/pkg/ulid"
+)
 
 type InfluxDataType uint8
 
@@ -38,8 +41,8 @@ type MeasurementProfile struct {
 	// Shared indicates whether this MeasurementProfile is shared across tenants.
 	// If true, the corresponding storage table is managed internally and cannot be modified by tenants.
 	Shared bool `json:"shared"`
-	Timestamps
-	SoftDelete
+	common.Timestamps
+	common.SoftDelete
 }
 
 // MeasurementField represents a specific field (data point) within a MeasurementProfile.
@@ -50,8 +53,8 @@ type MeasurementField struct {
 	StorageName string         `json:"storage_name"`
 	Description *string        `json:"description"`
 	Type        InfluxDataType `json:"type"`
-	Timestamps
-	SoftDelete
+	common.Timestamps
+	common.SoftDelete
 }
 
 // MeasurementTag represents a tag (metadata) associated with a MeasurementProfile,
@@ -62,6 +65,6 @@ type MeasurementTag struct {
 	Name        string    `json:"name"`
 	StorageName string    `json:"storage_name"`
 	Description *string   `json:"description"`
-	Timestamps
-	SoftDelete
+	common.Timestamps
+	common.SoftDelete
 }

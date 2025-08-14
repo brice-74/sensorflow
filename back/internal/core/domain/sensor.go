@@ -3,6 +3,7 @@ package domain
 import (
 	"fmt"
 
+	"github.com/brice-74/sensorflow/internal/core/domain/common"
 	"github.com/brice-74/sensorflow/pkg/ulid"
 )
 
@@ -45,8 +46,8 @@ type SensorInstance struct {
 	MeasurementProfileID ulid.ULID      `json:"measurement_profile_id"`
 	Config               map[string]any `json:"config"`
 	Status               SensorStatus   `json:"status"`
-	Timestamps
-	SoftDelete
+	common.Timestamps
+	common.SoftDelete
 }
 
 // Gateway represents a central program or device that collects data from one or multiple sensors
@@ -58,6 +59,6 @@ type SensorGateway struct {
 	Location string         `json:"location"`
 	Firmware string         `json:"firmware"`
 	Metadata map[string]any `json:"metadata"`
-	Timestamps
-	SoftDelete
+	common.Timestamps
+	common.SoftDelete
 }

@@ -1,0 +1,6 @@
+allowed_relations:
+  - resource: # string
+    action: # string
+    description: # string
+    guards: # wildcard * or slice []
+    scopes: # wildcard * or slice []

@@ -1,0 +1,8 @@
+roles:
+  - name: # string
+    description: # string
+    permissions:
+      - resources: # wildcard * or slice []
+        actions: # wildcard * or slice []
+        guards: # wildcard * or slice []
+        scopes: # wildcard * or slice []
