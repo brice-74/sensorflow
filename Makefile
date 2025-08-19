@@ -15,7 +15,7 @@ dev/start/core:
 	@docker compose -f ./ops/docker-compose.dev.yml up -d gateway-api kafka influxdb
 
 dev/stop:
-	@docker compose -f ./ops/docker-compose.dev.yml down
+	@docker compose -f ./ops/docker-compose.dev.yml stop
 
 dev/reset:
 	@docker compose -f ./ops/docker-compose.dev.yml down --volumes --remove-orphans
@@ -33,3 +33,8 @@ dev/reload/ingestion:
 define reload_process
 	@docker exec -it $(1) bash -c 'kill -s USR1 "$$(pgrep -f $(2) | head -n 1)"'
 endef
+
+protoc/sensor:
+	@protoc --go_out=. --go_opt=paths=source_relative \
+		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
+		back/internal/adapters/grpc/proto/sensor.proto

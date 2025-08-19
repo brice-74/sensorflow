@@ -26,8 +26,12 @@ func RunServer(logger log.FiberLoggerInterface, port string) error {
 				decoder.DisallowUnknownFields()
 				return decoder.Decode(v)
 			},
-			ReadTimeout: time.Second * 5,
-			BodyLimit:   5 * 1024 * 1024, // 5 Mo
+			IdleTimeout:      10 * time.Second,
+			Concurrency:      256 * 1024,
+			DisableKeepalive: false,
+			WriteTimeout:     time.Second * 5,
+			ReadTimeout:      time.Second * 5,
+			BodyLimit:        5 * 1024 * 1024, // 5 Mo
 			ErrorHandler: func(c *fiber.Ctx, err error) error {
 				logger.WithFiberCtx(c).Error(err)
 				return http.JSONInternalError(c, "fiber_unexpected_error", "Unexpected server error", nil)

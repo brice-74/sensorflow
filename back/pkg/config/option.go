@@ -80,8 +80,9 @@ func isZero[T comparable](val T) bool {
 func AddOption[T comparable](
 	l *Loader,
 	dst *T,
-	flagName, envName, desc string,
+	flagName, envName string,
 	defaultVal T,
+	desc string,
 	// parseEnv converts a string to T
 	fromString func(string) (T, error),
 ) *Option[T] {

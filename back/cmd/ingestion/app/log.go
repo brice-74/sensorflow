@@ -9,7 +9,7 @@ import (
 
 func PrepareLogger(conf *Config) (log.FiberLoggerInterface, func() error, error) {
 	if conf.Env == config.EnvLocal {
-		return kit.Zlog(zerolog.DebugLevel, zerolog.DebugLevel), func() error { return nil }, nil
+		return kit.Zlog(zerolog.DebugLevel, zerolog.DebugLevel, "/logs/ingestion.log"), func() error { return nil }, nil
 	}
 
 	return kit.Sentry(conf.Sentry)

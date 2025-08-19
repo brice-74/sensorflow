@@ -7,9 +7,12 @@ require (
 	github.com/getsentry/sentry-go v0.34.1
 	github.com/getsentry/sentry-go/fiber v0.34.1
 	github.com/gofiber/fiber/v2 v2.52.8
+	github.com/golang/protobuf v1.5.4
 	github.com/rs/zerolog v1.34.0
 	github.com/stretchr/testify v1.10.0
 	github.com/valyala/fasthttp v1.57.0
+	google.golang.org/grpc v1.73.0
+	google.golang.org/protobuf v1.36.6
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 )
 
@@ -28,8 +31,6 @@ require (
 	golang.org/x/tools v0.32.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250324211829-b45e905df463 // indirect
-	google.golang.org/grpc v1.73.0 // indirect
-	google.golang.org/protobuf v1.36.6 // indirect
 )
 
 require (

@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option go_package = "github.com/brice-74/sensorflow/internal/adapters/grpc/proto";
+
+package sensor;
+
+import "google/protobuf/empty.proto";
+import "google/protobuf/any.proto";
+
+service SensorService {
+   rpc StreamMeasurements(stream SensorMeasurementsRequest) returns (google.protobuf.Empty);
+   rpc UnaryMeasurements(SensorMeasurementsRequest) returns (google.protobuf.Empty);
+}
+
+message SensorMeasurementsRequest {
+   // string represents a sensor ID 
+   map<string, SensorMeasurementsList> values = 1;
+}
+
+message SensorMeasurementsList {
+   repeated SensorMeasurements measurements = 1;
+}
+
+message SensorMeasurements {
+   int64 timestamp = 1;
+   map<string, google.protobuf.Any> values = 3;
+}

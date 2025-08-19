@@ -29,4 +29,5 @@ func main() {
 	if err := app.RunServer(logger, cfg.HTTP.Port); err != nil {
 		logger.Error(err, log.Tags{"server": "closed"})
 	}
+
 }

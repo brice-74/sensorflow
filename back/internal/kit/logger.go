@@ -14,7 +14,7 @@ import (
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func Zlog(fileLvl, consoleLvl zerolog.Level) log.FiberLoggerInterface {
+func Zlog(consoleLvl, fileLvl zerolog.Level, filePath string) log.FiberLoggerInterface {
 	return log.NewZerolog(zerolog.New(
 		zerolog.MultiLevelWriter([]io.Writer{
 			// console writer
@@ -31,7 +31,7 @@ func Zlog(fileLvl, consoleLvl zerolog.Level) log.FiberLoggerInterface {
 			&zerolog.FilteredLevelWriter{
 				Writer: zerolog.LevelWriterAdapter{
 					Writer: &lumberjack.Logger{
-						Filename:   "logs/app.log",
+						Filename:   filePath,
 						MaxSize:    20,
 						MaxBackups: 5,
 						MaxAge:     30,

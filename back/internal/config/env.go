@@ -42,6 +42,6 @@ func EnvFromString(value string) (Env, error) {
 }
 
 func (e *Env) Define(loader *config.Loader) {
-	config.AddOption(loader, e, "env", "ENV", "application environment (local|preprod|prod)", 0, EnvFromString).
+	config.AddOption(loader, e, "env", "ENV", 0, "application environment (local|preprod|prod)", EnvFromString).
 		Required()
 }
