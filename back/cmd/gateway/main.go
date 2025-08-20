@@ -26,8 +26,7 @@ func main() {
 		log.Tags{"api_identifier": cfg.Instance.Identifier},
 	).(log.FiberLoggerInterface)
 
-	if err := app.RunServer(logger, cfg.HTTP.Port); err != nil {
+	if err := app.ServeHTTP(logger, cfg.HTTP); err != nil {
 		logger.Error(err, log.Tags{"server": "closed"})
 	}
-
 }

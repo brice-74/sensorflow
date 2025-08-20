@@ -8,23 +8,22 @@ import (
 type Config struct {
 	config.Instance
 	config.Env
-	config.HTTP
 	config.InfluxDB
 	config.Sentry
+	config.GRPC
+}
+
+func (c *Config) Define(loader *configpkg.Loader) {
+	c.Instance.Define(loader)
+	c.Env.Define(loader)
+	c.InfluxDB.Define(loader)
+	c.Sentry.Define(loader)
+	c.GRPC.Define(loader)
 }
 
 func ParseConfig() (*Config, error) {
 	cfg := new(Config)
-
-	loader := configpkg.NewLoader(configpkg.Both,
-		&cfg.Instance,
-		&cfg.Env,
-		&cfg.HTTP,
-		&cfg.InfluxDB,
-		&cfg.Sentry,
-	)
-
-	if err := loader.Parse(); err != nil {
+	if err := configpkg.NewLoader(configpkg.Both, cfg).Parse(); err != nil {
 		return nil, err
 	}
 	return cfg, nil

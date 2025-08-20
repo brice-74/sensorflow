@@ -41,10 +41,33 @@ func (l *Loader) Prefixes() [2]string {
 	return l.prefixes
 }
 
+// Makes a shallow copy of the loader and completely overwrites the prefixes
 func (l *Loader) WithPrefixes(flagPrefix, envPrefix string) *Loader {
 	clone := *l
 	clone.prefixes = [2]string{flagPrefix, envPrefix}
 	return &clone
+}
+
+// Makes a shallow copy of the loader and appends a prefix from the parent prefix
+func (l *Loader) AddPrefix(flagPrefix, envPrefix string) *Loader {
+	clone := *l
+	clone.prefixes[0] = l.prefixed(flagPrefix, 0)
+	clone.prefixes[1] = l.prefixed(envPrefix, 1)
+	return &clone
+}
+
+func (l *Loader) prefixed(str string, prefixIndex int) string {
+	sep := "_"
+	prefix := ""
+
+	if prefixIndex >= 0 && prefixIndex <= 1 {
+		prefix = l.prefixes[prefixIndex]
+	}
+
+	if prefix == "" {
+		return str
+	}
+	return prefix + sep + str
 }
 
 func (l *Loader) Parse() error {

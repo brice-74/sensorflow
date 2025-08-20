@@ -182,4 +182,33 @@ func TestLoader(t *testing.T) {
 		require.Equal(t, [2]string{"x", "y"}, withPrefix.Prefixes())
 		require.Equal(t, [2]string{"", ""}, base.Prefixes())
 	})
+
+	t.Run("PrefixesParentChild", func(t *testing.T) {
+		resetEnvAndFlags()
+
+		loader := config.NewLoader(config.Both)
+
+		parent := loader.AddPrefix("parent", "PARENT")
+		child := parent.AddPrefix("child", "CHILD")
+
+		var port int
+		var name string
+
+		child.Int(&port, "port", "PORT", 80, "server port")
+		child.String(&name, "name", "NAME", "defaultName", "server name")
+
+		os.Setenv("PARENT_CHILD_PORT", "1234")
+		os.Setenv("PARENT_CHILD_NAME", "childServer")
+		os.Args = []string{"cmd", "-parent_child_port=5678"}
+
+		err := child.Parse()
+		require.NoError(t, err)
+
+		require.Equal(t, 5678, port)
+		require.Equal(t, "childServer", name)
+
+		prefixes := child.Prefixes()
+		require.Equal(t, "parent_child", prefixes[0])
+		require.Equal(t, "PARENT_CHILD", prefixes[1])
+	})
 }
