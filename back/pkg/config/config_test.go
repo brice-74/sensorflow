@@ -130,4 +130,56 @@ func TestLoader(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "abc123", myVar)
 	})
+
+	t.Run("WithPrefixes_EnvOnly", func(t *testing.T) {
+		resetEnvAndFlags()
+		os.Setenv("APP_MY_KEY", "hello")
+
+		loader := config.NewLoader(config.EnvOnly).WithPrefixes("", "APP")
+		var value string
+		loader.String(&value, "my_key", "MY_KEY", "default", "test key")
+
+		err := loader.Parse()
+		require.NoError(t, err)
+		require.Equal(t, "hello", value)
+	})
+
+	t.Run("WithPrefixes_FlagOnly", func(t *testing.T) {
+		resetEnvAndFlags()
+		os.Args = []string{"cmd", "-app_my_port=1234"}
+
+		loader := config.NewLoader(config.FlagOnly).WithPrefixes("app", "")
+		var port int
+		loader.Int(&port, "my_port", "MY_PORT", 80, "server port")
+
+		err := loader.Parse()
+		require.NoError(t, err)
+		require.Equal(t, 1234, port)
+	})
+
+	t.Run("WithPrefixes_Both", func(t *testing.T) {
+		resetEnvAndFlags()
+		os.Setenv("APP_PORT", "9999")
+		os.Args = []string{"cmd", "-app_port=5678"}
+
+		loader := config.NewLoader(config.Both).WithPrefixes("app", "APP")
+		var port int
+		loader.Int(&port, "port", "PORT", 80, "server port")
+
+		err := loader.Parse()
+		require.NoError(t, err)
+		require.Equal(t, 5678, port) // flag doit écraser env
+	})
+
+	t.Run("WithPrefixes_CloneIndependence", func(t *testing.T) {
+		resetEnvAndFlags()
+
+		base := config.NewLoader(config.EnvOnly)
+		withPrefix := base.WithPrefixes("x", "y")
+
+		require.NotEqual(t, &base, withPrefix)
+		require.NotEqual(t, base, *withPrefix)
+		require.Equal(t, [2]string{"x", "y"}, withPrefix.Prefixes())
+		require.Equal(t, [2]string{"", ""}, base.Prefixes())
+	})
 }

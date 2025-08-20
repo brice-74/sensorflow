@@ -90,6 +90,14 @@ func AddOption[T comparable](
 		panic("config: destination pointer is nil")
 	}
 
+	if l.prefixes[0] != "" {
+		flagName = l.prefixes[0] + "_" + flagName
+	}
+
+	if l.prefixes[1] != "" {
+		envName = l.prefixes[1] + "_" + envName
+	}
+
 	opt := &Option[T]{
 		flagName:   flagName,
 		envName:    envName,
