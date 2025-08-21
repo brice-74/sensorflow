@@ -7,7 +7,7 @@ import (
 	"github.com/brice-74/sensorflow/internal/config"
 )
 
-func NewClient(cfg config.InfluxDB) (*influxdb3.Client, error) {
+func NewClient(cfg *config.InfluxDB) (*influxdb3.Client, error) {
 	config := influxdb3.ClientConfig{
 		Host:                  cfg.URL,
 		Token:                 cfg.Token,

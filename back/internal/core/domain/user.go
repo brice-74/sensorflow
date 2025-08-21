@@ -9,6 +9,7 @@ type User struct {
 	ID       ulid.ULID `json:"id"`
 	Email    string    `json:"email"`
 	Password *string   `json:"password"`
+	TenantID ulid.ULID `json:"tenant_id"`
 	common.Timestamps
 	common.SoftDelete
 }

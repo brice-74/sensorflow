@@ -3,9 +3,8 @@ package config
 import "github.com/brice-74/sensorflow/pkg/config"
 
 type Sentry struct {
-	DSN              string
-	SampleRate       float64
-	TracesSampleRate float64
+	DSN                          string
+	SampleRate, TracesSampleRate float64
 }
 
 func (c *Sentry) Define(loader *config.Loader) {

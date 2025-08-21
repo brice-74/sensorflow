@@ -10,14 +10,11 @@ import (
 )
 
 type HTTP struct {
-	Port                string
-	GracefulStopTimeout time.Duration
-	IdleTimeout         time.Duration
-	WriteTimeout        time.Duration
-	ReadTimeout         time.Duration
-	Keepalive           bool
-	BodyLimit           int64
-	ConcurrencyLimit    int
+	Port                                                        string
+	GracefulStopTimeout, IdleTimeout, WriteTimeout, ReadTimeout time.Duration
+	Keepalive                                                   bool
+	BodyLimit                                                   int64
+	ConcurrencyLimit                                            int
 }
 
 func (c *HTTP) Define(loader *config.Loader) {
@@ -34,16 +31,11 @@ func (c *HTTP) Define(loader *config.Loader) {
 }
 
 type GRPC struct {
-	Port                       string
-	GracefulStopTimeout        time.Duration
-	IdleTimeout                time.Duration
-	MaxConnectionAge           time.Duration
-	MaxConnectionAgeGrace      time.Duration
+	Port string
+	GracefulStopTimeout, IdleTimeout, MaxConnectionAge, MaxConnectionAgeGrace,
+	KeepaliveTime, KeepaliveTimeout, MinTimeBetweenPings time.Duration
 	MaxRecvMsgSize             int
 	MaxSendMsgSize             int
-	KeepaliveTime              time.Duration
-	KeepaliveTimeout           time.Duration
-	MinTimeBetweenPings        time.Duration
 	AllowPingWithoutActiveRPCs bool
 	MaxConcurrentStreams       uint32
 }

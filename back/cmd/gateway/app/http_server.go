@@ -2,7 +2,6 @@ package app
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -50,10 +49,7 @@ func ServeHTTP(logger log.FiberLoggerInterface, cfg config.HTTP) error {
 	case sig := <-signalChan:
 		logger.Info("shutting down HTTP server", log.Tags{"server_signal": sig.String()})
 
-		ctx, cancel := context.WithTimeout(context.Background(), cfg.GracefulStopTimeout)
-		defer cancel()
-
-		if err := fiberApp.ShutdownWithContext(ctx); err != nil {
+		if err := fiberApp.ShutdownWithTimeout(cfg.GracefulStopTimeout); err != nil {
 			return fmt.Errorf("shutdown error: %w", err)
 		}
 		return nil
