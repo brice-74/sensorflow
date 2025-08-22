@@ -5,6 +5,8 @@ SHELL := /bin/bash
 
 gateway_api_container_name := sensorflow-gateway-api
 ingestion_api_container_name := sensorflow-ingestion-api
+cli_container_name := sensorflow-cli
+de_cli := docker exec -it $(cli_container_name)
 
 .PHONY: dev/start dev/start/core dev/stop dev/reset dev/reload/gateway
 
@@ -38,3 +40,6 @@ protoc/sensor:
 	@protoc --go_out=. --go_opt=paths=source_relative \
 		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
 		back/internal/adapters/grpc/proto/sensor.proto
+
+migrate/new:
+	@$(de_cli) migrate create -seq -ext=.sql -dir=./internal/adapters/postgres/migrations ${name}

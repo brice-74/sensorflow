@@ -18,11 +18,13 @@ services:
       retries: 5
 
   nginx:
-    image: nginx:1.29.1
+    build:
+      context: ./ops/grpc-reverse-proxy
+      dockerfile: Dockerfile
+    image: sensorflow/grpc-reverse-proxy:dev
     container_name: sensorflow-grpc-reverse-proxy
     volumes:
       - ./grpc-reverse-proxy/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./grpc-reverse-proxy/entrypoint.sh:/entrypoint.sh:ro
       - certs_data:/etc/nginx/certs
     ports:
       - 443:443
@@ -30,10 +32,32 @@ services:
       - ingestion-api
     networks:
       - sensorflow-net
-    entrypoint: ["/entrypoint.sh"]
+
+  cli:
+    image: golang:1.24.5
+    container_name: sensorflow-cli
+    working_dir: /src
+    environment:
+      GO_SOURCE_FILE: /src/cmd/cli/main.go
+      GO_BIN_PATH: /usr/local/bin/cli
+      GO_BUILD_FLAGS: -buildvcs=false -gcflags="all=-N -l"
+    volumes:
+      - ../back:/src
+      - ./run.dev.sh:/run.dev.sh:ro
+    env_file:
+      - ./cli/.env.dev
+    networks:
+      - sensorflow-net
+    entrypoint: [
+      "bash", "-c", "go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.3 && /run.dev.sh"
+    ]
 
   ingestion-api:
-    image: golang:1.24.5
+    build:
+      context: .
+      dockerfile: Dockerfile.gowaitfile.dev
+    image: sensorflow/gowaitfile:dev
+    pull_policy: never
     container_name: sensorflow-ingestion-api
     working_dir: /src
     ports:
@@ -45,23 +69,22 @@ services:
     volumes:
       - ../back:/src
       - shared:/shared/influx:ro
-      - ./run.dev.sh:/run.dev.sh:ro
-      - ./lib/waitfile.sh:/waitfile.sh:ro
     env_file:
       - ./ingestion/.env.dev
     networks:
       - sensorflow-net
     depends_on:
       - influxdb
-    entrypoint: [ 
-      "bash", "/waitfile.sh", 
+    command: [ 
       "--file", "/shared/influx/admin.token",
       "--cmd", "export INFLUXDB_TOKEN=$(cat /shared/influx/admin.token)",
-      "--exec", "/run.dev.sh"
     ]
 
   gateway-api:
-    image: golang:1.24.5
+    build:
+      context: ./ops
+      dockerfile: Dockerfile
+    image: sensorflow/gowaitfile:dev
     container_name: sensorflow-gateway-api
     working_dir: /src
     ports:
@@ -73,19 +96,15 @@ services:
     volumes:
       - ../back:/src
       - shared:/shared/influx:ro
-      - ./run.dev.sh:/run.dev.sh:ro
-      - ./lib/waitfile.sh:/waitfile.sh:ro
     env_file:
       - ./gateway/.env.dev
     networks:
       - sensorflow-net
     depends_on:
       - influxdb
-    entrypoint: [ 
-      "bash", "/waitfile.sh", 
+    command: [ 
       "--file", "/shared/influx/admin.token",
       "--cmd", "export INFLUXDB_TOKEN=$(cat /shared/influx/admin.token)",
-      "--exec", "/run.dev.sh"
     ]
     
   kafka:
