@@ -41,13 +41,15 @@ func NewClient(ctx context.Context, cfg *config.Postgres) (Client, error) {
 	}
 
 	if cfg.InitialPingTimeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, cfg.InitialPingTimeout)
+		ctxTimeout, cancel := context.WithTimeout(ctx, cfg.InitialPingTimeout)
 		defer cancel()
-	}
-
-	if err := pool.Ping(ctx); err != nil {
-		return nil, err
+		if err := pool.Ping(ctxTimeout); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := pool.Ping(ctx); err != nil {
+			return nil, err
+		}
 	}
 
 	sqlxdb := sqlx.NewDb(stdlib.OpenDBFromPool(pool), "pgx")
@@ -60,7 +62,9 @@ func NewClient(ctx context.Context, cfg *config.Postgres) (Client, error) {
 
 func (c *client) Sqlx() *sqlx.DB     { return c.sqlxDB }
 func (c *client) Pgx() *pgxpool.Pool { return c.pgxPool }
-func (c *client) Close()             { c.pgxPool.Close() }
+
+// Since the pool is shared, simply close it from pgx.
+func (c *client) Close() { c.pgxPool.Close() }
 
 func buildDSN(cfg *config.Postgres) string {
 	u := url.URL{

@@ -16,14 +16,6 @@ const (
 	SensorStatusError
 )
 
-func (s SensorStatus) IsValid() bool {
-	switch s {
-	case SensorStatusUnknown, SensorStatusActive, SensorStatusInactive, SensorStatusError:
-		return true
-	}
-	return false
-}
-
 func (s SensorStatus) String() string {
 	switch s {
 	case SensorStatusUnknown:
@@ -41,11 +33,11 @@ func (s SensorStatus) String() string {
 
 // SensorInstance represents an instance of a sensor attached to a device
 type SensorInstance struct {
-	ID                   ulid.ULID      `json:"id"`
-	SensorGatewayID      ulid.ULID      `json:"sensor_gateway_id"`
-	MeasurementProfileID ulid.ULID      `json:"measurement_profile_id"`
-	Config               map[string]any `json:"config"`
-	Status               SensorStatus   `json:"status"`
+	ID                 ulid.ULID    `json:"id" db:"id"`
+	SensorGatewayID    ulid.ULID    `json:"sensor_gateway_id" db:"sensor_gateway_id"`
+	MeasurementTableID ulid.ULID    `json:"measurement_table_id" db:"measurement_table_id"`
+	Status             SensorStatus `json:"status" db:"status"`
+	Firmware           *string      `json:"firmware" db:"firmware"`
 	common.Timestamps
 	common.SoftDelete
 }
@@ -53,12 +45,11 @@ type SensorInstance struct {
 // Gateway represents a central program or device that collects data from one or multiple sensors
 // and forwards it to the system. It acts as the main entry point for sensor data ingestion.
 type SensorGateway struct {
-	ID       ulid.ULID      `json:"id"`
-	TenantID ulid.ULID      `json:"tenant_id"`
-	Name     string         `json:"name"`
-	Location string         `json:"location"`
-	Firmware string         `json:"firmware"`
-	Metadata map[string]any `json:"metadata"`
+	ID       ulid.ULID `json:"id" db:"id"`
+	TenantID ulid.ULID `json:"tenant_id" db:"tenant_id"`
+	Name     string    `json:"name" db:"name"`
+	Location *string   `json:"location" db:"location"`
+	Firmware *string   `json:"firmware" db:"firmware"`
 	common.Timestamps
 	common.SoftDelete
 }

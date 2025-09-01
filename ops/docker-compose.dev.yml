@@ -8,7 +8,7 @@ services:
       POSTGRES_PASSWORD: S3ns0rF!0w#2025
       POSTGRES_DB: sensorflow
     ports:
-      - 5432:5432
+      - 5432
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -19,22 +19,27 @@ services:
 
   nginx:
     build:
-      context: ./ops/grpc-reverse-proxy
-      dockerfile: Dockerfile
+      context: ./grpc-reverse-proxy
+      dockerfile: Dockerfile.dev
     image: sensorflow/grpc-reverse-proxy:dev
+    pull_policy: never
     container_name: sensorflow-grpc-reverse-proxy
     volumes:
       - ./grpc-reverse-proxy/nginx.conf:/etc/nginx/nginx.conf:ro
       - certs_data:/etc/nginx/certs
     ports:
-      - 443:443
+      - 443
     depends_on:
       - ingestion-api
     networks:
       - sensorflow-net
 
   cli:
-    image: golang:1.24.5
+    build:
+      context: .
+      dockerfile: Dockerfile.gowaitfile.dev
+    image: sensorflow/gowaitfile:dev
+    pull_policy: never
     container_name: sensorflow-cli
     working_dir: /src
     environment:
@@ -43,13 +48,14 @@ services:
       GO_BUILD_FLAGS: -buildvcs=false -gcflags="all=-N -l"
     volumes:
       - ../back:/src
-      - ./run.dev.sh:/run.dev.sh:ro
+      - shared:/shared/influx:ro
     env_file:
       - ./cli/.env.dev
     networks:
       - sensorflow-net
-    entrypoint: [
-      "bash", "-c", "go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.3 && /run.dev.sh"
+    command: [ 
+      "--file", "/shared/influx/admin.token",
+      "--cmd", "export INFLUXDB_TOKEN=$(cat /shared/influx/admin.token)",
     ]
 
   ingestion-api:
@@ -82,13 +88,14 @@ services:
 
   gateway-api:
     build:
-      context: ./ops
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: Dockerfile.gowaitfile.dev
     image: sensorflow/gowaitfile:dev
+    pull_policy: never
     container_name: sensorflow-gateway-api
     working_dir: /src
     ports:
-      - 8000:8000
+      - 8000
     environment:
       GO_SOURCE_FILE: /src/cmd/gateway/main.go
       GO_BIN_PATH: /usr/local/bin/gateway
@@ -111,8 +118,8 @@ services:
     image: apache/kafka:4.0.0
     container_name: sensorflow-kafka
     ports:
-      - 9092:9092 # Gateway
-      - 9093:9093 # KRaft internal quorum (cluster usage)
+      - 9092 # Gateway
+      - 9093 # KRaft internal quorum (cluster usage)
     volumes:
       - kafkadata:/var/lib/kafka/data
     env_file:
@@ -134,48 +141,45 @@ services:
       - kafka
 
   influxdb:
-    image: influxdb:3.3-core
+    build:
+      context: .
+      dockerfile: influxdb/Dockerfile.dev
+    image: sensorflow/influxdb:dev
+    pull_policy: never
     container_name: sensorflow-influxdb3-core
     platform: linux/amd64
-    user: 0:0 # Using root user for dev to avoid volume permission issues
     ports:
-      - 8181:8181 # Gateway gRPC/HTTP/SQL
+      - 8181 # Gateway gRPC/HTTP/SQL
     volumes:
       - influxdata:/var/lib/influxdb
       - shared:/shared/influx:rw
-      - ./influxdb/entrypoint.sh:/entrypoint.sh:ro
-      - ./lib/argparser.sh:/script/argparser.sh:ro
-      - ./lib/waitnet.sh:/script/waitnet.sh:ro
     env_file:
       - ./influxdb/.env.dev
-    environment:
-      SCRIPT_WAITNET_PATH: /script/waitnet.sh
-      SCRIPT_ARGPARSER_PATH: /script/argparser.sh
     networks:
       - sensorflow-net
-    entrypoint: [ "/entrypoint.sh", "--token-path", "/shared/influx/admin.token" ]
+    command: [ "--token-path", "/shared/influx/admin.token" ]
 
   influxdb-ui:
-    image: influxdata/influxdb3-ui:1.1.0
+    build:
+      context: .
+      dockerfile: influxdb/Dockerfile.ui.dev
+    image: sensorflow/influxdb-ui:dev
+    pull_policy: never
     container_name: sensorflow-influxdb3-ui
     platform: linux/amd64
     ports:
       - 8002:80
     volumes:
       - shared:/shared/influx:ro
-      - ./lib/argparser.sh:/argparser.sh:ro
-      - ./lib/waitfile.sh:/waitfile.sh:ro
-      - ./influxdb/entrypoint-ui.sh:/init.sh:ro
-    entrypoint: [
-      "sh", "/init.sh", 
-      "--token-path", "/shared/influx/admin.token",
-      "--db-name", "measurements",
-      "--influx-addr", "http://influxdb:8181"
-    ]
     networks:
       - sensorflow-net
     depends_on:
       - influxdb
+    command: [
+      "--token-path", "/shared/influx/admin.token",
+      "--db-name", "measurements",
+      "--influx-addr", "http://influxdb:8181"
+    ]
   
 networks:
   sensorflow-net:

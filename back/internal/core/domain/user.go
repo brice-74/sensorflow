@@ -6,10 +6,10 @@ import (
 )
 
 type User struct {
-	ID       ulid.ULID `json:"id"`
-	Email    string    `json:"email"`
-	Password *string   `json:"password"`
-	TenantID ulid.ULID `json:"tenant_id"`
+	ID       ulid.ULID `json:"id" db:"id"`
+	Email    string    `json:"email" db:"email"`
+	Password *string   `json:"password" db:"password"`
+	TenantID ulid.ULID `json:"tenant_id" db:"tenant_id"`
 	common.Timestamps
 	common.SoftDelete
 }

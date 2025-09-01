@@ -28,11 +28,11 @@ func (w *wrappedStream) Context() context.Context {
 	return w.ctx
 }
 
-type SensorAuth struct {
+type MTLSClientAuth struct {
 	// todo: use futur sensor gateway authentication service
 }
 
-func (*SensorAuth) StreamInterceptor() grpc.StreamServerInterceptor {
+func (*MTLSClientAuth) StreamInterceptor() grpc.StreamServerInterceptor {
 	return func(
 		srv any,
 		ss grpc.ServerStream,
@@ -47,6 +47,7 @@ func (*SensorAuth) StreamInterceptor() grpc.StreamServerInterceptor {
 		}
 
 		ctx = context.WithValue(ctx, ClientDNContextKey{}, client)
+
 		return handler(srv, &wrappedStream{
 			ServerStream: ss,
 			ctx:          ctx,
@@ -54,7 +55,7 @@ func (*SensorAuth) StreamInterceptor() grpc.StreamServerInterceptor {
 	}
 }
 
-func (*SensorAuth) UnaryInterceptor() grpc.UnaryServerInterceptor {
+func (*MTLSClientAuth) UnaryInterceptor() grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req any,
@@ -67,6 +68,7 @@ func (*SensorAuth) UnaryInterceptor() grpc.UnaryServerInterceptor {
 		}
 
 		ctx = context.WithValue(ctx, ClientDNContextKey{}, client)
+
 		return handler(ctx, req)
 	}
 }

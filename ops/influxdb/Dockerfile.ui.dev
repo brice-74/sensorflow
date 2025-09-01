@@ -1,0 +1,15 @@
+FROM influxdata/influxdb3-ui:1.1.0
+
+COPY ./lib/argparser.sh /script/argparser.sh
+RUN chmod +x /script/argparser.sh
+
+COPY ./lib/waitfile.sh /script/waitfile.sh
+RUN chmod +x /script/waitfile.sh
+
+COPY ./influxdb/entrypoint.ui.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+ENV SCRIPT_ARGPARSER_PATH=/script/argparser.sh
+ENV SCRIPT_WAITFILE_PATH=/script/waitfile.sh
+
+ENTRYPOINT [ "/entrypoint.sh"]

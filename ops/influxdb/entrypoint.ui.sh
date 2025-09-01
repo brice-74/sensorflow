@@ -4,6 +4,9 @@ set -eo pipefail
 # initialize dependency scripts
 . "${SCRIPT_ARGPARSER_PATH:-"$(cd "$(dirname "$0")" && pwd)argparser.sh"}"
 
+WAITFILE_PATH="${SCRIPT_WAITFILE_PATH:-/waitfile.sh}"
+FINAL_EXEC="${FINAL_EXEC_PATH:-"/app-root/entrypoint.sh --mode=admin"}"
+
 # define and parse config with argparser
 define_option token-path "${INFLUXDB3_ADMIN_TOKEN_PATH:-}" required
 define_option db-name "${INFLUXDB3_DATABASE_NAME:-}" required
@@ -18,7 +21,7 @@ influx_addr=$(get_option influx-addr)
 server_name=$(get_option server-name)
 
 # Use waitfile.sh to wait for the token file then execute the original entry point
-/waitfile.sh \
+"$WAITFILE_PATH" \
   --file "$token_path" \
   --cmd 'token=$(cat "'"$token_path"'");
          mkdir -p /app-root/config;
@@ -28,4 +31,4 @@ server_name=$(get_option server-name)
   \"DEFAULT_API_TOKEN\": \"'\"\$token\"'\",
   \"DEFAULT_SERVER_NAME\": \"'"$server_name"'\"
 }" > /app-root/config/config.json' \
-  --exec "/app-root/entrypoint.sh --mode=admin"
+  --exec "$FINAL_EXEC"
