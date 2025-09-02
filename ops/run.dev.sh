@@ -1,16 +1,16 @@
-#!/bin/bash
+#!/bin/sh
 
-DARK_PURPLE='\033[0;38;5;57m'
-PURPLE='\033[0;35m'
-DARK_GRAY='\033[0;38;5;235m'
-NC='\033[0m'
+DARK_PURPLE="$(printf '\033[0;38;5;57m')"
+PURPLE="$(printf '\033[0;35m')"
+DARK_GRAY="$(printf '\033[0;38;5;235m')"
+NC="$(printf '\033[0m')"
 
 echoc() {
-   echo -e "${DARK_PURPLE}run.dev.sh ${DARK_GRAY}| ${PURPLE}$1${NC}"
+   printf "%srun.dev.sh %s| %s%s%s\n" "$DARK_PURPLE" "$DARK_GRAY" "$PURPLE" "$1" "$NC"
 }
 
 runProcess() {
-   $GO_BIN_PATH &
+   "$GO_BIN_PATH" &
    process_pid=$!
    echoc "process is running, PID: $process_pid"
 }
@@ -19,11 +19,11 @@ killRunningProcess() {
    process_pid=$(pidof $GO_BIN_PATH)
    if [ -n "$process_pid" ]; then
       echoc "killing old process, PID: $process_pid"
-      kill -s SIGTERM $process_pid
-      wait $process_pid
+      kill -s TERM "$process_pid"
+      wait "$process_pid" 2>/dev/null
       echoc "old process terminated, PID: $process_pid"
    else
-      echoc "no running process found with PID: $process_pid"
+      echoc "no running process found"
    fi
 }
 
@@ -39,7 +39,7 @@ buildProcess() {
    fi
 
    echoc "building process at $GO_BIN_PATH from source $GO_SOURCE_FILE"
-   eval go build $GO_BUILD_FLAGS -o $GO_BIN_PATH "$GO_SOURCE_FILE"
+   eval go build $GO_BUILD_FLAGS -o "$GO_BIN_PATH" "$GO_SOURCE_FILE"
 }
 
 restart() {
@@ -55,15 +55,14 @@ cleanup() {
    exit 0
 }
 
-trap restart SIGUSR1
-trap cleanup SIGINT SIGTERM
+trap restart USR1
+trap cleanup INT TERM
 
 buildProcess
 runProcess
 
-echoc "awaiting signal SIGUSR1 - SIGINT - SIGTERM"
+echoc "awaiting signal USR1 - INT - TERM"
 
-while true; do
-  sleep 1 &
-  wait $!
+while :; do
+   sleep 1
 done

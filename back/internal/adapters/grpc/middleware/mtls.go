@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-const ClientDNHeaderKey = "x-client-id"
+const ClientDNHeaderKey = "x-client-dn"
 
 type ClientDNContextKey struct{}
 
@@ -131,7 +131,6 @@ func parseClientDN(dn string) (*ClientDN, error) {
 				return nil, fmt.Errorf("invalid key=value pair: %q", part)
 			}
 
-			// validate -> ASCII >=32, != ',' ou '=')
 			for k := 0; k < len(val); k++ {
 				if val[k] < 32 || val[k] == ',' || val[k] == '=' {
 					return nil, fmt.Errorf("invalid DN value for %s: %q", key, val)

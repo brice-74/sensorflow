@@ -46,14 +46,17 @@ func ServeGRPC(logger log.FiberLoggerInterface, cfg config.GRPC) error {
 		// use futur middleware SensorAuth
 		// grpc.StreamInterceptor(),
 		// grpc.UnaryInterceptor(),
+		// grpc.ChainStreamInterceptor(),
+		// grpc.ChainUnaryInterceptor(),
 	)
+
+	// todo: here register GRPC services
 
 	shutdownError := make(chan error, 1)
 	signalChan := make(chan os.Signal, 1)
 	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
 
 	go func() {
-		// todo: here register GRPC services
 		if err := s.Serve(lis); err != nil {
 			shutdownError <- fmt.Errorf("server listen error: %w", err)
 		}

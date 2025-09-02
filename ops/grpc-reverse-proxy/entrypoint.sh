@@ -2,20 +2,18 @@
 set -e
 
 CERT_DIR=/etc/nginx/certs
-CA_CERT_DIR="${CA_CERT_DIR:-$CERT_DIR}"
 
 mkdir -p $CERT_DIR
-mkdir -p $CA_CERT_DIR
 
 USER_ID="${HOST_UID:-1000}"
 GROUP_ID="${HOST_GID:-1000}"
 
 # Authority
-if [ ! -f "$CA_CERT_DIR/ca.key" ]; then
+if [ ! -f "$CERT_DIR/ca.key" ]; then
    echo "[certs] Generate CA..."
-   openssl genrsa -out $CA_CERT_DIR/ca.key 4096
-   openssl req -x509 -new -nodes -key $CA_CERT_DIR/ca.key -sha256 -days 365 \
-      -subj "/CN=SensorflowCA" -out $CA_CERT_DIR/ca.crt
+   openssl genrsa -out $CERT_DIR/ca.key 4096
+   openssl req -x509 -new -nodes -key $CERT_DIR/ca.key -sha256 -days 365 \
+      -subj "/CN=SensorflowCA" -out $CERT_DIR/ca.crt
    chown $USER_ID:$GROUP_ID "$CERT_DIR/ca.key" "$CERT_DIR/ca.crt"
 fi
 

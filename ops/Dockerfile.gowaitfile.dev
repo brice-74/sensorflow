@@ -1,6 +1,8 @@
-FROM golang:1.24.5 
+FROM golang:1.24.5-alpine 
 
 WORKDIR /src
+
+RUN apk --no-cache add curl bash
 
 COPY ./lib/waitfile.sh /waitfile.sh
 RUN chmod +x /waitfile.sh
@@ -8,7 +10,8 @@ RUN chmod +x /waitfile.sh
 COPY ./run.dev.sh /run.dev.sh
 RUN chmod +x /run.dev.sh
 
-RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@v4.18.3
+RUN curl -L https://github.com/golang-migrate/migrate/releases/download/v4.19.0/migrate.linux-amd64.tar.gz | tar xvz \
+   && mv migrate $GOPATH/bin/migrate 
 
 # Entrypoint automatically executed /run.dev.sh and leaves the --file and --cmd parameters flexible
 ENTRYPOINT ["/waitfile.sh", "--exec", "/run.dev.sh"]

@@ -8,3 +8,4 @@ DROP TABLE IF EXISTS "user" CASCADE;
 DROP TABLE IF EXISTS tenant CASCADE;
 
 DROP TYPE IF EXISTS sensor_status;
+DROP TYPE IF EXISTS influx_data_type;

@@ -8,9 +8,11 @@ services:
       POSTGRES_PASSWORD: S3ns0rF!0w#2025
       POSTGRES_DB: sensorflow
     ports:
-      - 5432
+      - 5432:5432
     volumes:
       - pgdata:/var/lib/postgresql/data
+    networks:
+      - sensorflow-net
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U root"]
       interval: 10s
@@ -28,7 +30,7 @@ services:
       - ./grpc-reverse-proxy/nginx.conf:/etc/nginx/nginx.conf:ro
       - certs_data:/etc/nginx/certs
     ports:
-      - 443
+      - 443:443
     depends_on:
       - ingestion-api
     networks:
@@ -46,6 +48,7 @@ services:
       GO_SOURCE_FILE: /src/cmd/cli/main.go
       GO_BIN_PATH: /usr/local/bin/cli
       GO_BUILD_FLAGS: -buildvcs=false -gcflags="all=-N -l"
+      DATABASE_URL: 'postgres://root:S3ns0rF%210w%232025@postgres/sensorflow?sslmode=disable'
     volumes:
       - ../back:/src
       - shared:/shared/influx:ro
@@ -67,7 +70,7 @@ services:
     container_name: sensorflow-ingestion-api
     working_dir: /src
     ports:
-      - 50051
+      - 50051:50051
     environment:
       GO_SOURCE_FILE: /src/cmd/ingestion/main.go
       GO_BIN_PATH: /usr/local/bin/ingestion
@@ -95,7 +98,7 @@ services:
     container_name: sensorflow-gateway-api
     working_dir: /src
     ports:
-      - 8000
+      - 8000:8000
     environment:
       GO_SOURCE_FILE: /src/cmd/gateway/main.go
       GO_BIN_PATH: /usr/local/bin/gateway
@@ -118,8 +121,8 @@ services:
     image: apache/kafka:4.0.0
     container_name: sensorflow-kafka
     ports:
-      - 9092 # Gateway
-      - 9093 # KRaft internal quorum (cluster usage)
+      - 9092:9092 # Gateway
+      - 9093:9093 # KRaft internal quorum (cluster usage)
     volumes:
       - kafkadata:/var/lib/kafka/data
     env_file:
@@ -149,7 +152,7 @@ services:
     container_name: sensorflow-influxdb3-core
     platform: linux/amd64
     ports:
-      - 8181 # Gateway gRPC/HTTP/SQL
+      - 8181:8181 # Gateway gRPC/HTTP/SQL
     volumes:
       - influxdata:/var/lib/influxdb
       - shared:/shared/influx:rw
