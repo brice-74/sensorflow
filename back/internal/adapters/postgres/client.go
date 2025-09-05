@@ -60,11 +60,10 @@ func NewClient(ctx context.Context, cfg *config.Postgres) (Client, error) {
 	}, nil
 }
 
-func (c *client) Sqlx() *sqlx.DB     { return c.sqlxDB }
-func (c *client) Pgx() *pgxpool.Pool { return c.pgxPool }
-
 // Since the pool is shared, simply close it from pgx.
-func (c *client) Close() { c.pgxPool.Close() }
+func (c *client) Close()             { c.pgxPool.Close() }
+func (c *client) Pgx() *pgxpool.Pool { return c.pgxPool }
+func (c *client) Sqlx() *sqlx.DB     { return c.sqlxDB }
 
 func buildDSN(cfg *config.Postgres) string {
 	u := url.URL{
