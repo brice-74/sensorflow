@@ -33,11 +33,12 @@ func (s SensorStatus) String() string {
 
 // SensorInstance represents an instance of a sensor attached to a device
 type SensorInstance struct {
-	ID                 ulid.ULID    `json:"id" db:"id"`
-	SensorGatewayID    ulid.ULID    `json:"sensor_gateway_id" db:"sensor_gateway_id"`
-	MeasurementTableID ulid.ULID    `json:"measurement_table_id" db:"measurement_table_id"`
-	Status             SensorStatus `json:"status" db:"status"`
-	Firmware           *string      `json:"firmware" db:"firmware"`
+	ID                 ulid.ULID `db:"id"`
+	SensorGatewayID    ulid.ULID `db:"sensor_gateway_id"`
+	SensorGateway      *SensorGateway
+	MeasurementTableID ulid.ULID    `db:"measurement_table_id"`
+	Status             SensorStatus `db:"status"`
+	Firmware           *string      `db:"firmware"`
 	common.Timestamps
 	common.SoftDelete
 }
@@ -45,11 +46,12 @@ type SensorInstance struct {
 // Gateway represents a central program or device that collects data from one or multiple sensors
 // and forwards it to the system. It acts as the main entry point for sensor data ingestion.
 type SensorGateway struct {
-	ID       ulid.ULID `json:"id" db:"id"`
-	TenantID ulid.ULID `json:"tenant_id" db:"tenant_id"`
-	Name     string    `json:"name" db:"name"`
-	Location *string   `json:"location" db:"location"`
-	Firmware *string   `json:"firmware" db:"firmware"`
+	ID              ulid.ULID `db:"id"`
+	TenantID        ulid.ULID `db:"tenant_id"`
+	Name            string    `db:"name"`
+	Location        *string   `db:"location"`
+	Firmware        *string   `db:"firmware"`
+	SensorInstances []*SensorInstance
 	common.Timestamps
 	common.SoftDelete
 }

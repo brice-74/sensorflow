@@ -2,7 +2,9 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/brice-74/sensorflow/pkg/errors"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -19,12 +21,21 @@ type SqlxConnState struct {
 
 // WithConnection acquires a connection and executes the given function with it.
 // The connection is released after the function returns, even in case of error or panic.
-func (s *SqlxConnState) WithConnection(ctx context.Context, fn func(ctx context.Context) error) error {
+func (s *SqlxConnState) WithConnection(ctx context.Context, fn func(ctx context.Context) error) (err error) {
 	conn, err := s.db.Connx(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "get *sqlx.Conn")
 	}
-	defer conn.Close()
+
+	defer func() {
+		if cerr := conn.Close(); cerr != nil {
+			if err != nil {
+				err = errors.Wrapf(err, "close *sql.Conn: %v", cerr)
+			} else {
+				err = errors.Wrap(cerr, "close *sql.Conn")
+			}
+		}
+	}()
 
 	ctx = context.WithValue(ctx, sqlxConnCtxKey{}, conn)
 	return fn(ctx)
@@ -35,7 +46,7 @@ func (s *SqlxConnState) WithConnection(ctx context.Context, fn func(ctx context.
 func (s *SqlxConnState) Connection(ctx context.Context) (func() error, context.Context, error) {
 	conn, err := s.db.Connx(ctx)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("SqlxConnState.Connection: get *sqlx.Conn error: %w", err)
 	}
 
 	releaseFn := func() error {

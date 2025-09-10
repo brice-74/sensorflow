@@ -39,31 +39,31 @@ func (t InfluxDataType) String() string {
 
 // MeasurementTable defines a specific storage table.
 type MeasurementTable struct {
-	ID          ulid.ULID `json:"id" db:"id"`
-	ProfileID   ulid.ULID `json:"profile_id" db:"profile_id"`
-	StorageName string    `json:"storage_name" db:"storage_name"`
+	ID          ulid.ULID `db:"id"`
+	ProfileID   ulid.ULID `db:"profile_id"`
+	StorageName string    `db:"storage_name"`
 	common.Timestamps
 }
 
 // MeasurementProfile represents a template for a type of measurement.
 // An undefined tenant_id means that the profile is shared.
 type MeasurementProfile struct {
-	ID          ulid.ULID  `json:"id" db:"id"`
-	TenantID    *ulid.ULID `json:"tenant_id" db:"tenant_id"`
-	Name        string     `json:"name" db:"name"`
-	Description *string    `json:"description" db:"description"`
+	ID          ulid.ULID  `db:"id"`
+	TenantID    *ulid.ULID `db:"tenant_id"`
+	Name        string     `db:"name"`
+	Description *string    `db:"description"`
 	common.Timestamps
 	common.SoftDelete
 }
 
 // MeasurementField represents a specific field (data point) within a MeasurementProfile.
 type MeasurementField struct {
-	ID          ulid.ULID      `json:"id" db:"id"`
-	ProfileID   ulid.ULID      `json:"profile_id" db:"profile_id"`
-	Name        string         `json:"name" db:"name"`
-	StorageName string         `json:"storage_name" db:"storage_name"`
-	Description *string        `json:"description" db:"description"`
-	Type        InfluxDataType `json:"type" db:"type"`
+	ID          ulid.ULID      `db:"id"`
+	ProfileID   ulid.ULID      `db:"profile_id"`
+	Name        string         `db:"name"`
+	StorageName string         `db:"storage_name"`
+	Description *string        `db:"description"`
+	Type        InfluxDataType `db:"type"`
 	common.Timestamps
 	common.SoftDelete
 }
@@ -71,11 +71,11 @@ type MeasurementField struct {
 // MeasurementTag represents a tag (metadata) associated with a MeasurementProfile,
 // used to categorize or filter measurement data.
 type MeasurementTag struct {
-	ID          ulid.ULID `json:"id" db:"id"`
-	ProfileID   ulid.ULID `json:"profile_id" db:"profile_id"`
-	Name        string    `json:"name" db:"name"`
-	StorageName string    `json:"storage_name" db:"storage_name"`
-	Description *string   `json:"description" db:"description"`
+	ID          ulid.ULID `db:"id"`
+	ProfileID   ulid.ULID `db:"profile_id"`
+	Name        string    `db:"name"`
+	StorageName string    `db:"storage_name"`
+	Description *string   `db:"description"`
 	common.Timestamps
 	common.SoftDelete
 }

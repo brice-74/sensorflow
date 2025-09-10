@@ -7,8 +7,8 @@ import (
 
 // Tenant represents an organization or client using the platform, which can own multiple devices
 type Tenant struct {
-	ID   ulid.ULID `json:"id" db:"id"`
-	Name string    `json:"name" db:"name"`
+	ID   ulid.ULID `db:"id"`
+	Name string    `db:"name"`
 	common.Timestamps
 	common.SoftDelete
 }

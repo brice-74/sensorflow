@@ -26,7 +26,7 @@ type SqlxTxState struct {
 
 func NewSqlxTxState(db *sqlx.DB) *SqlxTxState {
 	if db == nil {
-		panic("*sqlx.DB cannot be nil")
+		panic("postgres.NewSqlxTxState: *sqlx.DB cannot be nil")
 	}
 	return &SqlxTxState{
 		db:    db,
@@ -49,7 +49,7 @@ func (s *SqlxTxState) WithTransaction(ctx context.Context, opts *ports.TxUowOpti
 	defer func() {
 		if r := recover(); r != nil {
 			if revErr := block.Revert(ctx); revErr != nil {
-				panic(fmt.Errorf("panic during transaction: %v; rollback error: %w", r, revErr))
+				panic(fmt.Errorf("SqlxTxState.Transaction: panic during transaction: %v; rollback error: %w", r, revErr))
 			}
 			panic(r)
 		}
@@ -78,7 +78,7 @@ func (s *SqlxTxState) Transaction(ctx context.Context, opts *ports.TxUowOptions)
 		}
 		tx, err := s.db.BeginTxx(ctx, sqlOpts)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("SqlxTxState.Transaction: Begin *sqlx.Tx error: %w", err)
 		}
 		return &SqlxTxState{
 			db:     s.db,
@@ -90,7 +90,7 @@ func (s *SqlxTxState) Transaction(ctx context.Context, opts *ports.TxUowOptions)
 
 	savepointName := fmt.Sprintf("sp_%d", s.depth)
 	if _, err := s.sqlxTx.ExecContext(ctx, "SAVEPOINT "+savepointName); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("SqlxTxState.Transaction: exec savepoint '%s'error: %w", savepointName, err)
 	}
 
 	return &SqlxTxState{
