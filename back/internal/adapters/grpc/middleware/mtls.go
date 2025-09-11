@@ -2,8 +2,14 @@ package middleware
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/brice-74/sensorflow/internal/core/domain"
+	"github.com/brice-74/sensorflow/internal/core/ports"
+	"github.com/brice-74/sensorflow/internal/ctxvalues"
+	"github.com/brice-74/sensorflow/internal/types"
+	"github.com/brice-74/sensorflow/pkg/errors"
+	"github.com/brice-74/sensorflow/pkg/log"
+	"github.com/brice-74/sensorflow/pkg/ulid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -11,13 +17,6 @@ import (
 )
 
 const ClientDNHeaderKey = "x-client-dn"
-
-type ClientDNContextKey struct{}
-
-func GetClientDN(ctx context.Context) (*ClientDN, bool) {
-	c, ok := ctx.Value(ClientDNContextKey{}).(*ClientDN)
-	return c, ok
-}
 
 type wrappedStream struct {
 	grpc.ServerStream
@@ -29,24 +28,30 @@ func (w *wrappedStream) Context() context.Context {
 }
 
 type MTLSClientAuth struct {
-	// todo: use futur sensor gateway authentication service
+	log              log.LoggerInterface
+	svcSensorGateway ports.SensorGatewayService
 }
 
-func (*MTLSClientAuth) StreamInterceptor() grpc.StreamServerInterceptor {
+func NewMTLSClientAuth(logger log.LoggerInterface, svcSensorGateway ports.SensorGatewayService) *MTLSClientAuth {
+	return &MTLSClientAuth{
+		log:              logger,
+		svcSensorGateway: svcSensorGateway,
+	}
+}
+
+func (m *MTLSClientAuth) StreamInterceptor() grpc.StreamServerInterceptor {
 	return func(
 		srv any,
 		ss grpc.ServerStream,
 		info *grpc.StreamServerInfo,
 		handler grpc.StreamHandler,
-	) error {
+	) (err error) {
 		ctx := ss.Context()
 
-		client, err := extractClientDN(ctx)
+		ctx, err = m.handleContext(ctx)
 		if err != nil {
 			return err
 		}
-
-		ctx = context.WithValue(ctx, ClientDNContextKey{}, client)
 
 		return handler(srv, &wrappedStream{
 			ServerStream: ss,
@@ -55,25 +60,59 @@ func (*MTLSClientAuth) StreamInterceptor() grpc.StreamServerInterceptor {
 	}
 }
 
-func (*MTLSClientAuth) UnaryInterceptor() grpc.UnaryServerInterceptor {
+func (m *MTLSClientAuth) UnaryInterceptor() grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
 	) (any, error) {
-		client, err := extractClientDN(ctx)
+		var err error
+
+		ctx, err = m.handleContext(ctx)
 		if err != nil {
 			return nil, err
 		}
-
-		ctx = context.WithValue(ctx, ClientDNContextKey{}, client)
 
 		return handler(ctx, req)
 	}
 }
 
-func extractClientDN(ctx context.Context) (*ClientDN, error) {
+func (m *MTLSClientAuth) handleContext(ctx context.Context) (context.Context, error) {
+	client, err := m.extractClientDN(ctx)
+	if err != nil {
+		return nil, err
+	}
+	ctx = ctxvalues.WithClientDN(ctx, client)
+
+	gateway, err := m.loadSensorGateway(ctx, client.CN)
+	if err != nil {
+		return nil, err
+	}
+	ctx = ctxvalues.WithSensorGateway(ctx, gateway)
+
+	return ctx, nil
+}
+
+func (m *MTLSClientAuth) loadSensorGateway(ctx context.Context, cn string) (*domain.SensorGateway, error) {
+	id, err := ulid.Parse(cn)
+	if err != nil {
+		m.log.Error(errors.Wrap(err, "invalid ulid"), log.Contexts{"dn": {"cn": cn}})
+		return nil, status.Errorf(codes.Unauthenticated, "invalid sensor gateway ID")
+	}
+
+	sg, err := m.svcSensorGateway.GetOneWithInstances(ctx, id)
+	if err != nil {
+		if errors.Is(err, errors.ErrNotFound) {
+			return nil, status.Errorf(codes.NotFound, "sensor gateway not found")
+		}
+		m.log.Error(errors.Wrap(err, "failed to get sensor gateway"), log.Contexts{"sensor_gateway": {"id": id}})
+		return nil, status.Errorf(codes.Internal, "failed to retrieve sensor gateway")
+	}
+	return sg, nil
+}
+
+func (*MTLSClientAuth) extractClientDN(ctx context.Context) (*types.ClientDN, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "missing metadata")
@@ -84,77 +123,10 @@ func extractClientDN(ctx context.Context) (*ClientDN, error) {
 		return nil, status.Error(codes.Unauthenticated, "missing client DN header")
 	}
 
-	client, err := parseClientDN(values[0])
+	client, err := types.ParseClientDN(values[0])
 	if err != nil {
 		return nil, status.Errorf(codes.Unauthenticated, "invalid client DN: %v", err)
 	}
 
 	return client, nil
-}
-
-type ClientDN struct {
-	CN string
-	OU string
-	O  string
-	L  string
-	ST string
-	C  string
-}
-
-func parseClientDN(dn string) (*ClientDN, error) {
-	var res = new(ClientDN)
-	start := 0
-	l := len(dn)
-
-	for i := 0; i <= l; i++ {
-		if i == l || dn[i] == ',' {
-			if i <= start+2 {
-				return nil, fmt.Errorf("invalid DN segment: %q", dn[start:i])
-			}
-
-			part := dn[start:i]
-			start = i + 1
-
-			var key, val string
-			for j := 0; j < len(part); j++ {
-				if part[j] == '=' {
-					if j == 0 || j == len(part)-1 {
-						return nil, fmt.Errorf("invalid key=value pair: %q", part)
-					}
-					key = part[:j]
-					val = part[j+1:]
-					break
-				}
-			}
-
-			if key == "" || val == "" {
-				return nil, fmt.Errorf("invalid key=value pair: %q", part)
-			}
-
-			for k := 0; k < len(val); k++ {
-				if val[k] < 32 || val[k] == ',' || val[k] == '=' {
-					return nil, fmt.Errorf("invalid DN value for %s: %q", key, val)
-				}
-			}
-
-			switch key {
-			case "CN":
-				res.CN = val
-			case "OU":
-				res.OU = val
-			case "O":
-				res.O = val
-			case "L":
-				res.L = val
-			case "ST":
-				res.ST = val
-			case "C":
-				res.C = val
-			default:
-				return nil, fmt.Errorf("invalid DN key: %q", key)
-			}
-		}
-	}
-
-	return res, nil
 }

@@ -16,5 +16,5 @@ type SensorGatewayRepo interface {
 }
 
 type SensorGatewayService interface {
-	GetOneWithInstances(ctx context.Context, gatewayID string) (*domain.SensorGateway, error)
+	GetOneWithInstances(ctx context.Context, gatewayID ulid.ULID) (*domain.SensorGateway, error)
 }

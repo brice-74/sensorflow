@@ -2,10 +2,10 @@ package repo
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/brice-74/sensorflow/internal/adapters/postgres"
 	"github.com/brice-74/sensorflow/internal/core/domain"
+	"github.com/brice-74/sensorflow/pkg/errors"
 	"github.com/brice-74/sensorflow/pkg/ulid"
 )
 
@@ -32,7 +32,7 @@ func (r *SensorInstance) ListByGatewayID(ctx context.Context, gatewayID ulid.ULI
 			sensorInstanceListByGatewayIDQuery,
 			gatewayID,
 		); err != nil {
-		return nil, fmt.Errorf("failed to list sensor instances for gateway %s: %w", gatewayID, err)
+		return nil, errors.Wrap(err, "failed to list sensor instances for gateway")
 	}
 
 	return sensors, nil

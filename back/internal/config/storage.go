@@ -25,9 +25,9 @@ func (c *InfluxDB) Define(loader *config.Loader) {
 }
 
 type Postgres struct {
-	Host, Port, Database, User, Password                 string
-	MaxOpenConns, MaxIdleConns                           int
-	ConnMaxIdleTime, ConnMaxLifetime, InitialPingTimeout time.Duration
+	Host, Port, Database, User, Password string
+	MaxOpenConns, MaxIdleConns           int
+	ConnMaxIdleTime, ConnMaxLifetime     time.Duration
 }
 
 func (c *Postgres) Define(loader *config.Loader) {
@@ -53,8 +53,5 @@ func (c *Postgres) Define(loader *config.Loader) {
 	)
 	loader.Duration(&c.ConnMaxLifetime, "postgres_conn_max_lifetime", "POSTGRES_CONN_MAX_LIFETIME", 0,
 		"Maximum total lifetime of a connection before it is closed",
-	)
-	loader.Duration(&c.InitialPingTimeout, "postgres_initial_ping_timeout", "POSTGRES_INITIAL_PING_TIMEOUT", 0,
-		"Maximum duration to wait for the initial ping to the database when opening the connection",
 	)
 }

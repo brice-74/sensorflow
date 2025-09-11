@@ -40,18 +40,6 @@ func NewClient(ctx context.Context, cfg *config.Postgres) (Client, error) {
 		return nil, err
 	}
 
-	if cfg.InitialPingTimeout > 0 {
-		ctxTimeout, cancel := context.WithTimeout(ctx, cfg.InitialPingTimeout)
-		defer cancel()
-		if err := pool.Ping(ctxTimeout); err != nil {
-			return nil, err
-		}
-	} else {
-		if err := pool.Ping(ctx); err != nil {
-			return nil, err
-		}
-	}
-
 	sqlxdb := sqlx.NewDb(stdlib.OpenDBFromPool(pool), "pgx")
 
 	return &client{

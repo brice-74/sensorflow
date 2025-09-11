@@ -11,6 +11,7 @@ type Config struct {
 	config.InfluxDB
 	config.Sentry
 	config.GRPC
+	config.Postgres
 }
 
 func (c *Config) Define(loader *configpkg.Loader) {
@@ -19,6 +20,7 @@ func (c *Config) Define(loader *configpkg.Loader) {
 	c.InfluxDB.Define(loader)
 	c.Sentry.Define(loader)
 	c.GRPC.Define(loader)
+	c.Postgres.Define(loader)
 }
 
 func ParseConfig() (*Config, error) {

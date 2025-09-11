@@ -10,6 +10,7 @@ import (
 )
 
 var (
+	Zero       ULID
 	entropy    = ulid.Monotonic(rand.Reader, 0)
 	ErrInvalid = errors.New("invalid ULID")
 )
@@ -39,4 +40,16 @@ func (id *ULID) UnmarshalJSON(data []byte) error {
 	}
 	id.ULID = parsed
 	return nil
+}
+
+// Helpers to avoid importing the stdlib "github.com/oklog/ulid/v2".
+
+func Parse(ulidstr string) (ULID, error) {
+	id, err := ulid.Parse(ulidstr)
+	return ULID{id}, err
+}
+
+func ParseStrict(ulidstr string) (ULID, error) {
+	id, err := ulid.ParseStrict(ulidstr)
+	return ULID{id}, err
 }

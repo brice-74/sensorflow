@@ -7,6 +7,14 @@ import (
 	"sync"
 )
 
+// used to avoid importing the stdlib "errors".
+var (
+	Is     = errors.Is
+	As     = errors.As
+	Unwrap = errors.Unwrap
+	Join   = errors.Join
+)
+
 var pcNameCache sync.Map
 
 func getCallerFuncName(skip int) string {
@@ -36,21 +44,21 @@ func wrap(err error, msg string, skip int) error {
 }
 
 func Wrap(err error, msg string) error {
-	return wrap(err, msg, 2)
+	return wrap(err, msg, 3)
 }
 
 func Wrapf(err error, format string, args ...any) error {
-	return wrap(err, fmt.Sprintf(format, args...), 2)
+	return wrap(err, fmt.Sprintf(format, args...), 3)
 }
 
 func WrapErr(err error) error {
-	return wrap(err, "", 2)
+	return wrap(err, "", 3)
 }
 
 func New(msg string) error {
-	return wrap(errors.New(msg), "", 2)
+	return wrap(errors.New(msg), "", 3)
 }
 
 func Newf(format string, args ...any) error {
-	return wrap(fmt.Errorf(format, args...), "", 2)
+	return wrap(fmt.Errorf(format, args...), "", 3)
 }

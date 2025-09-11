@@ -2,10 +2,10 @@ package repo
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/brice-74/sensorflow/internal/adapters/postgres"
 	"github.com/brice-74/sensorflow/internal/core/domain"
+	"github.com/brice-74/sensorflow/pkg/errors"
 	"github.com/brice-74/sensorflow/pkg/ulid"
 )
 
@@ -23,7 +23,7 @@ const sensorGatewayGetOneByIDQuery = `
 	LIMIT 1
 `
 
-func (r *SensorInstance) GetOneByID(ctx context.Context, ID ulid.ULID) (*domain.SensorGateway, error) {
+func (r *SensorGateway) GetOneByID(ctx context.Context, ID ulid.ULID) (*domain.SensorGateway, error) {
 	var gateway *domain.SensorGateway
 	if err := r.
 		Executor(ctx).
@@ -33,7 +33,7 @@ func (r *SensorInstance) GetOneByID(ctx context.Context, ID ulid.ULID) (*domain.
 			sensorGatewayGetOneByIDQuery,
 			ID,
 		); err != nil {
-		return nil, fmt.Errorf("failed to get one sensor gateway %s: %w", ID, err)
+		return nil, errors.Wrap(err, "failed to get sensor gateway")
 	}
 
 	return gateway, nil

@@ -8,7 +8,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/brice-74/sensorflow/internal/adapters/grpc/middleware"
 	"github.com/brice-74/sensorflow/internal/config"
+	"github.com/brice-74/sensorflow/internal/core/ports"
 	"github.com/brice-74/sensorflow/pkg/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -18,11 +20,18 @@ import (
 type server struct {
 }
 
-func ServeGRPC(logger log.FiberLoggerInterface, cfg config.GRPC) error {
+type GRPCDeps struct {
+	Logger               log.FiberLoggerInterface
+	SensorGatewayService ports.SensorGatewayService
+}
+
+func ServeGRPC(cfg config.GRPC, deps GRPCDeps) error {
 	lis, err := net.Listen("tcp", ":"+cfg.Port)
 	if err != nil {
 		return fmt.Errorf("failed to listen: %v", err)
 	}
+
+	tlsAuth := middleware.NewMTLSClientAuth(deps.Logger, deps.SensorGatewayService)
 
 	kaParams := keepalive.ServerParameters{
 		MaxConnectionIdle:     cfg.IdleTimeout,
@@ -43,11 +52,12 @@ func ServeGRPC(logger log.FiberLoggerInterface, cfg config.GRPC) error {
 		grpc.MaxConcurrentStreams(cfg.MaxConcurrentStreams),
 		grpc.MaxRecvMsgSize(cfg.MaxRecvMsgSize),
 		grpc.MaxSendMsgSize(cfg.MaxSendMsgSize),
-		// use futur middleware SensorAuth
-		// grpc.StreamInterceptor(),
-		// grpc.UnaryInterceptor(),
-		// grpc.ChainStreamInterceptor(),
-		// grpc.ChainUnaryInterceptor(),
+		grpc.ChainStreamInterceptor(
+			tlsAuth.StreamInterceptor(),
+		),
+		grpc.ChainUnaryInterceptor(
+			tlsAuth.UnaryInterceptor(),
+		),
 	)
 
 	// todo: here register GRPC services
@@ -64,7 +74,7 @@ func ServeGRPC(logger log.FiberLoggerInterface, cfg config.GRPC) error {
 
 	select {
 	case sig := <-signalChan:
-		logger.Info("shutting down gRPC server", log.Tags{"server_signal": sig.String()})
+		deps.Logger.Info("shutting down gRPC server", log.Tags{"server_signal": sig.String()})
 
 		done := make(chan struct{})
 		go func() {
@@ -74,9 +84,9 @@ func ServeGRPC(logger log.FiberLoggerInterface, cfg config.GRPC) error {
 
 		select {
 		case <-done:
-			logger.Info("gRPC server stopped gracefully", nil)
+			deps.Logger.Info("gRPC server stopped gracefully")
 		case <-time.After(cfg.GracefulStopTimeout):
-			logger.Info("gRPC server shutdown timed out, forcing stop", nil)
+			deps.Logger.Info("gRPC server shutdown timed out, forcing stop")
 			s.Stop()
 		}
 

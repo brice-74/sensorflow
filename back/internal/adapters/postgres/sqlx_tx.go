@@ -3,10 +3,10 @@ package postgres
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"fmt"
 
 	"github.com/brice-74/sensorflow/internal/core/ports"
+	"github.com/brice-74/sensorflow/pkg/errors"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -26,7 +26,7 @@ type SqlxTxState struct {
 
 func NewSqlxTxState(db *sqlx.DB) *SqlxTxState {
 	if db == nil {
-		panic("postgres.NewSqlxTxState: *sqlx.DB cannot be nil")
+		panic("*sqlx.DB cannot be nil")
 	}
 	return &SqlxTxState{
 		db:    db,
@@ -49,7 +49,7 @@ func (s *SqlxTxState) WithTransaction(ctx context.Context, opts *ports.TxUowOpti
 	defer func() {
 		if r := recover(); r != nil {
 			if revErr := block.Revert(ctx); revErr != nil {
-				panic(fmt.Errorf("SqlxTxState.Transaction: panic during transaction: %v; rollback error: %w", r, revErr))
+				panic(fmt.Sprintf("panic during transaction: %v; rollback error: %v", r, revErr))
 			}
 			panic(r)
 		}
@@ -78,7 +78,7 @@ func (s *SqlxTxState) Transaction(ctx context.Context, opts *ports.TxUowOptions)
 		}
 		tx, err := s.db.BeginTxx(ctx, sqlOpts)
 		if err != nil {
-			return nil, fmt.Errorf("SqlxTxState.Transaction: Begin *sqlx.Tx error: %w", err)
+			return nil, errors.Wrap(err, "Begin *sqlx.Tx")
 		}
 		return &SqlxTxState{
 			db:     s.db,
@@ -90,7 +90,7 @@ func (s *SqlxTxState) Transaction(ctx context.Context, opts *ports.TxUowOptions)
 
 	savepointName := fmt.Sprintf("sp_%d", s.depth)
 	if _, err := s.sqlxTx.ExecContext(ctx, "SAVEPOINT "+savepointName); err != nil {
-		return nil, fmt.Errorf("SqlxTxState.Transaction: exec savepoint '%s'error: %w", savepointName, err)
+		return nil, errors.Wrapf(err, "add savepoint '%s'", savepointName)
 	}
 
 	return &SqlxTxState{
@@ -117,19 +117,22 @@ func toSQLTxIsolation(level ports.UowIsolationLevel) sql.IsolationLevel {
 // Finish finalizes the current transaction block.
 func (s *SqlxTxState) Finish(ctx context.Context) error {
 	if s.depth == 0 {
-		return fmt.Errorf("no active transaction to finish")
+		return errors.New("no active transaction to finish")
 	}
 
 	if s.depth == 1 {
 		err := s.sqlxTx.Commit()
 		s.sqlxTx = nil
 		s.depth = 0
-		return err
+		if err != nil {
+			return errors.Wrap(err, "commit")
+		}
+		return nil
 	}
 
 	savepointName := fmt.Sprintf("sp_%d", s.depth-1)
 	if _, err := s.sqlxTx.ExecContext(ctx, "RELEASE SAVEPOINT "+savepointName); err != nil {
-		return err
+		return errors.Wrapf(err, "release savepoint '%s'", savepointName)
 	}
 
 	return nil
@@ -138,19 +141,22 @@ func (s *SqlxTxState) Finish(ctx context.Context) error {
 // Revert undoes the current transaction block.
 func (s *SqlxTxState) Revert(ctx context.Context) error {
 	if s.depth == 0 {
-		return fmt.Errorf("no active transaction to revert")
+		return errors.New("no active transaction to revert")
 	}
 
 	if s.depth == 1 {
 		err := s.sqlxTx.Rollback()
 		s.sqlxTx = nil
 		s.depth = 0
-		return err
+		if err != nil {
+			return errors.Wrap(err, "rollback")
+		}
+		return nil
 	}
 
 	savepointName := fmt.Sprintf("sp_%d", s.depth-1)
 	if _, err := s.sqlxTx.ExecContext(ctx, "ROLLBACK TO SAVEPOINT "+savepointName); err != nil {
-		return err
+		return errors.Wrapf(err, "rollback savepoint '%s'", savepointName)
 	}
 
 	return nil
