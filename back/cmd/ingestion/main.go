@@ -31,6 +31,8 @@ func main() {
 	).(log.FiberLoggerInterface)
 
 	pgclient := openPostgres(&cfg.Postgres, logger)
+	defer pgclient.Close()
+
 	sqlxDB := pgclient.Sqlx()
 
 	repos := app.NewRepositories(sqlxDB)

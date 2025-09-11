@@ -12,8 +12,9 @@ CORE_TARGETS := start start/core stop reset
 RELOAD_TARGETS := reload/gateway reload/ingestion reload/cli
 PROTO_TARGETS := protoc/sensor
 MIGRATE_TARGETS := migrate/new migrate/up migrate/down migrate/goto
+OTHER_TARGETS := print/archi/back
 
-.PHONY: $(CORE_TARGETS) $(RELOAD_TARGETS) $(PROTO_TARGETS) $(MIGRATE_TARGETS)
+.PHONY: $(CORE_TARGETS) $(RELOAD_TARGETS) $(PROTO_TARGETS) $(MIGRATE_TARGETS) $(OTHER_TARGETS)
 
 start:
 	@docker compose -f ./ops/docker-compose.dev.yml up -d 
@@ -66,3 +67,7 @@ migrate/goto:
 define de_migrate
 	@$(de_cli) sh -c 'migrate -path=${migrate_path} -database "$$DATABASE_URL" $(1) $(2)'
 endef
+
+print/archi/back:
+	@tree -d -I 'logs' ./back
+
