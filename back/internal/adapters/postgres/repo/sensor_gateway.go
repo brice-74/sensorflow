@@ -25,15 +25,16 @@ const sensorGatewayGetOneByIDQuery = `
 
 func (r *SensorGateway) GetOneByID(ctx context.Context, ID ulid.ULID) (*domain.SensorGateway, error) {
 	var gateway *domain.SensorGateway
-	if err := r.
+	err := r.
 		Executor(ctx).
 		SelectContext(
 			ctx,
 			gateway,
 			sensorGatewayGetOneByIDQuery,
 			ID,
-		); err != nil {
-		return nil, errors.Wrap(err, "failed to get sensor gateway")
+		)
+	if err = postgres.HandleSelectError(err); err != nil {
+		return nil, errors.WrapErr(err)
 	}
 
 	return gateway, nil

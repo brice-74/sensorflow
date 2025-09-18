@@ -34,6 +34,10 @@ func NewSqlxTxState(db *sqlx.DB) *SqlxTxState {
 	}
 }
 
+func (s *SqlxTxState) Tx() *sqlx.Tx {
+	return s.sqlxTx
+}
+
 func (s *SqlxTxState) Context() context.Context {
 	return s.ctx
 }
@@ -117,7 +121,7 @@ func toSQLTxIsolation(level ports.UowIsolationLevel) sql.IsolationLevel {
 // Finish finalizes the current transaction block.
 func (s *SqlxTxState) Finish(ctx context.Context) error {
 	if s.depth == 0 {
-		return errors.New("no active transaction to finish")
+		return errors.WrapMsg("no active transaction to finish")
 	}
 
 	if s.depth == 1 {
@@ -141,7 +145,7 @@ func (s *SqlxTxState) Finish(ctx context.Context) error {
 // Revert undoes the current transaction block.
 func (s *SqlxTxState) Revert(ctx context.Context) error {
 	if s.depth == 0 {
-		return errors.New("no active transaction to revert")
+		return errors.WrapMsg("no active transaction to revert")
 	}
 
 	if s.depth == 1 {

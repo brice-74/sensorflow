@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
 	"github.com/testcontainers/testcontainers-go"
 	"github.com/testcontainers/testcontainers-go/wait"
@@ -36,8 +37,14 @@ func SetupPostgres(ctx context.Context) (*PostgresContainer, error) {
 		return nil, err
 	}
 
-	host, _ := container.Host(ctx)
-	port, _ := container.MappedPort(ctx, "5432")
+	host, err := container.Host(ctx)
+	if err != nil {
+		return nil, err
+	}
+	port, err := container.MappedPort(ctx, "5432")
+	if err != nil {
+		return nil, err
+	}
 
 	dsn := fmt.Sprintf("postgres://postgres:secret@%s:%s/testdb?sslmode=disable", host, port.Port())
 	db, err := sql.Open("postgres", dsn)
@@ -66,4 +73,11 @@ func (p *PostgresContainer) Teardown(ctx context.Context) {
 	if p.container != nil {
 		p.container.Terminate(ctx)
 	}
+}
+
+func (p *PostgresContainer) SqlxDB() *sqlx.DB {
+	if p.DB == nil {
+		panic("*sql.DB is nil")
+	}
+	return sqlx.NewDb(p.DB, "postgres")
 }

@@ -103,9 +103,14 @@ func (m *MTLSClientAuth) loadSensorGateway(ctx context.Context, cn string) (*dom
 
 	sg, err := m.svcSensorGateway.GetOneWithInstances(ctx, id)
 	if err != nil {
-		if errors.Is(err, errors.ErrNotFound) {
-			return nil, status.Errorf(codes.NotFound, "sensor gateway not found")
+		var e *errors.Error
+		if errors.As(err, &e) {
+			switch e.Code {
+			case errors.ErrNotFound:
+				return nil, status.Errorf(codes.NotFound, "sensor gateway not found")
+			}
 		}
+
 		m.log.Error(errors.Wrap(err, "failed to get sensor gateway"), log.Contexts{"sensor_gateway": {"id": id}})
 		return nil, status.Errorf(codes.Internal, "failed to retrieve sensor gateway")
 	}

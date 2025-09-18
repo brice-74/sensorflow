@@ -55,10 +55,10 @@ func WrapErr(err error) error {
 	return wrap(err, "", 3)
 }
 
-func New(msg string) error {
+func WrapMsg(msg string) error {
 	return wrap(errors.New(msg), "", 3)
 }
 
-func Newf(format string, args ...any) error {
+func WrapMsgf(format string, args ...any) error {
 	return wrap(fmt.Errorf(format, args...), "", 3)
 }

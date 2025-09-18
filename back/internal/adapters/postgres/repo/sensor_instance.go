@@ -24,15 +24,16 @@ const sensorInstanceListByGatewayIDQuery = `
 
 func (r *SensorInstance) ListByGatewayID(ctx context.Context, gatewayID ulid.ULID) ([]*domain.SensorInstance, error) {
 	var sensors []*domain.SensorInstance
-	if err := r.
+	err := r.
 		Executor(ctx).
 		SelectContext(
 			ctx,
 			&sensors,
 			sensorInstanceListByGatewayIDQuery,
 			gatewayID,
-		); err != nil {
-		return nil, errors.Wrap(err, "failed to list sensor instances for gateway")
+		)
+	if err = postgres.HandleSelectError(err); err != nil {
+		return nil, errors.WrapErr(err)
 	}
 
 	return sensors, nil

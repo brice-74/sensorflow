@@ -4,14 +4,14 @@ package postgres_test
 
 import (
 	"context"
-	"database/sql"
 	"os"
 	"testing"
 
 	"github.com/brice-74/sensorflow/internal/testhelpers"
+	"github.com/jmoiron/sqlx"
 )
 
-var testDB *sql.DB
+var sqlxDB *sqlx.DB
 
 func TestMain(m *testing.M) {
 	ctx := context.Background()
@@ -22,7 +22,7 @@ func TestMain(m *testing.M) {
 	}
 	defer pg.Teardown(ctx)
 
-	testDB = pg.DB
+	sqlxDB = pg.SqlxDB()
 
 	os.Exit(m.Run())
 }
