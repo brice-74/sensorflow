@@ -7,75 +7,79 @@ import (
 	"github.com/brice-74/sensorflow/pkg/ulid"
 )
 
-type InfluxDataType uint8
+type DataType uint8
 
 const (
-	InfluxDataTypeString = iota
-	InfluxDataTypeFloat64
-	InfluxDataTypeInt64
-	InfluxDataTypeUint64
-	InfluxDataTypeBool
-	InfluxDataTypeTimestamp
+	DataTypeString = iota
+	DataTypeFloat64
+	DataTypeInt64
+	DataTypeUint64
+	DataTypeBool
+	DataTypeTimestamp
 )
 
-func (t InfluxDataType) String() string {
+func (t DataType) String() string {
 	switch t {
-	case InfluxDataTypeString:
+	case DataTypeString:
 		return "string"
-	case InfluxDataTypeFloat64:
+	case DataTypeFloat64:
 		return "float64"
-	case InfluxDataTypeInt64:
+	case DataTypeInt64:
 		return "int64"
-	case InfluxDataTypeUint64:
+	case DataTypeUint64:
 		return "uint64"
-	case InfluxDataTypeBool:
+	case DataTypeBool:
 		return "boolean"
-	case InfluxDataTypeTimestamp:
+	case DataTypeTimestamp:
 		return "timestamp"
 	default:
-		return fmt.Sprintf("InfluxDataType(%d)", t)
+		return fmt.Sprintf("DataType(%d)", t)
 	}
 }
 
-// MeasurementTable defines a specific storage table.
-type MeasurementTable struct {
-	ID          ulid.ULID `db:"id"`
-	ProfileID   ulid.ULID `db:"profile_id"`
-	StorageName string    `db:"storage_name"`
-	common.Timestamps
-}
-
-// MeasurementProfile represents a template for a type of measurement.
-// An undefined tenant_id means that the profile is shared.
+// MeasurementProfile represents a template for a set of measurements.
+// If TenantID is nil, the profile is shared across tenants.
 type MeasurementProfile struct {
-	ID          ulid.ULID  `db:"id"`
-	TenantID    *ulid.ULID `db:"tenant_id"`
-	Name        string     `db:"name"`
-	Description *string    `db:"description"`
+	ID          ulid.ULID
+	TenantID    *ulid.ULID
+	Tenant      *Tenant
+	Name        string
+	Description *string
+	Groups      []*MeasurementGroup
+	Fields      []*MeasurementField
+	Tags        []*MeasurementTag
 	common.Timestamps
 	common.SoftDelete
 }
 
-// MeasurementField represents a specific field (data point) within a MeasurementProfile.
+// MeasurementGroup represents a logical set of measurements.
+type MeasurementGroup struct {
+	ID        ulid.ULID
+	ProfileID ulid.ULID
+	Profile   *MeasurementProfile
+	Name      string
+	common.Timestamps
+}
+
+// MeasurementField represents a data point.
 type MeasurementField struct {
-	ID          ulid.ULID      `db:"id"`
-	ProfileID   ulid.ULID      `db:"profile_id"`
-	Name        string         `db:"name"`
-	StorageName string         `db:"storage_name"`
-	Description *string        `db:"description"`
-	Type        InfluxDataType `db:"type"`
+	ID          ulid.ULID
+	ProfileID   ulid.ULID
+	Profile     *MeasurementProfile
+	Name        string
+	Description *string
+	Type        DataType
 	common.Timestamps
 	common.SoftDelete
 }
 
-// MeasurementTag represents a tag (metadata) associated with a MeasurementProfile,
-// used to categorize or filter measurement data.
+// MeasurementTag represents a tag or indexed metadata.
 type MeasurementTag struct {
-	ID          ulid.ULID `db:"id"`
-	ProfileID   ulid.ULID `db:"profile_id"`
-	Name        string    `db:"name"`
-	StorageName string    `db:"storage_name"`
-	Description *string   `db:"description"`
+	ID          ulid.ULID
+	ProfileID   ulid.ULID
+	Profile     *MeasurementProfile
+	Name        string
+	Description *string
 	common.Timestamps
 	common.SoftDelete
 }
