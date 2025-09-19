@@ -10,10 +10,10 @@ const (
 )
 
 type Guard struct {
-	ID          int64     `json:"id"`
-	Name        string    `json:"name"` // unique
-	Description string    `json:"description"`
-	Type        GuardType `json:"type"`
+	ID          int64
+	Name        string // unique
+	Description string
+	Type        GuardType
 }
 
 type ActionType uint8
@@ -30,28 +30,28 @@ const (
 )
 
 type Action struct {
-	ID          int64      `json:"id"`
-	Name        string     `json:"name"` // unique
-	Description string     `json:"description"`
-	Type        ActionType `json:"type"`
+	ID          int64
+	Name        string // unique
+	Description string
+	Type        ActionType
 }
 
 type ScopeType uint8
 
 type Scope struct {
-	ID          int64     `json:"id"`
-	Name        string    `json:"name"` // unique
-	Description string    `json:"description"`
-	Type        ScopeType `json:"type"`
+	ID          int64
+	Name        string // unique
+	Description string
+	Type        ScopeType
 	// to see if it is useful and non-blocking in terms of mechanism
-	//Level       *uint8 `json:"level"`
+	//Level       *uint8
 }
 
 type ResourceType uint8
 
 type Resource struct {
-	ID          int64        `json:"id"`
-	Name        string       `json:"name"` // unique
-	Description string       `json:"description"`
-	Type        ResourceType `json:"type"`
+	ID          int64
+	Name        string // unique
+	Description string
+	Type        ResourceType
 }

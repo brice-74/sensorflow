@@ -10,8 +10,8 @@ type Timestamped interface {
 }
 
 type Timestamps struct {
-	CreatedAt time.Time `json:"created_at" db:"created_at"`
-	UpdatedAt time.Time `json:"updated_at" db:"updated_at"`
+	CreatedAt time.Time `db:"created_at"`
+	UpdatedAt time.Time `db:"updated_at"`
 }
 
 func (ts *Timestamps) GetCreatedAt() time.Time {
@@ -33,7 +33,7 @@ type SoftDeleted interface {
 }
 
 type SoftDelete struct {
-	DeletedAt *time.Time `json:"deleted_at" db:"deleted_at"`
+	DeletedAt *time.Time `db:"deleted_at"`
 }
 
 func (s *SoftDelete) GetDeletedAt() *time.Time {

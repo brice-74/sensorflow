@@ -2,7 +2,7 @@ package errors
 
 import "fmt"
 
-type Code = uint8
+type Code uint8
 
 const (
 	ErrInternal Code = iota
@@ -15,7 +15,7 @@ const (
 	ErrCanceled
 )
 
-func CodeToString(c Code) string {
+func (c Code) String() string {
 	switch c {
 	case ErrNotFound:
 		return "NotFound"
@@ -44,9 +44,9 @@ type Error struct {
 
 func (e *Error) Error() string {
 	if e.Details != nil {
-		return fmt.Sprintf("code: %s, error: %v, details: %v", CodeToString(e.Code), e.Err, e.Details)
+		return fmt.Sprintf("code: %s, error: %v, details: %v", e.Code, e.Err, e.Details)
 	}
-	return fmt.Sprintf("code: %s, error: %v", CodeToString(e.Code), e.Err)
+	return fmt.Sprintf("code: %s, error: %v", e.Code, e.Err)
 }
 
 func (e *Error) Unwrap() error {

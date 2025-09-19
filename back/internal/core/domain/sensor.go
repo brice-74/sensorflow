@@ -48,9 +48,10 @@ type SensorInstance struct {
 type SensorGateway struct {
 	ID              ulid.ULID `db:"id"`
 	TenantID        ulid.ULID `db:"tenant_id"`
-	Name            string    `db:"name"`
-	Location        *string   `db:"location"`
-	Firmware        *string   `db:"firmware"`
+	Tenant          *Tenant
+	Name            string  `db:"name"`
+	Location        *string `db:"location"`
+	Firmware        *string `db:"firmware"`
 	SensorInstances []*SensorInstance
 	common.Timestamps
 	common.SoftDelete
