@@ -98,7 +98,7 @@ func (m *MTLSClientAuth) loadSensorGateway(ctx context.Context, cn string) (*dom
 	id, err := ulid.Parse(cn)
 	if err != nil {
 		m.log.Error(errors.Wrap(err, "invalid ulid"), log.Contexts{"dn": {"cn": cn}})
-		return nil, status.Errorf(codes.Unauthenticated, "invalid sensor gateway ID")
+		return nil, status.Error(codes.Unauthenticated, "invalid sensor gateway ID")
 	}
 
 	sg, err := m.svcSensorGateway.GetOneWithInstances(ctx, id)
@@ -106,14 +106,18 @@ func (m *MTLSClientAuth) loadSensorGateway(ctx context.Context, cn string) (*dom
 		var e *errors.Error
 		if errors.As(err, &e) {
 			switch e.Code {
-			case errors.ErrNotFound:
-				return nil, status.Errorf(codes.NotFound, "sensor gateway not found")
+			case errors.ErrTimeout,
+				errors.ErrCanceled,
+				errors.ErrInternal:
+				break
+			default:
+				return nil, status.Error(codes.Unauthenticated, "invalid sensor gateway ID")
 			}
 		}
-
 		m.log.Error(errors.Wrap(err, "failed to get sensor gateway"), log.Contexts{"sensor_gateway": {"id": id}})
-		return nil, status.Errorf(codes.Internal, "failed to retrieve sensor gateway")
+		return nil, status.Error(codes.Internal, "something wen't wrong")
 	}
+
 	return sg, nil
 }
 
