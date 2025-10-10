@@ -54,10 +54,7 @@ type TxUnitOfWorkFlat interface {
 //
 // Example:
 //
-//	root.WithTransaction(root.Context(), &TxUowOptions{
-//	    ReadOnly: false,
-//	    Isolation: IsolationSerializable,
-//	}, func(uow TxUnitOfWork) error {
+//	root.WithTransaction(root.Context(), &TxUowOptions{}, func(uow TxUnitOfWork) error {
 //	    return uow.WithTransaction(uow.Context(), nil, func(inner TxUnitOfWork) error {
 //	        doSomething(inner.Context())
 //	        return nil

@@ -42,3 +42,25 @@ func (s *SoftDelete) GetDeletedAt() *time.Time {
 func (s *SoftDelete) SetDeletedAt(t *time.Time) {
 	s.DeletedAt = t
 }
+
+type VersionedUnix interface {
+	GetVersion() int64
+	SetVersion(int64)
+	Touch()
+}
+
+type VersionUnix struct {
+	Version int64 `db:"version"`
+}
+
+func (v *VersionUnix) GetVersion() int64 {
+	return v.Version
+}
+
+func (v *VersionUnix) SetVersion(ver int64) {
+	v.Version = ver
+}
+
+func (v *VersionUnix) Touch() {
+	v.Version = time.Now().UnixNano()
+}
