@@ -11,18 +11,20 @@ type Ristretto[K comparable, V any] struct {
 	hub     *ristretto.Cache[string, any]
 	prefix  string
 	keyFunc func(K) string
+	ttl     time.Duration
 }
 
 func NewRistretto[K comparable, V any](
 	cfg ristretto.Config[string, any],
 	prefix string,
 	keyFunc func(K) string,
+	defaultTTL time.Duration,
 ) (*Ristretto[K, V], error) {
 	cache, err := ristretto.NewCache(&cfg)
 	if err != nil {
 		return nil, err
 	}
-	return &Ristretto[K, V]{hub: cache, prefix: prefix, keyFunc: keyFunc}, nil
+	return &Ristretto[K, V]{hub: cache, prefix: prefix, keyFunc: keyFunc, ttl: defaultTTL}, nil
 }
 
 func (r *Ristretto[K, V]) makeKey(k K) string {
@@ -37,8 +39,11 @@ func (r *Ristretto[K, V]) Get(key K) (V, bool) {
 	}
 	return val.(V), true
 }
+func (r *Ristretto[K, V]) Set(key K, value V) {
+	r.hub.SetWithTTL(r.makeKey(key), value, 1, r.ttl)
+}
 
-func (r *Ristretto[K, V]) Set(key K, value V, ttl time.Duration) {
+func (r *Ristretto[K, V]) SetWithTTL(key K, value V, ttl time.Duration) {
 	r.hub.SetWithTTL(r.makeKey(key), value, 1, ttl)
 }
 

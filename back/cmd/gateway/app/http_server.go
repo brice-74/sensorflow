@@ -10,11 +10,11 @@ import (
 
 	"github.com/brice-74/sensorflow/internal/adapters/http"
 	"github.com/brice-74/sensorflow/internal/config"
-	"github.com/brice-74/sensorflow/pkg/log"
+	"github.com/brice-74/sensorflow/internal/log"
 	"github.com/gofiber/fiber/v2"
 )
 
-func ServeHTTP(logger log.FiberLoggerInterface, cfg config.HTTP) error {
+func ServeHTTP(logger log.Fiber, cfg config.HTTP) error {
 	fiberApp := fiber.New(
 		fiber.Config{
 			JSONDecoder: func(data []byte, v any) error {

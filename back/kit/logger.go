@@ -7,15 +7,17 @@ import (
 	"os"
 	"time"
 
+	sentryadapter "github.com/brice-74/sensorflow/internal/adapters/sentry"
+	zerologadapter "github.com/brice-74/sensorflow/internal/adapters/zerolog"
 	"github.com/brice-74/sensorflow/internal/config"
-	"github.com/brice-74/sensorflow/pkg/log"
+	"github.com/brice-74/sensorflow/internal/log"
 	"github.com/getsentry/sentry-go"
 	"github.com/rs/zerolog"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func Zlog(consoleLvl, fileLvl zerolog.Level, filePath string) log.FiberLoggerInterface {
-	return log.NewZerolog(zerolog.New(
+func Zlog(consoleLvl, fileLvl zerolog.Level, filePath string) log.Fiber {
+	return zerologadapter.NewLogger(zerolog.New(
 		zerolog.MultiLevelWriter([]io.Writer{
 			// console writer
 			&zerolog.FilteredLevelWriter{
@@ -43,8 +45,8 @@ func Zlog(consoleLvl, fileLvl zerolog.Level, filePath string) log.FiberLoggerInt
 	).With().Timestamp().Logger())
 }
 
-func Sentry(conf config.Sentry) (log.SentryLoggerInterface, func() error, error) {
-	sentrylog, err := log.NewSentry(sentry.ClientOptions{
+func Sentry(conf config.Sentry) (log.Sentry, func() error, error) {
+	sentrylog, err := sentryadapter.NewLogger(sentry.ClientOptions{
 		Dsn:              conf.DSN,
 		Debug:            false,
 		AttachStacktrace: true,

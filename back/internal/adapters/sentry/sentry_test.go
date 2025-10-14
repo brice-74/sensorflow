@@ -1,6 +1,6 @@
 //go:build unit
 
-package log_test
+package sentry_test
 
 import (
 	"context"
@@ -8,7 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brice-74/sensorflow/pkg/log"
+	sentryadapter "github.com/brice-74/sensorflow/internal/adapters/sentry"
+	"github.com/brice-74/sensorflow/internal/log"
 	"github.com/getsentry/sentry-go"
 	"github.com/gofiber/fiber/v2"
 	"github.com/stretchr/testify/require"
@@ -32,7 +33,7 @@ func (m *mockTransport) Reset() {
 
 func TestSentryLogger(t *testing.T) {
 	transport := &mockTransport{}
-	logger, err := log.NewSentry(sentry.ClientOptions{Transport: transport})
+	logger, err := sentryadapter.NewLogger(sentry.ClientOptions{Transport: transport})
 	require.NoErrorf(t, err, "create sentry client error: %s", err)
 
 	t.Run("Info", func(t *testing.T) {
@@ -222,7 +223,7 @@ func TestSentryLogger(t *testing.T) {
 			log.Tags{
 				"env": "production",
 			},
-		).(log.SentryLoggerInterface)
+		).(log.Sentry)
 
 		sub.AddBreadcrumb(&sentry.Breadcrumb{
 			Message: "breadcrumb1",
@@ -237,12 +238,12 @@ func TestSentryLogger(t *testing.T) {
 	})
 
 	t.Run("ParentDoNotAffectChild", func(t *testing.T) {
-		sub := logger.With().(log.SentryLoggerInterface)
+		sub := logger.With().(log.Sentry)
 		sub.AddBreadcrumb(&sentry.Breadcrumb{
 			Message: "createdBySub1",
 		}, nil)
 
-		sub2 := sub.With().(log.SentryLoggerInterface)
+		sub2 := sub.With().(log.Sentry)
 		sub2.AddBreadcrumb(&sentry.Breadcrumb{
 			Message: "createdBySub2",
 		}, nil)

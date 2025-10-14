@@ -1,11 +1,12 @@
-package log
+package zerolog
 
 import (
+	"github.com/brice-74/sensorflow/internal/log"
 	"github.com/gofiber/fiber/v2"
 	"github.com/rs/zerolog"
 )
 
-// ZeroLogger implements LoggerInterface and acts as a bridge
+// Logger implements log.Logger interface and acts as a bridge
 // between the interface and zerolog.Logger (https://github.com/rs/zerolog).
 // The idea is to keep zerolog's stateless* nature, to preserve its efficiency
 // in terms of speed and its low memory allocation.
@@ -17,24 +18,26 @@ import (
 // *stateless logger: A logger that doesn't accumulate context or additional
 // data in memory between log calls, allowing optimized direct
 // writing without memory overhead.
-type Zerolog struct {
+type Logger struct {
 	zlog       zerolog.Logger
 	stackTrace bool
 }
 
-func NewZerolog(zlog zerolog.Logger) *Zerolog {
-	return &Zerolog{zlog: zlog}
+var _ log.Logger = (*Logger)(nil)
+
+func NewLogger(zlog zerolog.Logger) *Logger {
+	return &Logger{zlog: zlog}
 }
 
 // applyOptions adds data about options to the logger,
 // a new instance zerolog.Logger is returned.
-func applyOptions(zlog zerolog.Logger, opts ...Option) zerolog.Logger {
+func applyOptions(zlog zerolog.Logger, opts ...log.Option) zerolog.Logger {
 	if len(opts) == 0 {
 		return zlog
 	}
 
 	logctx := zlog.With()
-	o := Options{}
+	o := log.Options{}
 	for _, opt := range opts {
 		opt.Apply(&o)
 	}
@@ -54,32 +57,32 @@ func applyOptions(zlog zerolog.Logger, opts ...Option) zerolog.Logger {
 	return logctx.Logger()
 }
 
-func (l *Zerolog) Info(msg string, opts ...Option) {
+func (l *Logger) Info(msg string, opts ...log.Option) {
 	zlog := applyOptions(l.zlog, opts...)
 	zlog.Info().Msg(msg)
 }
 
-func (l *Zerolog) Error(err error, opts ...Option) {
+func (l *Logger) Error(err error, opts ...log.Option) {
 	zlog := applyOptions(l.zlog, opts...)
 	zlog.Error().Err(err).Msg("")
 }
 
 // Fatal method avoid os.Exist.
 // We prefer to manage app exits on our side
-func (l *Zerolog) Fatal(err error, opts ...Option) {
+func (l *Logger) Fatal(err error, opts ...log.Option) {
 	zlog := applyOptions(l.zlog, opts...)
 	zlog.WithLevel(zerolog.FatalLevel).Err(err).Msg("")
 }
 
-// With create a new ZeroLogger instance with the associated options
-func (l *Zerolog) With(opts ...Option) LoggerInterface {
-	return &Zerolog{
+// With create a new Logger instance with the associated options
+func (l *Logger) With(opts ...log.Option) log.Logger {
+	return &Logger{
 		zlog: applyOptions(l.zlog, opts...),
 	}
 }
 
-func (l *Zerolog) WithFiberCtx(ctx *fiber.Ctx, opts ...Option) FiberLoggerInterface {
-	opts = append(opts, Contexts{
+func (l *Logger) WithFiberCtx(ctx *fiber.Ctx, opts ...log.Option) log.Fiber {
+	opts = append(opts, log.Contexts{
 		"request_": {
 			"method":  ctx.Method(),
 			"path":    ctx.Path(),
@@ -88,7 +91,7 @@ func (l *Zerolog) WithFiberCtx(ctx *fiber.Ctx, opts ...Option) FiberLoggerInterf
 		},
 	})
 
-	return &Zerolog{
+	return &Logger{
 		zlog: applyOptions(l.zlog, opts...),
 	}
 }

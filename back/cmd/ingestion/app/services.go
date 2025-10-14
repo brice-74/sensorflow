@@ -9,8 +9,8 @@ type Services struct {
 	SensorGateway ports.SensorGatewayService
 }
 
-func NewServices(repos *Repositories, uows *UnitOfWorks) *Services {
-	sensorGateway := service.NewSensorGateway(uows.ConnectionUnitOfWork, repos.SensorGateway, repos.SensorInstance)
+func NewServices(repos *Repositories) *Services {
+	sensorGateway := service.NewSensorGateway(repos.SensorGateway, repos.SensorInstance)
 
 	services := Services{
 		SensorGateway: sensorGateway,

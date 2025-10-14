@@ -5,163 +5,106 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/brice-74/sensorflow/internal/core/ports"
 	"github.com/brice-74/sensorflow/pkg/errors"
 	"github.com/jmoiron/sqlx"
 )
 
-type sqlxTxCtxKey struct{}
+type sqlxTxCtxKeytype struct{}
 
-func GetSqlxTxFromContext(ctx context.Context) (*sqlx.Tx, bool) {
-	tx, ok := ctx.Value(sqlxTxCtxKey{}).(*sqlx.Tx)
+var sqlxTxCtxKey = sqlxTxCtxKeytype{}
+
+func GetSqlxTx(ctx context.Context) (*sqlx.Tx, bool) {
+	tx, ok := ctx.Value(sqlxTxCtxKey).(*sqlx.Tx)
 	return tx, ok
 }
 
-type SqlxTxState struct {
-	db     *sqlx.DB
-	sqlxTx *sqlx.Tx
-	ctx    context.Context
-	depth  uint16 // nested transaction depth
+type SqlxTxManager struct {
+	db    *sqlx.DB
+	tx    *sqlx.Tx
+	depth int
 }
 
-func NewSqlxTxState(db *sqlx.DB) *SqlxTxState {
+func NewSqlxTxManager(db *sqlx.DB) *SqlxTxManager {
 	if db == nil {
-		panic("*sqlx.DB cannot be nil")
+		panic("db cannot be nil")
 	}
-	return &SqlxTxState{
-		db:    db,
-		depth: 0,
-	}
+	return &SqlxTxManager{db: db}
 }
 
-func (s *SqlxTxState) Tx() *sqlx.Tx {
-	return s.sqlxTx
-}
-
-func (s *SqlxTxState) Context() context.Context {
-	return s.ctx
-}
-
-// TransactionFn starts a new transaction block and runs fn inside it.
-// Automatically commits/releases if fn succeeds, or rollbacks/reverts if fn fails.
-func (s *SqlxTxState) WithTransaction(ctx context.Context, opts *ports.TxUowOptions, fn func(ports.TxUnitOfWork) error) error {
-	block, err := s.Transaction(ctx, opts)
+// WithTransaction runs fn inside a transaction or savepoint automatically.
+func (t *SqlxTxManager) WithTransaction(ctx context.Context, opts *sql.TxOptions, fn func(ctx context.Context) error) error {
+	sub, err := t.Begin(ctx, opts)
 	if err != nil {
 		return err
 	}
-
 	defer func() {
 		if r := recover(); r != nil {
-			if revErr := block.Revert(ctx); revErr != nil {
-				panic(fmt.Sprintf("panic during transaction: %v; rollback error: %v", r, revErr))
+			if subErr := sub.Rollback(ctx); subErr != nil {
+				panic(fmt.Sprintf("panic during transaction: %v; rollback error: %v", r, subErr))
 			}
+
 			panic(r)
 		}
 	}()
 
-	if err = fn(block); err != nil {
-		if revErr := block.Revert(ctx); revErr != nil {
-			err = errors.Join(err, revErr)
+	if err := fn(sub.Context()); err != nil {
+		if subErr := sub.Rollback(ctx); subErr != nil {
+			err = errors.Join(err, subErr)
 		}
+
 		return err
 	}
 
-	return block.Finish(ctx)
+	return sub.Commit(ctx)
 }
 
-// Transaction starts a new transaction block manually.
-// Caller must call Finish() or Revert().
-func (s *SqlxTxState) Transaction(ctx context.Context, opts *ports.TxUowOptions) (ports.TxUnitOfWorkFlat, error) {
-	if s.depth == 0 {
-		var sqlOpts *sql.TxOptions
-		if opts != nil {
-			sqlOpts = &sql.TxOptions{
-				Isolation: toSQLTxIsolation(opts.Isolation),
-				ReadOnly:  opts.ReadOnly,
-			}
-		}
-		tx, err := s.db.BeginTxx(ctx, sqlOpts)
+// begin starts a transaction or nested savepoint.
+func (t *SqlxTxManager) Begin(ctx context.Context, opts *sql.TxOptions) (*SqlxTxManager, error) {
+	if t.depth == 0 {
+		tx, err := t.db.BeginTxx(ctx, opts)
 		if err != nil {
-			return nil, errors.Wrap(err, "Begin *sqlx.Tx")
+			return nil, errors.Wrap(err, "begin transaction")
 		}
-		return &SqlxTxState{
-			db:     s.db,
-			sqlxTx: tx,
-			ctx:    context.WithValue(ctx, sqlxTxCtxKey{}, tx),
-			depth:  1,
+		return &SqlxTxManager{
+			db:    t.db,
+			tx:    tx,
+			depth: 1,
 		}, nil
 	}
 
-	savepointName := fmt.Sprintf("sp_%d", s.depth)
-	if _, err := s.sqlxTx.ExecContext(ctx, "SAVEPOINT "+savepointName); err != nil {
-		return nil, errors.Wrapf(err, "add savepoint '%s'", savepointName)
+	savepoint := fmt.Sprintf("sp_%d", t.depth)
+	if _, err := t.tx.ExecContext(ctx, "SAVEPOINT "+savepoint); err != nil {
+		return nil, errors.Wrapf(err, "create savepoint %s", savepoint)
 	}
-
-	return &SqlxTxState{
-		db:     s.db,
-		sqlxTx: s.sqlxTx,
-		ctx:    ctx,
-		depth:  s.depth + 1,
+	return &SqlxTxManager{
+		db:    t.db,
+		tx:    t.tx,
+		depth: t.depth + 1,
 	}, nil
 }
 
-func toSQLTxIsolation(level ports.UowIsolationLevel) sql.IsolationLevel {
-	switch level {
-	case ports.IsolationReadCommitted:
-		return sql.LevelReadCommitted
-	case ports.IsolationRepeatableRead:
-		return sql.LevelRepeatableRead
-	case ports.IsolationSerializable:
-		return sql.LevelSerializable
-	default:
-		return sql.LevelDefault
-	}
+func (t *SqlxTxManager) Tx() *sqlx.Tx {
+	return t.tx
 }
 
-// Finish finalizes the current transaction block.
-func (s *SqlxTxState) Finish(ctx context.Context) error {
-	if s.depth == 0 {
-		return errors.WrapMsg("no active transaction to finish")
-	}
-
-	if s.depth == 1 {
-		err := s.sqlxTx.Commit()
-		s.sqlxTx = nil
-		s.depth = 0
-		if err != nil {
-			return errors.Wrap(err, "commit")
-		}
-		return nil
-	}
-
-	savepointName := fmt.Sprintf("sp_%d", s.depth-1)
-	if _, err := s.sqlxTx.ExecContext(ctx, "RELEASE SAVEPOINT "+savepointName); err != nil {
-		return errors.Wrapf(err, "release savepoint '%s'", savepointName)
-	}
-
-	return nil
+func (t *SqlxTxManager) Context() context.Context {
+	return context.WithValue(context.Background(), sqlxTxCtxKey, t.tx)
 }
 
-// Revert undoes the current transaction block.
-func (s *SqlxTxState) Revert(ctx context.Context) error {
-	if s.depth == 0 {
-		return errors.WrapMsg("no active transaction to revert")
+func (t *SqlxTxManager) Commit(ctx context.Context) error {
+	if t.depth == 1 {
+		return errors.Wrap(t.tx.Commit(), "commit transaction")
 	}
+	savepoint := fmt.Sprintf("sp_%d", t.depth-1)
+	_, err := t.tx.ExecContext(ctx, "RELEASE SAVEPOINT "+savepoint)
+	return errors.Wrap(err, "release savepoint")
+}
 
-	if s.depth == 1 {
-		err := s.sqlxTx.Rollback()
-		s.sqlxTx = nil
-		s.depth = 0
-		if err != nil {
-			return errors.Wrap(err, "rollback")
-		}
-		return nil
+func (t *SqlxTxManager) Rollback(ctx context.Context) error {
+	if t.depth == 1 {
+		return errors.Wrap(t.tx.Rollback(), "rollback transaction")
 	}
-
-	savepointName := fmt.Sprintf("sp_%d", s.depth-1)
-	if _, err := s.sqlxTx.ExecContext(ctx, "ROLLBACK TO SAVEPOINT "+savepointName); err != nil {
-		return errors.Wrapf(err, "rollback savepoint '%s'", savepointName)
-	}
-
-	return nil
+	savepoint := fmt.Sprintf("sp_%d", t.depth-1)
+	_, err := t.tx.ExecContext(ctx, "ROLLBACK TO SAVEPOINT "+savepoint)
+	return errors.Wrap(err, "rollback savepoint")
 }

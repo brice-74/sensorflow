@@ -1,20 +1,21 @@
 //go:build unit
 
-package log_test
+package zerolog_test
 
 import (
 	"bytes"
 	"errors"
 	"testing"
 
-	"github.com/brice-74/sensorflow/pkg/log"
+	zerologadapter "github.com/brice-74/sensorflow/internal/adapters/zerolog"
+	"github.com/brice-74/sensorflow/internal/log"
 	"github.com/rs/zerolog"
 	"github.com/stretchr/testify/require"
 )
 
 func TestZeroLogger(t *testing.T) {
 	var buf bytes.Buffer
-	logger := log.NewZerolog(zerolog.New(&buf))
+	logger := zerologadapter.NewLogger(zerolog.New(&buf))
 
 	t.Run("Info", func(t *testing.T) {
 		logger.Info("test message")

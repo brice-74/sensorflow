@@ -1,17 +1,17 @@
 package grpc
 
 import (
+	"github.com/brice-74/sensorflow/internal/log"
 	"github.com/brice-74/sensorflow/pkg/errors"
-	"github.com/brice-74/sensorflow/pkg/log"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type ErrorHandler struct {
-	log log.LoggerInterface
+	log log.Logger
 }
 
-func NewErrorHandler(logger log.LoggerInterface) *ErrorHandler {
+func NewErrorHandler(logger log.Logger) *ErrorHandler {
 	return &ErrorHandler{log: logger}
 }
 

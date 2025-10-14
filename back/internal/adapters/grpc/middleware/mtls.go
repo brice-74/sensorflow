@@ -6,9 +6,9 @@ import (
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/core/ports"
 	"github.com/brice-74/sensorflow/internal/ctxvalues"
+	"github.com/brice-74/sensorflow/internal/log"
 	"github.com/brice-74/sensorflow/internal/types"
 	"github.com/brice-74/sensorflow/pkg/errors"
-	"github.com/brice-74/sensorflow/pkg/log"
 	"github.com/brice-74/sensorflow/pkg/ulid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -28,11 +28,11 @@ func (w *wrappedStream) Context() context.Context {
 }
 
 type MTLSClientAuth struct {
-	log              log.LoggerInterface
+	log              log.Logger
 	svcSensorGateway ports.SensorGatewayService
 }
 
-func NewMTLSClientAuth(logger log.LoggerInterface, svcSensorGateway ports.SensorGatewayService) *MTLSClientAuth {
+func NewMTLSClientAuth(logger log.Logger, svcSensorGateway ports.SensorGatewayService) *MTLSClientAuth {
 	return &MTLSClientAuth{
 		log:              logger,
 		svcSensorGateway: svcSensorGateway,

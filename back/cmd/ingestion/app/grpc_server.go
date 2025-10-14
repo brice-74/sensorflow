@@ -11,7 +11,7 @@ import (
 	"github.com/brice-74/sensorflow/internal/adapters/grpc/middleware"
 	"github.com/brice-74/sensorflow/internal/config"
 	"github.com/brice-74/sensorflow/internal/core/ports"
-	"github.com/brice-74/sensorflow/pkg/log"
+	"github.com/brice-74/sensorflow/internal/log"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
 )
@@ -21,7 +21,7 @@ type server struct {
 }
 
 type GRPCDeps struct {
-	Logger               log.FiberLoggerInterface
+	Logger               log.Fiber
 	SensorGatewayService ports.SensorGatewayService
 }
 

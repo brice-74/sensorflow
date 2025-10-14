@@ -10,38 +10,31 @@ import (
 )
 
 type SensorGateway struct {
-	uowConn      ports.ConnUnitOfWork
 	repo         ports.SensorGatewayRepo
 	instanceRepo ports.SensorInstanceRepo
 }
 
 func NewSensorGateway(
-	uowConn ports.ConnUnitOfWork,
 	repo ports.SensorGatewayRepo,
 	instanceRepo ports.SensorInstanceRepo,
 ) *SensorGateway {
 	return &SensorGateway{
-		uowConn,
 		repo,
 		instanceRepo,
 	}
 }
 
-func (s *SensorGateway) GetOneWithInstances(ctx context.Context, gatewayID ulid.ULID) (sensorGateway *domain.SensorGateway, err error) {
-	err = s.uowConn.WithConnection(ctx, func(ctx context.Context) error {
-		var e error
+func (s *SensorGateway) GetOneWithInstances(ctx context.Context, gatewayID ulid.ULID) (*domain.SensorGateway, error) {
+	sensorGateway, err := s.repo.GetOneByID(ctx, gatewayID)
+	if err != nil {
+		return nil, errors.WrapErr(err)
+	}
 
-		sensorGateway, e = s.repo.GetOneByID(ctx, gatewayID)
-		if e != nil {
-			return errors.WrapErr(e)
-		}
+	sensorInstances, err := s.instanceRepo.ListByGatewayID(ctx, gatewayID)
+	if err != nil {
+		return nil, errors.WrapErr(err)
+	}
 
-		sensorGateway.SensorInstances, e = s.instanceRepo.ListByGatewayID(ctx, gatewayID)
-		if e != nil {
-			return errors.WrapErr(e)
-		}
-
-		return nil
-	})
-	return
+	sensorGateway.SensorInstances = sensorInstances
+	return sensorGateway, nil
 }

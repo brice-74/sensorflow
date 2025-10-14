@@ -9,7 +9,7 @@ import (
 	"github.com/brice-74/sensorflow/cmd/ingestion/app"
 	"github.com/brice-74/sensorflow/internal/adapters/postgres"
 	"github.com/brice-74/sensorflow/internal/config"
-	"github.com/brice-74/sensorflow/pkg/log"
+	"github.com/brice-74/sensorflow/internal/log"
 )
 
 func main() {
@@ -28,7 +28,7 @@ func main() {
 
 	logger = logger.With(
 		log.Tags{"api_identifier": cfg.Instance.Identifier},
-	).(log.FiberLoggerInterface)
+	).(log.Fiber)
 
 	pgclient := openPostgres(&cfg.Postgres, logger)
 	defer pgclient.Close()
@@ -36,8 +36,7 @@ func main() {
 	sqlxDB := pgclient.Sqlx()
 
 	repos := app.NewRepositories(sqlxDB)
-	uows := app.NewUnitOfWorks(sqlxDB)
-	svcs := app.NewServices(repos, uows)
+	svcs := app.NewServices(repos)
 
 	if err := app.ServeGRPC(cfg.GRPC, app.GRPCDeps{
 		Logger:               logger,
@@ -47,7 +46,7 @@ func main() {
 	}
 }
 
-func openPostgres(cfg *config.Postgres, logger log.LoggerInterface) postgres.Client {
+func openPostgres(cfg *config.Postgres, logger log.Logger) postgres.Client {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 

@@ -10,7 +10,7 @@ import (
 )
 
 type SqlxRepo struct {
-	db *sqlx.DB
+	DB *sqlx.DB
 }
 
 func NewSqlxRepo(db *sqlx.DB) *SqlxRepo {
@@ -18,18 +18,28 @@ func NewSqlxRepo(db *sqlx.DB) *SqlxRepo {
 		panic("*sqlx.DB cannot be nil")
 	}
 	return &SqlxRepo{
-		db: db,
+		DB: db,
 	}
 }
 
 func (r *SqlxRepo) Executor(ctx context.Context) SqlxExecutor {
-	if tx, ok := GetSqlxTxFromContext(ctx); ok && tx != nil {
+	if tx, ok := GetSqlxTx(ctx); ok && tx != nil {
 		return &SqlxTx{tx}
 	}
-	if conn, ok := GetSqlxConnFromContext(ctx); ok && conn != nil {
+	if conn, ok := GetSqlxConn(ctx); ok && conn != nil {
 		return &SqlxConn{conn}
 	}
-	return r.db
+	return r.DB
+}
+
+func (r *SqlxRepo) Tx(ctx context.Context) (*SqlxTx, bool) {
+	tx, ok := GetSqlxTx(ctx)
+	return &SqlxTx{tx}, ok
+}
+
+func (r *SqlxRepo) Conn(ctx context.Context) (*SqlxConn, bool) {
+	conn, ok := GetSqlxConn(ctx)
+	return &SqlxConn{conn}, ok
 }
 
 type SqlxExecutor interface {
