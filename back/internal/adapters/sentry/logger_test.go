@@ -31,7 +31,7 @@ func (m *mockTransport) Reset() {
 	m.events = m.events[:0]
 }
 
-func TestSentryLogger(t *testing.T) {
+func TestLogger(t *testing.T) {
 	transport := &mockTransport{}
 	logger, err := sentryadapter.NewLogger(sentry.ClientOptions{Transport: transport})
 	require.NoErrorf(t, err, "create sentry client error: %s", err)

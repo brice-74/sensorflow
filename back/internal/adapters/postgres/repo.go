@@ -13,15 +13,6 @@ type SqlxRepo struct {
 	DB *sqlx.DB
 }
 
-func NewSqlxRepo(db *sqlx.DB) *SqlxRepo {
-	if db == nil {
-		panic("*sqlx.DB cannot be nil")
-	}
-	return &SqlxRepo{
-		DB: db,
-	}
-}
-
 func (r *SqlxRepo) Executor(ctx context.Context) SqlxExecutor {
 	if tx, ok := GetSqlxTx(ctx); ok && tx != nil {
 		return &SqlxTx{tx}

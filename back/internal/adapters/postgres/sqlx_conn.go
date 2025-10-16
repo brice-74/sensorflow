@@ -45,7 +45,7 @@ func (s *SqlxConnManager) WithConnection(ctx context.Context, fn func(ctx contex
 	return fn(ctx)
 }
 
-// Connection returns the current connection and a release function.
+// Connection returns a new connection has context value and a release function.
 // Caller must call releaseFn() when done.
 func (s *SqlxConnManager) Connection(ctx context.Context) (func() error, context.Context, error) {
 	conn, err := s.db.Connx(ctx)

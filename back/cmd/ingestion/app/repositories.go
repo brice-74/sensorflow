@@ -13,7 +13,7 @@ type Repositories struct {
 }
 
 func NewRepositories(sqlxDB *sqlx.DB) *Repositories {
-	sqlxRepo := postgres.NewSqlxRepo(sqlxDB)
+	sqlxRepo := &postgres.SqlxRepo{DB: sqlxDB}
 
 	repositories := Repositories{
 		SensorGateway:  repo.NewSensorGateway(sqlxRepo),

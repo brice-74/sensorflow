@@ -5,6 +5,7 @@ import (
 
 	"github.com/brice-74/sensorflow/internal/adapters/postgres"
 	"github.com/brice-74/sensorflow/internal/core/domain"
+	"github.com/brice-74/sensorflow/internal/core/ports"
 	"github.com/brice-74/sensorflow/pkg/errors"
 	"github.com/brice-74/sensorflow/pkg/ulid"
 )
@@ -12,6 +13,8 @@ import (
 type SensorGateway struct {
 	*postgres.SqlxRepo
 }
+
+var _ ports.SensorGatewayRepo = (*SensorGateway)(nil)
 
 func NewSensorGateway(repo *postgres.SqlxRepo) *SensorGateway {
 	return &SensorGateway{repo}

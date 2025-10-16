@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestZeroLogger(t *testing.T) {
+func TestLogger(t *testing.T) {
 	var buf bytes.Buffer
 	logger := zerologadapter.NewLogger(zerolog.New(&buf))
 
