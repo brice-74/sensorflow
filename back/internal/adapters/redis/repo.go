@@ -30,7 +30,3 @@ func (r *Repo) Cmdable(ctx context.Context) redis.Cmdable {
 	}
 	return r.UnaryCmdable(ctx)
 }
-
-func (r *Repo) StringCmd(ctx context.Context, key string) *redis.StringCmd {
-	return r.Cmdable(ctx).Get(ctx, key)
-}

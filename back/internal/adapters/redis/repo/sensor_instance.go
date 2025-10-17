@@ -3,16 +3,15 @@ package repo
 import (
 	"context"
 
+	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/core/ports"
+	"github.com/brice-74/sensorflow/pkg/gobutil"
 	"github.com/brice-74/sensorflow/pkg/ulid"
 
 	redisadapter "github.com/brice-74/sensorflow/internal/adapters/redis"
-	"github.com/brice-74/sensorflow/pkg/gobutil"
 	"github.com/redis/go-redis/v9"
 )
-
-const SensorInstanceKey redisadapter.EntityKey = "sensor_instance"
 
 type SensorInstance struct {
 	*redisadapter.Repo
@@ -26,65 +25,41 @@ func NewSensorInstance(repo *redisadapter.Repo) *SensorInstance {
 	}
 }
 
-func (r *SensorInstance) CmdListIDsByGatewayID(ctx context.Context, gatewayID ulid.ULID) *redis.StringSliceCmd {
-	cmdable := r.Cmdable(ctx)
-	relationKey := redisadapter.FormatHasManyKey(
-		SensorGatewayKey, gatewayID.String(), SensorInstanceKey,
+func (*SensorInstance) cmdListIDsByGatewayID(ctx context.Context, cmdable redis.Cmdable, gatewayID ulid.ULID) *redis.StringSliceCmd {
+	relationKey := cache.FormatHasManyKey(
+		cache.SensorGatewayKey, gatewayID.String(), cache.SensorInstanceKey,
 	)
 	return cmdable.SMembers(ctx, relationKey)
 }
 
-func (r *SensorInstance) CmdGetMany(ctx context.Context, ids []string) *redis.SliceCmd {
-	cmdable := r.Cmdable(ctx)
+func (r *SensorInstance) CmdListIDsByGatewayID(ctx context.Context, gatewayID ulid.ULID) *redis.StringSliceCmd {
+	return r.cmdListIDsByGatewayID(ctx, r.Cmdable(ctx), gatewayID)
+}
 
+func (*SensorInstance) cmdGetByIDs(ctx context.Context, cmdable redis.Cmdable, ids []string) *redis.SliceCmd {
 	keys := make([]string, len(ids))
 	for i, id := range ids {
-		keys[i] = redisadapter.FormatEntityKey(SensorInstanceKey, id)
+		keys[i] = cache.FormatEntityKey(cache.SensorInstanceKey, id)
 	}
-
 	return cmdable.MGet(ctx, keys...)
 }
 
+func (r *SensorInstance) CmdGetByIDs(ctx context.Context, ids []string) *redis.SliceCmd {
+	return r.cmdGetByIDs(ctx, r.Cmdable(ctx), ids)
+}
+
 func (r *SensorInstance) ListByGatewayID(ctx context.Context, gatewayID ulid.ULID) ([]*domain.SensorInstance, error) {
-	cmdable := r.Cmdable(ctx)
-
-	relationKey := redisadapter.FormatHasManyKey(
-		SensorGatewayKey, gatewayID.String(), SensorInstanceKey,
-	)
-
-	ids, err := cmdable.SMembers(ctx, relationKey).Result()
-	if err != nil {
+	idsCmd := r.cmdListIDsByGatewayID(ctx, r.UnaryCmdable(ctx), gatewayID)
+	ids, err := idsCmd.Result()
+	if err != nil || len(ids) == 0 {
 		return nil, err
 	}
-	if len(ids) == 0 {
-		return nil, nil
-	}
 
-	keys := make([]string, len(ids))
-	for i, id := range ids {
-		keys[i] = redisadapter.FormatEntityKey(SensorInstanceKey, id)
-	}
-
-	values, err := cmdable.MGet(ctx, keys...).Result()
+	valuesCmd := r.cmdGetByIDs(ctx, r.UnaryCmdable(ctx), ids)
+	values, err := valuesCmd.Result()
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]*domain.SensorInstance, 0, len(values))
-	for _, val := range values {
-		if val == nil {
-			continue
-		}
-		str, ok := val.(string)
-		if !ok {
-			continue
-		}
-		inst, err := gobutil.Decode[domain.SensorInstance]([]byte(str))
-		if err != nil {
-			continue
-		}
-		result = append(result, inst)
-	}
-
-	return result, nil
+	return gobutil.DecodeManyAnyStr[domain.SensorInstance](values)
 }

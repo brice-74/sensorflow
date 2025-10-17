@@ -3,6 +3,7 @@ package repo
 import (
 	"context"
 
+	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/core/ports"
 	"github.com/brice-74/sensorflow/pkg/gobutil"
@@ -11,8 +12,6 @@ import (
 
 	redisadapter "github.com/brice-74/sensorflow/internal/adapters/redis"
 )
-
-const SensorGatewayKey redisadapter.EntityKey = "sensor_gateway"
 
 type SensorGateway struct {
 	*redisadapter.Repo
@@ -26,12 +25,16 @@ func NewSensorGateway(repo *redisadapter.Repo) *SensorGateway {
 	}
 }
 
+func (*SensorGateway) cmdGetOneByID(ctx context.Context, cmdable redis.Cmdable, ID ulid.ULID) *redis.StringCmd {
+	return cmdable.Get(ctx, cache.FormatEntityKey(cache.SensorGatewayKey, ID.String()))
+}
+
 func (r *SensorGateway) CmdGetOneByID(ctx context.Context, ID ulid.ULID) *redis.StringCmd {
-	return r.StringCmd(ctx, redisadapter.FormatEntityKey(SensorGatewayKey, ID.String()))
+	return r.cmdGetOneByID(ctx, r.Cmdable(ctx), ID)
 }
 
 func (r *SensorGateway) GetOneByID(ctx context.Context, ID ulid.ULID) (*domain.SensorGateway, error) {
-	res, err := r.CmdGetOneByID(ctx, ID).Result()
+	res, err := r.cmdGetOneByID(ctx, r.UnaryCmdable(ctx), ID).Result()
 	if err != nil {
 		return nil, err
 	}
