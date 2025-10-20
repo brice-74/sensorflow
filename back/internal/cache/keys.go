@@ -7,7 +7,7 @@ import (
 type EntityKey string
 
 // result -> entity:identifier
-func FormatEntityKey(entity EntityKey, identifier string) string {
+func FormatKey(entity EntityKey, identifier string) string {
 	var b strings.Builder
 	b.Grow(len(entity) + len(identifier) + 1)
 	b.WriteString(string(entity))

@@ -42,6 +42,14 @@ func (id *ULID) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func ToStrings(ids []ULID) []string {
+	out := make([]string, len(ids))
+	for i, id := range ids {
+		out[i] = id.String()
+	}
+	return out
+}
+
 // Helpers to avoid importing the stdlib "github.com/oklog/ulid/v2".
 
 func Parse(ulidstr string) (ULID, error) {
