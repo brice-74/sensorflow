@@ -8,8 +8,9 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// All Redis helpers methods that begin with Cmd are designed to be used in all contexts, including pipelines.
-// The others are designed for unary calls.
+// All Redis helper methods prefixed with Cmd are intended for use in any context,
+// including pipelines, and therefore require manual execution.
+// Other helper methods are meant for single, unary calls.
 type repo[T any] struct {
 	Client *redis.Client
 	Key    cache.EntityKey
@@ -41,56 +42,56 @@ func (r *repo[_]) Cmdable(ctx context.Context) redis.Cmdable {
 }
 
 //
-// --- Internal Redis helpers ---
+// --- Unexported helpers ---
 //
 
 func (r *repo[T]) cmdGetOneByID(ctx context.Context, cmdable redis.Cmdable, id string) *StringCmd[T] {
 	return &StringCmd[T]{Cmd: cmdable.Get(ctx, cache.FormatKey(r.Key, id))}
 }
 
+func (*repo[T]) cmdGetByIDs(ctx context.Context, cmdable redis.Cmdable, ids []string) *SliceCmd[T] {
+	return &SliceCmd[T]{Cmd: cmdable.MGet(ctx, cache.FormatKeys(cache.SensorInstanceKey, ids)...)}
+}
+
+func (r *repo[T]) cmdListIDsByParentID(ctx context.Context, cmdable redis.Cmdable, id string, relKey cache.EntityKey) *redis.StringSliceCmd {
+	return cmdable.SMembers(ctx, cache.FormatHasManyKey(r.Key, id, relKey))
+}
+
+//
+// --- Commands ---
+//
+
 func (r *repo[T]) CmdGetOneByID(ctx context.Context, id string) *StringCmd[T] {
 	return r.cmdGetOneByID(ctx, r.Cmdable(ctx), id)
-}
-
-func (r *repo[T]) GetOneByID(ctx context.Context, id ulid.ULID) (*T, error) {
-	return r.cmdGetOneByID(ctx, r.UnaryCmdable(ctx), id.String()).Result()
-}
-
-func (*repo[T]) cmdGetByIDs(ctx context.Context, cmdable redis.Cmdable, ids []string) *SliceCmd[T] {
-	keys := make([]string, len(ids))
-	for i, id := range ids {
-		keys[i] = cache.FormatKey(cache.SensorInstanceKey, id)
-	}
-	return &SliceCmd[T]{Cmd: cmdable.MGet(ctx, keys...)}
 }
 
 func (r *repo[T]) CmdGetByIDs(ctx context.Context, ids []string) *SliceCmd[T] {
 	return r.cmdGetByIDs(ctx, r.Cmdable(ctx), ids)
 }
 
+func (r *repo[_]) CmdListIDsByParentID(ctx context.Context, id string, relKey cache.EntityKey) *redis.StringSliceCmd {
+	return r.cmdListIDsByParentID(ctx, r.Cmdable(ctx), id, relKey)
+}
+
+//
+// --- Unary calls ---
+//
+
+func (r *repo[T]) GetOneByID(ctx context.Context, id ulid.ULID) (*T, error) {
+	return r.cmdGetOneByID(ctx, r.UnaryCmdable(ctx), id.String()).Result()
+}
+
 func (r *repo[T]) GetByIDs(ctx context.Context, ids []ulid.ULID) ([]*T, error) {
 	return r.cmdGetByIDs(ctx, r.UnaryCmdable(ctx), ulid.ToStrings(ids)).Result()
 }
 
-func (r *repo[T]) cmdListIDsByParentID(ctx context.Context, cmdable redis.Cmdable, id string, relKey cache.EntityKey) *redis.StringSliceCmd {
-	return cmdable.SMembers(ctx, cache.FormatHasManyKey(
-		r.Key, id, relKey,
-	))
-}
-
-func (r *repo[T]) CmdListIDsByParentID(ctx context.Context, id string, relKey cache.EntityKey) *redis.StringSliceCmd {
-	return r.Cmdable(ctx).SMembers(ctx, cache.FormatHasManyKey(
-		r.Key, id, relKey,
-	))
-}
-
 func (r *repo[T]) GetManyByParentID(ctx context.Context, parentID string, relKey cache.EntityKey) ([]*T, error) {
-	idsCmd := r.cmdListIDsByParentID(ctx, r.UnaryCmdable(ctx), parentID, relKey)
-	ids, err := idsCmd.Result()
+	cmdable := r.UnaryCmdable(ctx)
+
+	ids, err := r.cmdListIDsByParentID(ctx, cmdable, parentID, relKey).Result()
 	if err != nil || len(ids) == 0 {
 		return nil, err
 	}
 
-	valuesCmd := r.cmdGetByIDs(ctx, r.UnaryCmdable(ctx), ids)
-	return valuesCmd.Result()
+	return r.cmdGetByIDs(ctx, cmdable, ids).Result()
 }

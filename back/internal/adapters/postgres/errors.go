@@ -9,8 +9,8 @@ import (
 	"github.com/lib/pq"
 )
 
-// HandleSelectError maps common select errors to your Error codes.
-func HandleSelectError(err error) error {
+// handleSelectError maps common select errors to your Error codes.
+func handleSelectError(err error) error {
 	if err == nil {
 		return nil
 	}
@@ -21,7 +21,7 @@ func HandleSelectError(err error) error {
 }
 
 // expected set less than 0 skips checks related to rows affected
-func HandleResultError(res sql.Result, err error, expected int) error {
+func handleResultError(res sql.Result, err error, expected int) error {
 	if err != nil {
 		return mapDriverError(err)
 	}

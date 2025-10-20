@@ -3,8 +3,8 @@ package repo
 import (
 	"context"
 
-	pgrepo "github.com/brice-74/sensorflow/internal/adapters/postgres/repo"
-	redisrepo "github.com/brice-74/sensorflow/internal/adapters/redis/repo"
+	"github.com/brice-74/sensorflow/internal/adapters/postgres"
+	"github.com/brice-74/sensorflow/internal/adapters/redis"
 	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/core/ports"
@@ -12,8 +12,8 @@ import (
 )
 
 type SensorGateway struct {
-	dbRepo      *pgrepo.SensorGateway
-	redisRepo   *redisrepo.SensorGateway
+	dbRepo      *postgres.SensorGateway
+	redisRepo   *redis.SensorGateway
 	localCache  cache.Local[string, *domain.SensorGateway]
 	invalidator cache.Invalidator[string]
 }
@@ -25,7 +25,7 @@ func NewSensorGateway() *SensorGateway {
 }
 
 func (r *SensorGateway) GetOneByID(ctx context.Context, id ulid.ULID) (*domain.SensorGateway, error) {
-	key := cache.FormatEntityKey(cache.SensorGatewayKey, id.String())
+	key := cache.FormatKey(cache.SensorGatewayKey, id.String())
 
 	if val, ok := r.localCache.Get(key); ok {
 		return val, nil

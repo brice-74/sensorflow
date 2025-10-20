@@ -1,9 +1,8 @@
-package repo
+package postgres
 
 import (
 	"context"
 
-	"github.com/brice-74/sensorflow/internal/adapters/postgres"
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/core/ports"
 	"github.com/brice-74/sensorflow/pkg/errors"
@@ -11,12 +10,12 @@ import (
 )
 
 type SensorGateway struct {
-	*postgres.SqlxRepo
+	*SqlxRepo
 }
 
 var _ ports.SensorGatewayRepo = (*SensorGateway)(nil)
 
-func NewSensorGateway(repo *postgres.SqlxRepo) *SensorGateway {
+func NewSensorGateway(repo *SqlxRepo) *SensorGateway {
 	return &SensorGateway{repo}
 }
 
@@ -36,7 +35,7 @@ func (r *SensorGateway) GetOneByID(ctx context.Context, ID ulid.ULID) (*domain.S
 			sensorGatewayGetOneByIDQuery,
 			ID,
 		)
-	if err = postgres.HandleSelectError(err); err != nil {
+	if err = handleSelectError(err); err != nil {
 		return nil, errors.WrapErr(err)
 	}
 
