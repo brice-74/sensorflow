@@ -62,3 +62,27 @@ func WrapMsg(msg string) error {
 func WrapMsgf(format string, args ...any) error {
 	return wrap(fmt.Errorf(format, args...), "", 3)
 }
+
+func JoinWrap(errs ...error) error {
+	n := 0
+	for _, err := range errs {
+		if err != nil {
+			n++
+		}
+	}
+	if n == 0 {
+		return nil
+	}
+
+	fn := getCallerFuncName(2)
+
+	wrapped := make([]error, n)
+	for i, err := range errs {
+		if err == nil {
+			continue
+		}
+		wrapped[i] = fmt.Errorf("%s: %w", fn, err)
+	}
+
+	return errors.Join(wrapped...)
+}
