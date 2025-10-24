@@ -16,21 +16,10 @@ func GetSqlxConn(ctx context.Context) (*sqlx.Conn, bool) {
 	return conn, ok
 }
 
-type SqlxConnManager struct {
-	db *sqlx.DB
-}
-
-func NewSqlxConnManager(db *sqlx.DB) *SqlxConnManager {
-	if db == nil {
-		panic("*sqlx.DB cannot be nil")
-	}
-	return &SqlxConnManager{db}
-}
-
 // WithConnection acquires a connection and executes the given function with it.
 // The connection is released after the function returns, even in case of error or panic.
-func (s *SqlxConnManager) WithConnection(ctx context.Context, fn func(ctx context.Context) error) (err error) {
-	conn, err := s.db.Connx(ctx)
+func WithConnection(ctx context.Context, db *sqlx.DB, fn func(ctx context.Context) error) (err error) {
+	conn, err := db.Connx(ctx)
 	if err != nil {
 		return errors.Wrap(err, "get *sqlx.Conn")
 	}
@@ -47,8 +36,8 @@ func (s *SqlxConnManager) WithConnection(ctx context.Context, fn func(ctx contex
 
 // Connection returns a new connection has context value and a release function.
 // Caller must call releaseFn() when done.
-func (s *SqlxConnManager) Connection(ctx context.Context) (func() error, context.Context, error) {
-	conn, err := s.db.Connx(ctx)
+func Connection(ctx context.Context, db *sqlx.DB) (func() error, context.Context, error) {
+	conn, err := db.Connx(ctx)
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "get *sqlx.Conn")
 	}

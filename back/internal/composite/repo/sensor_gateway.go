@@ -1,17 +1,25 @@
 package repo
 
-import (
-	"context"
+/* type SensorGateway struct {
+	LayeredFallbackRead[domain.SensorGateway, *redis.SensorGateway, *postgres.SensorGateway]
+}
 
-	"github.com/brice-74/sensorflow/internal/adapters/postgres"
-	"github.com/brice-74/sensorflow/internal/adapters/redis"
-	"github.com/brice-74/sensorflow/internal/cache"
-	"github.com/brice-74/sensorflow/internal/core/domain"
-	"github.com/brice-74/sensorflow/internal/core/ports"
-	"github.com/brice-74/sensorflow/pkg/ulid"
-)
+var _ ports.SensorGatewayRepo = (*SensorGateway)(nil)
 
-type SensorGateway struct {
+func NewSensorGateway() *SensorGateway {
+	return &SensorGateway{}
+}
+
+type SensorInstance struct {
+	LayeredFallbackRead[domain.SensorInstance, *redis.SensorInstance, *postgres.SensorInstance]
+}
+
+func (r *SensorInstance) ListByGatewayID(ctx context.Context, gatewayID ulid.ULID) ([]*domain.SensorInstance, error) {
+	instances, err := r.RedisRepo.ListByGatewayID(ctx, gatewayID)
+	if err != nil
+}
+*/
+/* type SensorGateway struct {
 	dbRepo      *postgres.SensorGateway
 	redisRepo   *redis.SensorGateway
 	localCache  cache.Local[string, *domain.SensorGateway]
@@ -44,3 +52,4 @@ func (r *SensorGateway) GetOneByID(ctx context.Context, id ulid.ULID) (*domain.S
 	r.localCache.Set(key, val)
 	return val, nil
 }
+*/
