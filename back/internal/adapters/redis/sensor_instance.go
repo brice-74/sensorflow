@@ -25,8 +25,8 @@ func NewSensorInstance(client *redis.Client) *SensorInstance {
 	}
 }
 
-func (r *SensorInstance) CmdListIDsByGatewayID(ctx context.Context, gatewayID ulid.ULID) *redis.StringSliceCmd {
-	return r.CmdListIDsByParentID(ctx, gatewayID.String(), cache.SensorGatewayKey)
+func (r *SensorInstance) CmdListIDsByGatewayID(ctx context.Context, gatewayID string) *redis.StringSliceCmd {
+	return r.CmdListIDsByParentID(ctx, gatewayID, cache.SensorGatewayKey)
 }
 
 func (r *SensorInstance) ListByGatewayID(ctx context.Context, gatewayID ulid.ULID) ([]*domain.SensorInstance, error) {
