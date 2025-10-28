@@ -1,35 +1,48 @@
 package errors
 
-import "fmt"
+import (
+	"fmt"
+)
+
+var (
+	ErrInternal         error = &Error{Code: CodeInternal}
+	ErrNotFound         error = &Error{Code: CodeNotFound}
+	ErrAlreadyExists    error = &Error{Code: CodeAlreadyExists}
+	ErrInvalidReference error = &Error{Code: CodeInvalidReference}
+	ErrInvalidInput     error = &Error{Code: CodeInvalidInput}
+	ErrUnexpectedRows   error = &Error{Code: CodeUnexpectedRows}
+	ErrTimeout          error = &Error{Code: CodeTimeout}
+	ErrCanceled         error = &Error{Code: CodeCanceled}
+)
 
 type Code uint8
 
 const (
-	ErrInternal Code = iota
-	ErrNotFound
-	ErrAlreadyExists
-	ErrInvalidReference
-	ErrInvalidInput
-	ErrUnexpectedRows
-	ErrTimeout
-	ErrCanceled
+	CodeInternal Code = iota
+	CodeNotFound
+	CodeAlreadyExists
+	CodeInvalidReference
+	CodeInvalidInput
+	CodeUnexpectedRows
+	CodeTimeout
+	CodeCanceled
 )
 
 func (c Code) String() string {
 	switch c {
-	case ErrNotFound:
+	case CodeNotFound:
 		return "NotFound"
-	case ErrAlreadyExists:
+	case CodeAlreadyExists:
 		return "AlreadyExists"
-	case ErrInvalidReference:
+	case CodeInvalidReference:
 		return "InvalidReference"
-	case ErrInvalidInput:
+	case CodeInvalidInput:
 		return "InvalidInput"
-	case ErrUnexpectedRows:
+	case CodeUnexpectedRows:
 		return "UnexpectedRows"
-	case ErrTimeout:
+	case CodeTimeout:
 		return "Timeout"
-	case ErrCanceled:
+	case CodeCanceled:
 		return "Canceled"
 	default:
 		return "Internal"
@@ -51,6 +64,14 @@ func (e *Error) Error() string {
 
 func (e *Error) Unwrap() error {
 	return e.Err
+}
+
+func (e *Error) Is(target error) bool {
+	t, ok := target.(*Error)
+	if !ok {
+		return false
+	}
+	return e.Code == t.Code
 }
 
 func NewError(code Code, err error, details map[string]any) *Error {

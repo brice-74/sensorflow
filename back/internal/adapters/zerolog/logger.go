@@ -62,6 +62,11 @@ func (l *Logger) Info(msg string, opts ...log.Option) {
 	zlog.Info().Msg(msg)
 }
 
+func (l *Logger) Warn(err error, opts ...log.Option) {
+	zlog := applyOptions(l.zlog, opts...)
+	zlog.Warn().Err(err).Msg("")
+}
+
 func (l *Logger) Error(err error, opts ...log.Option) {
 	zlog := applyOptions(l.zlog, opts...)
 	zlog.Error().Err(err).Msg("")

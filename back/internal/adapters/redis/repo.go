@@ -90,11 +90,13 @@ func (r *repo[_]) CmdListIDsByParentID(ctx context.Context, id string, relKey ca
 //
 
 func (r *repo[T]) GetOneByID(ctx context.Context, id ulid.ULID) (*T, error) {
-	return r.cmdGetOneByID(ctx, r.UnaryCmdable(ctx), id.String()).Result()
+	res, err := r.cmdGetOneByID(ctx, r.UnaryCmdable(ctx), id.String()).Result()
+	return res, HandleError(err)
 }
 
 func (r *repo[T]) GetByIDs(ctx context.Context, ids []ulid.ULID) ([]*T, error) {
-	return r.cmdGetByIDs(ctx, r.UnaryCmdable(ctx), ulid.ToStrings(ids)).Result()
+	res, err := r.cmdGetByIDs(ctx, r.UnaryCmdable(ctx), ulid.ToStrings(ids)).Result()
+	return res, HandleError(err)
 }
 
 func (r *repo[T]) GetManyByParentID(ctx context.Context, parentID string, relKey cache.EntityKey) ([]*T, error) {
@@ -102,8 +104,9 @@ func (r *repo[T]) GetManyByParentID(ctx context.Context, parentID string, relKey
 
 	ids, err := r.cmdListIDsByParentID(ctx, cmdable, parentID, relKey).Result()
 	if err != nil || len(ids) == 0 {
-		return nil, err
+		return nil, HandleError(err)
 	}
 
-	return r.cmdGetByIDs(ctx, cmdable, ids).Result()
+	res, err := r.cmdGetByIDs(ctx, cmdable, ids).Result()
+	return res, HandleError(err)
 }

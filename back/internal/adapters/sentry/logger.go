@@ -70,6 +70,12 @@ func (l *Logger) Info(msg string, opts ...log.Option) {
 	l.hub.CaptureMessage(msg)
 }
 
+func (l *Logger) Warn(err error, opts ...log.Option) {
+	l.applyOptions(opts...)
+	l.hub.Scope().SetLevel(sentry.LevelWarning)
+	l.hub.CaptureException(err)
+}
+
 func (l *Logger) Error(err error, opts ...log.Option) {
 	l.applyOptions(opts...)
 	l.hub.Scope().SetLevel(sentry.LevelError)

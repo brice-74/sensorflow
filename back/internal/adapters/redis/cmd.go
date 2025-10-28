@@ -11,7 +11,7 @@ type StringCmd[T any] struct {
 
 func (cmd StringCmd[T]) Result() (*T, error) {
 	str, err := cmd.Cmd.Result()
-	if err != nil {
+	if err = HandleError(err); err != nil {
 		return nil, err
 	}
 	return gobutil.Decode[T]([]byte(str))
@@ -23,7 +23,7 @@ type SliceCmd[T any] struct {
 
 func (cmd SliceCmd[T]) Result() ([]*T, error) {
 	slice, err := cmd.Cmd.Result()
-	if err != nil {
+	if err = HandleError(err); err != nil {
 		return nil, err
 	}
 	return gobutil.DecodeManyAnyStr[T](slice)

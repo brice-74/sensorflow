@@ -16,6 +16,7 @@ type Option interface {
 type Logger interface {
 	//	Record a given message or error with optional contextual datas.
 	Info(msg string, opts ...Option)
+	Warn(err error, opts ...Option)
 	Error(err error, opts ...Option)
 	Fatal(err error, opts ...Option)
 	// The aim of this method is to clone the logger and to be able to introduce

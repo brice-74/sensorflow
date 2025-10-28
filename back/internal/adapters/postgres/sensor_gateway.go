@@ -5,7 +5,6 @@ import (
 
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/core/ports"
-	"github.com/brice-74/sensorflow/pkg/errors"
 	"github.com/brice-74/sensorflow/pkg/ulid"
 )
 
@@ -36,7 +35,7 @@ func (r *SensorGateway) GetOneByID(ctx context.Context, ID ulid.ULID) (*domain.S
 			ID,
 		)
 	if err = handleSelectError(err); err != nil {
-		return nil, errors.WrapErr(err)
+		return nil, err
 	}
 
 	return gateway, nil

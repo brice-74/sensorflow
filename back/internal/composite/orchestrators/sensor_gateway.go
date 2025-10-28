@@ -7,6 +7,8 @@ import (
 	redisadapter "github.com/brice-74/sensorflow/internal/adapters/redis"
 	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
+	"github.com/brice-74/sensorflow/internal/log"
+	"github.com/brice-74/sensorflow/pkg/errors"
 	"github.com/brice-74/sensorflow/pkg/ulid"
 )
 
@@ -17,65 +19,149 @@ type SensorGateway struct {
 	RedisInstanceRepo redisadapter.SensorInstance
 	LocalCache        cache.Local[*domain.SensorGateway]
 	Invalidator       cache.InvalidatorPublisher[string]
+	Logger            log.Logger
 }
 
 func (o *SensorGateway) GetOneWithInstances(ctx context.Context, ID ulid.ULID) (*domain.SensorGateway, error) {
 	strID := ID.String()
-	if v, found := o.LocalCache.Get(
-		cache.FormatHydratedKey(cache.SensorGatewayKey, strID, cache.WithSensorInstancesKey),
-	); found {
+	hydratedKey := cache.FormatHydratedKey(cache.SensorGatewayKey, strID, cache.WithSensorInstancesKey)
+
+	if v, ok := o.LocalCache.Get(hydratedKey); ok {
 		return v, nil
 	}
 
 	var (
-		sensorInstanceIds []string
-		sensorgateway     *domain.SensorGateway
-		errs              []error
-		err               error
+		redisErrors []error
+
+		gateway             *domain.SensorGateway
+		gotGatewayFromRedis bool
+
+		instanceIDs     []string
+		gotIDsFromRedis bool
+
+		instances             []*domain.SensorInstance
+		gotInstancesFromRedis bool
 	)
 
 	pipe := o.RedisRepo.Client.Pipeline()
-	ctx = redisadapter.WithPipeline(ctx, pipe)
+	ctxPipe := redisadapter.WithPipeline(ctx, pipe)
 
-	sensorGatewayCmd := o.RedisRepo.CmdGetOneByID(ctx, strID)
-	sensorInstancesIdsCmd := o.RedisInstanceRepo.CmdListIDsByGatewayID(ctx, strID)
-	if _, err := pipe.Exec(ctx); err != nil {
-		errs = append(errs, redisadapter.HandleError(err))
+	gatewayCmd := o.RedisRepo.CmdGetOneByID(ctxPipe, strID)
+	idsCmd := o.RedisInstanceRepo.CmdListIDsByGatewayID(ctxPipe, strID)
+
+	if _, err := pipe.Exec(ctxPipe); err != nil {
+		redisErrors = append(redisErrors, redisadapter.HandleError(err))
 	}
 
-	sensorgateway, err = sensorGatewayCmd.Result()
+	if g, err := gatewayCmd.Result(); err == nil {
+		gateway = g
+		gotGatewayFromRedis = true
+	} else {
+		if appErr := redisadapter.HandleError(err); appErr != nil {
+			if errors.Is(appErr, errors.ErrNotFound) {
+				gotGatewayFromRedis = false
+			} else {
+				redisErrors = append(redisErrors, appErr)
+			}
+		} else {
+			gotGatewayFromRedis = false
+		}
+	}
+
+	if ids, err := idsCmd.Result(); err == nil {
+		instanceIDs = ids
+		gotIDsFromRedis = true
+	} else {
+		if appErr := redisadapter.HandleError(err); appErr != nil {
+			if errors.Is(appErr, errors.ErrNotFound) {
+				gotIDsFromRedis = false
+			} else {
+				redisErrors = append(redisErrors, appErr)
+			}
+		} else {
+			gotIDsFromRedis = false
+		}
+	}
+
+	if gotIDsFromRedis && len(instanceIDs) > 0 {
+		pipe2 := o.RedisInstanceRepo.Client.Pipeline()
+		ctxPipe2 := redisadapter.WithPipeline(ctx, pipe2)
+
+		instancesCmd := o.RedisInstanceRepo.CmdGetByIDs(ctxPipe2, instanceIDs)
+
+		if _, err := pipe2.Exec(ctxPipe2); err != nil {
+			redisErrors = append(redisErrors, redisadapter.HandleError(err))
+		}
+
+		if vals, err := instancesCmd.Result(); err == nil {
+			instances = vals
+			gotInstancesFromRedis = true
+		} else {
+			if appErr := redisadapter.HandleError(err); appErr != nil {
+				if errors.Is(appErr, errors.ErrNotFound) {
+					gotInstancesFromRedis = false
+				} else {
+					redisErrors = append(redisErrors, appErr)
+				}
+			} else {
+				gotInstancesFromRedis = false
+			}
+		}
+	} else if gotIDsFromRedis && len(instanceIDs) == 0 {
+		gotInstancesFromRedis = true
+		instances = nil
+	}
+
+	if gotGatewayFromRedis {
+		if gotInstancesFromRedis {
+			gateway.SensorInstances = instances
+			o.LocalCache.Set(hydratedKey, gateway)
+
+			// Log redis warnings but don't fail the call
+			/* if len(redisErrors) > 0 {
+				o.Logger.Warn("partial redis errors while fetching gateway",
+					log.Tags{"gateway_id": strID, "warnings": redisErrors})
+			} */
+			return gateway, nil
+		}
+
+		insts, err := o.DBInstanceRepo.ListByGatewayID(ctx, ID)
+		if err != nil {
+			return nil, errors.WrapErr(err)
+		}
+
+		gateway.SensorInstances = insts
+		o.LocalCache.Set(hydratedKey, gateway)
+
+		// async: repopulate redis (non-blocking)
+		/* o.safeAsync("redis_repopulate_after_db_instances", func() {
+			_ = o.RedisInstanceRepo.SetMany(ctx, insts)
+			_ = o.RedisInstanceRepo.SetIDsByGatewayID(ctx, strID, insts)
+			_ = o.RedisRepo.SetOne(ctx, gateway)
+		}) */
+		return gateway, nil
+	}
+
+	gwFromDB, err := o.DBRepo.GetOneByID(ctx, ID)
 	if err != nil {
-
+		return nil, errors.WrapErr(err)
 	}
-	sensorInstanceIds, err = sensorInstancesIdsCmd.Result()
+
+	instsFromDB, err := o.DBInstanceRepo.ListByGatewayID(ctx, ID)
 	if err != nil {
-
+		return nil, errors.WrapErr(err)
 	}
 
-	// si on a bien la liste d'ids
-	sensorInstancesCmd := o.RedisInstanceRepo.CmdGetByIDs(ctx, sensorInstanceIds)
-	if _, err := pipe.Exec(ctx); err != nil {
-		errs = append(errs, redisadapter.HandleError(err))
-	}
-	sensorgateway.SensorInstances, err = sensorInstancesCmd.Result()
-	if err != nil {
+	gwFromDB.SensorInstances = instsFromDB
+	o.LocalCache.Set(hydratedKey, gwFromDB)
 
-	}
-	// si on a bienj les insatnces on retourne
+	// async cache population
+	/* o.safeAsync("redis_populate_after_db_fetch", func() {
 
-	// si sensor gateway et insatnces ne sont pas trouver depuis les cache, on lance une connexion sql commune pour faire passer les deux requetes sur la meme
+		_ = o.RedisRepo.SetOne(ctx, gwFromDB)
+		_ = o.RedisInstanceRepo.SetMany(ctx, instsFromDB)
+		_ = o.RedisInstanceRepo.SetIDsByGatewayID(ctx, strID, instsFromDB)
+	}) */
 
-	// si on a pas le gateway on va en db
-	sensorgateway, err = o.DBRepo.GetOneByID(ctx, ID)
-	if err != nil {
-		// on aura une erreru et le sensorgateway nil
-	}
-
-	// si on a pas les instances
-	sensorgateway.SensorInstances, err = o.DBInstanceRepo.ListByGatewayID(ctx, ID)
-	if err != nil {
-		// on aura une erreru et le sensorgateway nil
-	}
-
-	return nil, nil
+	return gwFromDB, nil
 }

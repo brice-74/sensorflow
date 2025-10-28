@@ -59,10 +59,10 @@ endef
 .PHONY: test/unit test/integration/postgres clean/testcache
 
 test/unit: clean/testcache
-	$(call gotest,unit,$(func),$(path))
+	@$(call gotest,unit,$(func),$(path))
 
 test/integration/postgres: clean/testcache
-	$(call gotest,integration_postgres,$(func),$(path))
+	@$(call gotest,integration_postgres,$(func),$(path))
 
 define gotest
 	@cd ./back && go test -p 1 -v -vet=off \
@@ -73,7 +73,7 @@ define gotest
 endef
 
 clean/testcache:
-	go clean -testcache
+	@go clean -testcache
 
 
 #-----------------------------------------------------------------#

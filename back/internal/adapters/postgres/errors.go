@@ -15,7 +15,7 @@ func handleSelectError(err error) error {
 		return nil
 	}
 	if errors.Is(err, sql.ErrNoRows) {
-		return errors.NewError(errors.ErrNotFound, err, nil)
+		return errors.NewWrappedErr(errors.CodeNotFound, err, nil)
 	}
 	return mapDriverError(err)
 }
@@ -35,11 +35,11 @@ func handleResultError(res sql.Result, err error, expected int) error {
 	}
 
 	if rows == 0 && expected > 0 {
-		return errors.NewError(errors.ErrNotFound, nil, nil)
+		return errors.NewWrappedErr(errors.CodeNotFound, nil, nil)
 	}
 
 	if expected > 0 && int(rows) != expected {
-		return errors.NewError(errors.ErrUnexpectedRows,
+		return errors.NewWrappedErr(errors.CodeUnexpectedRows,
 			fmt.Errorf("expected %d rows affected, got %d", expected, rows),
 			map[string]any{"expected": expected, "got": rows})
 	}
@@ -51,20 +51,20 @@ func handleResultError(res sql.Result, err error, expected int) error {
 func mapDriverError(err error) error {
 	switch {
 	case errors.Is(err, context.DeadlineExceeded):
-		return errors.NewError(errors.ErrTimeout, err, nil)
+		return errors.NewWrappedErr(errors.CodeTimeout, err, nil)
 	case errors.Is(err, context.Canceled):
-		return errors.NewError(errors.ErrCanceled, err, nil)
+		return errors.NewWrappedErr(errors.CodeCanceled, err, nil)
 	}
 
 	var pqErr *pq.Error
 	if errors.As(err, &pqErr) {
 		switch pqErr.Code {
 		case "23505":
-			return errors.NewError(errors.ErrAlreadyExists, err, nil)
+			return errors.NewWrappedErr(errors.CodeAlreadyExists, err, nil)
 		case "23503":
-			return errors.NewError(errors.ErrInvalidReference, err, nil)
+			return errors.NewWrappedErr(errors.CodeInvalidReference, err, nil)
 		case "23502", "23514":
-			return errors.NewError(errors.ErrInvalidInput, err, nil)
+			return errors.NewWrappedErr(errors.CodeInvalidInput, err, nil)
 		}
 	}
 
