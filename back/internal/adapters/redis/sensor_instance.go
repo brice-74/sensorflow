@@ -5,7 +5,7 @@ import (
 
 	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
-	"github.com/brice-74/sensorflow/internal/core/ports"
+	"github.com/brice-74/sensorflow/internal/ports"
 	"github.com/brice-74/sensorflow/pkg/ulid"
 	"github.com/redis/go-redis/v9"
 )
@@ -14,7 +14,7 @@ type SensorInstance struct {
 	repo[domain.SensorInstance]
 }
 
-var _ ports.SensorInstanceRepo = (*SensorInstance)(nil)
+var _ ports.SensorInstanceRepository = (*SensorInstance)(nil)
 
 func NewSensorInstance(client *redis.Client) *SensorInstance {
 	return &SensorInstance{

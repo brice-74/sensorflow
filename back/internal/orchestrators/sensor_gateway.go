@@ -8,25 +8,27 @@ import (
 	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/log"
+	"github.com/brice-74/sensorflow/internal/ports"
 	"github.com/brice-74/sensorflow/pkg/errors"
 	"github.com/brice-74/sensorflow/pkg/ulid"
 )
 
 type SensorGateway struct {
-	DBRepo            postgres.SensorGateway
-	DBInstanceRepo    postgres.SensorInstance
-	RedisRepo         redisadapter.SensorGateway
-	RedisInstanceRepo redisadapter.SensorInstance
-	LocalCache        cache.Local[*domain.SensorGateway]
-	Invalidator       cache.InvalidatorPublisher[string]
-	Logger            log.Logger
+	dbRepo            postgres.SensorGateway
+	dbInstanceRepo    postgres.SensorInstance
+	redisRepo         redisadapter.SensorGateway
+	redisInstanceRepo redisadapter.SensorInstance
+	localCache        cache.Local[*domain.SensorGateway]
+	invalidator       cache.InvalidatorPublisher[string]
+	logger            log.Logger
+	asyncPool         ports.AsyncSubmitter
 }
 
 func (o *SensorGateway) GetOneWithInstances(ctx context.Context, ID ulid.ULID) (*domain.SensorGateway, error) {
 	strID := ID.String()
 	hydratedKey := cache.FormatHydratedKey(cache.SensorGatewayKey, strID, cache.WithSensorInstancesKey)
 
-	if v, ok := o.LocalCache.Get(hydratedKey); ok {
+	if v, ok := o.localCache.Get(hydratedKey); ok {
 		return v, nil
 	}
 
@@ -43,11 +45,11 @@ func (o *SensorGateway) GetOneWithInstances(ctx context.Context, ID ulid.ULID) (
 		gotInstancesFromRedis bool
 	)
 
-	pipe := o.RedisRepo.Client.Pipeline()
+	pipe := o.redisRepo.Client.Pipeline()
 	ctxPipe := redisadapter.WithPipeline(ctx, pipe)
 
-	gatewayCmd := o.RedisRepo.CmdGetOneByID(ctxPipe, strID)
-	idsCmd := o.RedisInstanceRepo.CmdListIDsByGatewayID(ctxPipe, strID)
+	gatewayCmd := o.redisRepo.CmdGetOneByID(ctxPipe, strID)
+	idsCmd := o.redisInstanceRepo.CmdListIDsByGatewayID(ctxPipe, strID)
 
 	if _, err := pipe.Exec(ctxPipe); err != nil {
 		redisErrors = append(redisErrors, redisadapter.HandleError(err))
@@ -84,10 +86,10 @@ func (o *SensorGateway) GetOneWithInstances(ctx context.Context, ID ulid.ULID) (
 	}
 
 	if gotIDsFromRedis && len(instanceIDs) > 0 {
-		pipe2 := o.RedisInstanceRepo.Client.Pipeline()
+		pipe2 := o.redisInstanceRepo.Client.Pipeline()
 		ctxPipe2 := redisadapter.WithPipeline(ctx, pipe2)
 
-		instancesCmd := o.RedisInstanceRepo.CmdGetByIDs(ctxPipe2, instanceIDs)
+		instancesCmd := o.redisInstanceRepo.CmdGetByIDs(ctxPipe2, instanceIDs)
 
 		if _, err := pipe2.Exec(ctxPipe2); err != nil {
 			redisErrors = append(redisErrors, redisadapter.HandleError(err))
@@ -115,23 +117,24 @@ func (o *SensorGateway) GetOneWithInstances(ctx context.Context, ID ulid.ULID) (
 	if gotGatewayFromRedis {
 		if gotInstancesFromRedis {
 			gateway.SensorInstances = instances
-			o.LocalCache.Set(hydratedKey, gateway)
+			o.localCache.Set(hydratedKey, gateway)
 
 			// Log redis warnings but don't fail the call
 			/* if len(redisErrors) > 0 {
 				o.Logger.Warn("partial redis errors while fetching gateway",
 					log.Tags{"gateway_id": strID, "warnings": redisErrors})
 			} */
+
 			return gateway, nil
 		}
 
-		insts, err := o.DBInstanceRepo.ListByGatewayID(ctx, ID)
+		insts, err := o.dbInstanceRepo.ListByGatewayID(ctx, ID)
 		if err != nil {
 			return nil, errors.WrapErr(err)
 		}
 
 		gateway.SensorInstances = insts
-		o.LocalCache.Set(hydratedKey, gateway)
+		o.localCache.Set(hydratedKey, gateway)
 
 		// async: repopulate redis (non-blocking)
 		/* o.safeAsync("redis_repopulate_after_db_instances", func() {
@@ -142,18 +145,18 @@ func (o *SensorGateway) GetOneWithInstances(ctx context.Context, ID ulid.ULID) (
 		return gateway, nil
 	}
 
-	gwFromDB, err := o.DBRepo.GetOneByID(ctx, ID)
+	gwFromDB, err := o.dbRepo.GetOneByID(ctx, ID)
 	if err != nil {
 		return nil, errors.WrapErr(err)
 	}
 
-	instsFromDB, err := o.DBInstanceRepo.ListByGatewayID(ctx, ID)
+	instsFromDB, err := o.dbInstanceRepo.ListByGatewayID(ctx, ID)
 	if err != nil {
 		return nil, errors.WrapErr(err)
 	}
 
 	gwFromDB.SensorInstances = instsFromDB
-	o.LocalCache.Set(hydratedKey, gwFromDB)
+	o.localCache.Set(hydratedKey, gwFromDB)
 
 	// async cache population
 	/* o.safeAsync("redis_populate_after_db_fetch", func() {

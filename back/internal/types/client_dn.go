@@ -2,15 +2,18 @@ package types
 
 import "fmt"
 
+// ClientDN represents the components of a Distinguished Name (DN)
 type ClientDN struct {
-	CN string
-	OU string
-	O  string
-	L  string
-	ST string
-	C  string
+	CN string // Common Name
+	OU string // Organizational Unit
+	O  string // Organization
+	L  string // Locality
+	ST string // State or Province
+	C  string // Country
 }
 
+// ParseClientDN parses a DN string (e.g., "CN=John,OU=IT,O=Company,L=City,ST=State,C=US")
+// and returns a ClientDN struct or an error if the DN is invalid.
 func ParseClientDN(dn string) (*ClientDN, error) {
 	var res = new(ClientDN)
 	start := 0

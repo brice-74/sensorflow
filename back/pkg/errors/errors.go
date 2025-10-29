@@ -13,6 +13,7 @@ var (
 	ErrUnexpectedRows   error = &Error{Code: CodeUnexpectedRows}
 	ErrTimeout          error = &Error{Code: CodeTimeout}
 	ErrCanceled         error = &Error{Code: CodeCanceled}
+	ErrUnavailable      error = &Error{Code: CodeUnavailable}
 )
 
 type Code uint8
@@ -26,6 +27,7 @@ const (
 	CodeUnexpectedRows
 	CodeTimeout
 	CodeCanceled
+	CodeUnavailable
 )
 
 func (c Code) String() string {
@@ -44,6 +46,8 @@ func (c Code) String() string {
 		return "Timeout"
 	case CodeCanceled:
 		return "Canceled"
+	case CodeUnavailable:
+		return "Unavailable"
 	default:
 		return "Internal"
 	}

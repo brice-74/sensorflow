@@ -10,9 +10,9 @@ import (
 
 type (
 	// Task represents a unit of work to be executed by the pool.
-	Task func()
+	Task = func()
 	// PanicHandler is an optional callback for recovered panics in tasks.
-	PanicHandler func(any)
+	PanicHandler = func(any)
 )
 
 var (
@@ -40,7 +40,7 @@ type WorkerPool struct {
 
 func NewWorkerPool(opts ...Option) *WorkerPool {
 	p := &WorkerPool{
-		minWorkers:  0,
+		minWorkers:  1,
 		maxWorkers:  10,
 		idleTimeout: 5 * time.Second,
 		queueSize:   1000,

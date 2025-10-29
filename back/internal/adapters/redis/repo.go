@@ -8,24 +8,12 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-type Repo[T any] interface {
-	CmdGetByIDs(ctx context.Context, ids []string) *SliceCmd[T]
-	CmdGetOneByID(ctx context.Context, id string) *StringCmd[T]
-	CmdListIDsByParentID(ctx context.Context, id string, relKey cache.EntityKey) *redis.StringSliceCmd
-	Cmdable(ctx context.Context) redis.Cmdable
-	GetByIDs(ctx context.Context, ids []ulid.ULID) ([]*T, error)
-	GetManyByParentID(ctx context.Context, parentID string, relKey cache.EntityKey) ([]*T, error)
-	GetOneByID(ctx context.Context, id ulid.ULID) (*T, error)
-	Pipeline(ctx context.Context) (redis.Pipeliner, bool)
-	UnaryCmdable(ctx context.Context) redis.Cmdable
-}
-
-// All Redis helper methods prefixed with Cmd are intended for use in any context,
+// All Redis helper methods prefixed with 'Cmd' are intended for use in any context,
 // including pipelines, and therefore require manual execution.
 // Other helper methods are meant for single, unary calls.
 type repo[T any] struct {
-	Client *redis.Client
-	Key    cache.EntityKey
+	Rdb *HealthyClient
+	Key cache.EntityKey
 }
 
 //
@@ -36,7 +24,7 @@ func (r *repo[_]) UnaryCmdable(ctx context.Context) redis.Cmdable {
 	if conn, ok := GetConn(ctx); ok && conn != nil {
 		return conn
 	}
-	return r.Client
+	return r.Rdb.Client
 }
 
 func (r *repo[_]) Pipeline(ctx context.Context) (redis.Pipeliner, bool) {
@@ -91,12 +79,12 @@ func (r *repo[_]) CmdListIDsByParentID(ctx context.Context, id string, relKey ca
 
 func (r *repo[T]) GetOneByID(ctx context.Context, id ulid.ULID) (*T, error) {
 	res, err := r.cmdGetOneByID(ctx, r.UnaryCmdable(ctx), id.String()).Result()
-	return res, HandleError(err)
+	return res, r.Rdb.HandleError(err)
 }
 
 func (r *repo[T]) GetByIDs(ctx context.Context, ids []ulid.ULID) ([]*T, error) {
 	res, err := r.cmdGetByIDs(ctx, r.UnaryCmdable(ctx), ulid.ToStrings(ids)).Result()
-	return res, HandleError(err)
+	return res, r.Rdb.HandleError(err)
 }
 
 func (r *repo[T]) GetManyByParentID(ctx context.Context, parentID string, relKey cache.EntityKey) ([]*T, error) {
@@ -104,9 +92,9 @@ func (r *repo[T]) GetManyByParentID(ctx context.Context, parentID string, relKey
 
 	ids, err := r.cmdListIDsByParentID(ctx, cmdable, parentID, relKey).Result()
 	if err != nil || len(ids) == 0 {
-		return nil, HandleError(err)
+		return nil, r.Rdb.HandleError(err)
 	}
 
 	res, err := r.cmdGetByIDs(ctx, cmdable, ids).Result()
-	return res, HandleError(err)
+	return res, r.Rdb.HandleError(err)
 }

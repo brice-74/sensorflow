@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/brice-74/sensorflow/internal/core/domain"
-	"github.com/brice-74/sensorflow/internal/core/ports"
+	"github.com/brice-74/sensorflow/internal/ports"
 	"github.com/brice-74/sensorflow/pkg/ulid"
 )
 
@@ -12,7 +12,7 @@ type SensorInstance struct {
 	*SqlxRepo
 }
 
-var _ ports.SensorInstanceRepo = (*SensorInstance)(nil)
+var _ ports.SensorInstanceRepository = (*SensorInstance)(nil)
 
 func NewSensorInstance(repo *SqlxRepo) *SensorInstance {
 	return &SensorInstance{repo}

@@ -6,24 +6,26 @@ import (
 )
 
 type StringCmd[T any] struct {
-	Cmd *redis.StringCmd
+	Cmd      *redis.StringCmd
+	markDown func()
 }
 
 func (cmd StringCmd[T]) Result() (*T, error) {
 	str, err := cmd.Cmd.Result()
-	if err = HandleError(err); err != nil {
+	if err = HandleError(err, cmd.markDown); err != nil {
 		return nil, err
 	}
 	return gobutil.Decode[T]([]byte(str))
 }
 
 type SliceCmd[T any] struct {
-	Cmd *redis.SliceCmd
+	Cmd      *redis.SliceCmd
+	markDown func()
 }
 
 func (cmd SliceCmd[T]) Result() ([]*T, error) {
 	slice, err := cmd.Cmd.Result()
-	if err = HandleError(err); err != nil {
+	if err = HandleError(err, cmd.markDown); err != nil {
 		return nil, err
 	}
 	return gobutil.DecodeManyAnyStr[T](slice)
