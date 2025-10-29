@@ -7,25 +7,24 @@ import (
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/ports"
 	"github.com/brice-74/sensorflow/pkg/ulid"
-	"github.com/redis/go-redis/v9"
 )
 
 type SensorInstance struct {
-	repo[domain.SensorInstance]
+	repo[ulid.ULID, *domain.SensorInstance[ulid.ULID]]
 }
 
 var _ ports.SensorInstanceRepository = (*SensorInstance)(nil)
 
-func NewSensorInstance(client *redis.Client) *SensorInstance {
+func NewSensorInstance(client *HealthyClient) *SensorInstance {
 	return &SensorInstance{
 		repo: repo[domain.SensorInstance]{
-			Client: client,
-			Key:    cache.SensorInstanceKey,
+			Rdb: client,
+			Key: cache.SensorInstanceKey,
 		},
 	}
 }
 
-func (r *SensorInstance) CmdListIDsByGatewayID(ctx context.Context, gatewayID string) *redis.StringSliceCmd {
+func (r *SensorInstance) CmdListIDsByGatewayID(ctx context.Context, gatewayID string) *StringSliceCmd {
 	return r.CmdListIDsByParentID(ctx, gatewayID, cache.SensorGatewayKey)
 }
 

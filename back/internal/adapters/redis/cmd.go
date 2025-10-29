@@ -5,6 +5,19 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+type StatusCmd struct {
+	Cmd      *redis.StatusCmd
+	markDown func()
+}
+
+func (cmd StatusCmd) Result() (string, error) {
+	str, err := cmd.Cmd.Result()
+	if err = HandleError(err, cmd.markDown); err != nil {
+		return "", err
+	}
+	return str, nil
+}
+
 type StringCmd[T any] struct {
 	Cmd      *redis.StringCmd
 	markDown func()
@@ -29,4 +42,17 @@ func (cmd SliceCmd[T]) Result() ([]*T, error) {
 		return nil, err
 	}
 	return gobutil.DecodeManyAnyStr[T](slice)
+}
+
+type StringSliceCmd struct {
+	Cmd      *redis.StringSliceCmd
+	markDown func()
+}
+
+func (cmd StringSliceCmd) Result() ([]string, error) {
+	slice, err := cmd.Cmd.Result()
+	if err = HandleError(err, cmd.markDown); err != nil {
+		return nil, err
+	}
+	return slice, nil
 }

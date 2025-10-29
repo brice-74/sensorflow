@@ -12,7 +12,7 @@ import (
 // HealthyClient wraps a redis.Client and tracks its health.
 // It marks itself down on request errors and tries to recover using configurable exponential backoff with optional jitter.
 type HealthyClient struct {
-	Client         *redis.Client
+	*redis.Client
 	isDown         atomic.Bool
 	pingTimeout    time.Duration
 	initialBackoff time.Duration

@@ -2,6 +2,7 @@ package redis
 
 import (
 	"context"
+	"time"
 
 	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/pkg/ulid"
@@ -12,8 +13,9 @@ import (
 // including pipelines, and therefore require manual execution.
 // Other helper methods are meant for single, unary calls.
 type repo[T any] struct {
-	Rdb *HealthyClient
-	Key cache.EntityKey
+	Rdb        *HealthyClient
+	Key        cache.EntityKey
+	DefaultTTL time.Duration
 }
 
 //
@@ -45,21 +47,33 @@ func (r *repo[_]) Cmdable(ctx context.Context) redis.Cmdable {
 // --- Unexported helpers ---
 //
 
+func (r *repo[T]) cmdSetOne(ctx context.Context, cmdable redis.Cmdable, id string, entity *T, ttl time.Duration) *StatusCmd {
+	return &StatusCmd{Cmd: cmdable.Set(ctx, cache.FormatKey(r.Key, id), entity, ttl), markDown: r.Rdb.markDown}
+}
+
 func (r *repo[T]) cmdGetOneByID(ctx context.Context, cmdable redis.Cmdable, id string) *StringCmd[T] {
-	return &StringCmd[T]{Cmd: cmdable.Get(ctx, cache.FormatKey(r.Key, id))}
+	return &StringCmd[T]{Cmd: cmdable.Get(ctx, cache.FormatKey(r.Key, id)), markDown: r.Rdb.markDown}
 }
 
-func (*repo[T]) cmdGetByIDs(ctx context.Context, cmdable redis.Cmdable, ids []string) *SliceCmd[T] {
-	return &SliceCmd[T]{Cmd: cmdable.MGet(ctx, cache.FormatKeys(cache.SensorInstanceKey, ids)...)}
+func (r *repo[T]) cmdGetByIDs(ctx context.Context, cmdable redis.Cmdable, ids []string) *SliceCmd[T] {
+	return &SliceCmd[T]{Cmd: cmdable.MGet(ctx, cache.FormatKeys(cache.SensorInstanceKey, ids)...), markDown: r.Rdb.markDown}
 }
 
-func (r *repo[T]) cmdListIDsByParentID(ctx context.Context, cmdable redis.Cmdable, id string, relKey cache.EntityKey) *redis.StringSliceCmd {
-	return cmdable.SMembers(ctx, cache.FormatHasManyKey(r.Key, id, relKey))
+func (r *repo[T]) cmdListIDsByParentID(ctx context.Context, cmdable redis.Cmdable, id string, relKey cache.EntityKey) *StringSliceCmd {
+	return &StringSliceCmd{Cmd: cmdable.SMembers(ctx, cache.FormatHasManyKey(r.Key, id, relKey)), markDown: r.Rdb.markDown}
 }
 
 //
 // --- Commands ---
 //
+
+func (r *repo[T]) CmdSetOne(ctx context.Context, id string, entity *T) *StatusCmd {
+	return r.cmdSetOne(ctx, r.Cmdable(ctx), id, entity, r.DefaultTTL)
+}
+
+func (r *repo[T]) CmdSetOneTTL(ctx context.Context, id string, entity *T, ttl time.Duration) *StatusCmd {
+	return r.cmdSetOne(ctx, r.Cmdable(ctx), id, entity, ttl)
+}
 
 func (r *repo[T]) CmdGetOneByID(ctx context.Context, id string) *StringCmd[T] {
 	return r.cmdGetOneByID(ctx, r.Cmdable(ctx), id)
@@ -69,13 +83,17 @@ func (r *repo[T]) CmdGetByIDs(ctx context.Context, ids []string) *SliceCmd[T] {
 	return r.cmdGetByIDs(ctx, r.Cmdable(ctx), ids)
 }
 
-func (r *repo[_]) CmdListIDsByParentID(ctx context.Context, id string, relKey cache.EntityKey) *redis.StringSliceCmd {
+func (r *repo[_]) CmdListIDsByParentID(ctx context.Context, id string, relKey cache.EntityKey) *StringSliceCmd {
 	return r.cmdListIDsByParentID(ctx, r.Cmdable(ctx), id, relKey)
 }
 
 //
 // --- Unary calls ---
 //
+
+func (r *repo[T]) SetOne(ctx context.Context, id string, entity *T) *StatusCmd {
+	return r.cmdSetOne(ctx, r.Cmdable(ctx), id, entity, r.DefaultTTL)
+}
 
 func (r *repo[T]) GetOneByID(ctx context.Context, id ulid.ULID) (*T, error) {
 	res, err := r.cmdGetOneByID(ctx, r.UnaryCmdable(ctx), id.String()).Result()

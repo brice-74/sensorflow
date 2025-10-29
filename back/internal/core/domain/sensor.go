@@ -33,27 +33,29 @@ func (s SensorStatus) String() string {
 
 // SensorInstance represents an instance of a sensor attached to a device
 type SensorInstance struct {
-	ID                   ulid.ULID `db:"id"`
 	SensorGatewayID      ulid.ULID `db:"sensor_gateway_id"`
 	SensorGateway        *SensorGateway
 	MeasurementProfileID ulid.ULID `db:"measurement_table_id"`
 	MeasurementProfile   *MeasurementProfile
 	Status               SensorStatus `db:"status"`
 	Firmware             *string      `db:"firmware"`
+	common.ULID
 	common.Timestamps
 	common.SoftDelete
+	common.VersionUnix
 }
 
 // Gateway represents a central program or device that collects data from one or multiple sensors
 // and forwards it to the system. It acts as the main entry point for sensor data ingestion.
 type SensorGateway struct {
-	ID              ulid.ULID `db:"id"`
 	TenantID        ulid.ULID `db:"tenant_id"`
 	Tenant          *Tenant
 	Name            string  `db:"name"`
 	Location        *string `db:"location"`
 	Firmware        *string `db:"firmware"`
 	SensorInstances []*SensorInstance
+	common.ULID
 	common.Timestamps
 	common.SoftDelete
+	common.VersionUnix
 }

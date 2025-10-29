@@ -1,18 +1,43 @@
 package common
 
-import "time"
+import (
+	"time"
 
-type Timestamped interface {
-	GetCreatedAt() time.Time
-	GetUpdatedAt() time.Time
-	SetCreatedAt(time.Time)
-	SetUpdatedAt(time.Time)
+	"github.com/brice-74/sensorflow/pkg/ulid"
+)
+
+type ULID struct {
+	ID ulid.ULID `db:"id"`
+}
+
+var _ Identifiable[ulid.ULID] = (*ULID)(nil)
+
+func (u *ULID) Identifier() ulid.ULID {
+	return u.ID
+}
+
+func (u *ULID) SetIdentifier(id ulid.ULID) {
+	u.ID = id
+}
+
+func (u *ULID) Touch() {
+	u.ID = ulid.NewOrdered()
+}
+
+func (u *ULID) String() string {
+	return u.ID.String()
+}
+
+func (u *ULID) StringIdentifier() string {
+	return u.ID.String()
 }
 
 type Timestamps struct {
 	CreatedAt time.Time `db:"created_at"`
 	UpdatedAt time.Time `db:"updated_at"`
 }
+
+var _ Timestamped = (*Timestamps)(nil)
 
 func (ts *Timestamps) GetCreatedAt() time.Time {
 	return ts.CreatedAt
@@ -27,14 +52,11 @@ func (ts *Timestamps) SetUpdatedAt(t time.Time) {
 	ts.UpdatedAt = t
 }
 
-type SoftDeleted interface {
-	GetDeletedAt() *time.Time
-	SetDeletedAt(*time.Time)
-}
-
 type SoftDelete struct {
 	DeletedAt *time.Time `db:"deleted_at"`
 }
+
+var _ SoftDeleted = (*SoftDelete)(nil)
 
 func (s *SoftDelete) GetDeletedAt() *time.Time {
 	return s.DeletedAt
@@ -43,15 +65,11 @@ func (s *SoftDelete) SetDeletedAt(t *time.Time) {
 	s.DeletedAt = t
 }
 
-type VersionedUnix interface {
-	GetVersion() int64
-	SetVersion(int64)
-	Touch()
-}
-
 type VersionUnix struct {
 	Version int64 `db:"version"`
 }
+
+var _ Versioned[int64] = (*VersionUnix)(nil)
 
 func (v *VersionUnix) GetVersion() int64 {
 	return v.Version

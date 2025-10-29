@@ -4,7 +4,6 @@ import (
 	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/ports"
-	"github.com/redis/go-redis/v9"
 )
 
 type SensorGateway struct {
@@ -13,11 +12,11 @@ type SensorGateway struct {
 
 var _ ports.SensorGatewayRepository = (*SensorGateway)(nil)
 
-func NewSensorGateway(client *redis.Client) *SensorGateway {
+func NewSensorGateway(client *HealthyClient) *SensorGateway {
 	return &SensorGateway{
 		repo: repo[domain.SensorGateway]{
-			Client: client,
-			Key:    cache.SensorInstanceKey,
+			Rdb: client,
+			Key: cache.SensorInstanceKey,
 		},
 	}
 }
