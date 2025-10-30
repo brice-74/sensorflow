@@ -1,9 +1,12 @@
 package redis
 
 import (
+	"context"
+
 	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/ports"
+	"github.com/brice-74/sensorflow/pkg/ulid"
 )
 
 type SensorGateway struct {
@@ -19,4 +22,8 @@ func NewSensorGateway(client *HealthyClient) *SensorGateway {
 			Key: cache.SensorInstanceKey,
 		},
 	}
+}
+
+func (r *SensorGateway) GetOneByID(ctx context.Context, id ulid.ULID) (*domain.SensorGateway, error) {
+	return r.repo.GetOneByID(ctx, id.String())
 }

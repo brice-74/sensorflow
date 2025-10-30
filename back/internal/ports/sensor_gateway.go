@@ -8,5 +8,5 @@ import (
 )
 
 type SensorGatewayRepository interface {
-	GetOneByID(ctx context.Context, ID ulid.ULID) (*domain.SensorGateway, error)
+	GetOneByID(ctx context.Context, id ulid.ULID) (*domain.SensorGateway, error)
 }

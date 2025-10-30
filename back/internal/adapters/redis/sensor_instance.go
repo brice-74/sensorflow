@@ -10,7 +10,7 @@ import (
 )
 
 type SensorInstance struct {
-	repo[ulid.ULID, *domain.SensorInstance[ulid.ULID]]
+	repo[domain.SensorInstance]
 }
 
 var _ ports.SensorInstanceRepository = (*SensorInstance)(nil)

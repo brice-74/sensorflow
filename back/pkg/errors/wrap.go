@@ -75,14 +75,7 @@ func JoinWrap(errs ...error) error {
 	}
 
 	fn := getCallerFuncName(2)
+	joined := errors.Join(errs...)
 
-	wrapped := make([]error, n)
-	for i, err := range errs {
-		if err == nil {
-			continue
-		}
-		wrapped[i] = fmt.Errorf("%s: %w", fn, err)
-	}
-
-	return errors.Join(wrapped...)
+	return fmt.Errorf("%s: %w", fn, joined)
 }
