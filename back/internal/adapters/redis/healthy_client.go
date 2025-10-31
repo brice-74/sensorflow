@@ -21,6 +21,8 @@ type HealthyClient struct {
 	jitterPct      float64
 }
 
+var _ RedisCmdable = (*HealthyClient)(nil)
+
 type Option func(*HealthyClient)
 
 func WithPingTimeout(timeout time.Duration) Option {
@@ -97,4 +99,13 @@ func (h *HealthyClient) tryRecover() {
 // IsHealthy returns true if the client is currently healthy.
 func (h *HealthyClient) IsHealthy() bool {
 	return !h.isDown.Load()
+}
+
+func (h *HealthyClient) Cmdable(ctx context.Context) redis.Cmdable {
+	return h.Client
+}
+
+func (h *HealthyClient) Pipeline(ctx context.Context) (redis.Pipeliner, context.Context) {
+	pipe := h.Client.Pipeline()
+	return pipe, WithPipeline(ctx, pipe)
 }

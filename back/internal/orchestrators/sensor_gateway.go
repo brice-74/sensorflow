@@ -51,8 +51,7 @@ func (o *SensorGateway) GetOneWithInstances(ctx context.Context, ID ulid.ULID) (
 			}
 		}()
 
-		pipe := redisCli.Pipeline()
-		ctxPipe := redisadapter.WithPipeline(ctx, pipe)
+		pipe, ctxPipe := redisCli.Pipeline(ctx)
 
 		gatewayCmd := o.redisRepo.CmdGetOneByID(ctxPipe, strID)
 		idsCmd := o.redisInstanceRepo.CmdListIDsByGatewayID(ctxPipe, strID)
@@ -141,8 +140,7 @@ func (o *SensorGateway) GetOneWithInstances(ctx context.Context, ID ulid.ULID) (
 				}
 			}()
 
-			pipe := redisCli.Pipeline()
-			ctxPipe := redisadapter.WithPipeline(context.Background(), pipe)
+			pipe, ctxPipe := redisCli.Pipeline(context.Background())
 
 			setGtwCmd := o.redisRepo.CmdSetOne(ctxPipe, gwFromDB)
 			setInstsCmd, setInstsTtlCmds := o.redisInstanceRepo.CmdSetMany(ctxPipe, instsFromDB)

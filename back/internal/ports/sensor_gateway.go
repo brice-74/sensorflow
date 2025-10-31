@@ -10,3 +10,7 @@ import (
 type SensorGatewayRepository interface {
 	GetOneByID(ctx context.Context, id ulid.ULID) (*domain.SensorGateway, error)
 }
+
+type SensorGatewayRedisRepository interface {
+	SensorGatewayRepository
+}

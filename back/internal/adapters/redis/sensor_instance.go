@@ -6,7 +6,8 @@ import (
 	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/core/domain/common"
-	"github.com/brice-74/sensorflow/internal/ports"
+
+	//"github.com/brice-74/sensorflow/internal/ports"
 	"github.com/brice-74/sensorflow/pkg/ulid"
 )
 
@@ -14,7 +15,7 @@ type SensorInstance struct {
 	repo[domain.SensorInstance]
 }
 
-var _ ports.SensorInstanceRepository = (*SensorInstance)(nil)
+//var _ ports.SensorInstanceRepository = (*SensorInstance)(nil)
 
 func NewSensorInstance(client *HealthyClient) *SensorInstance {
 	return &SensorInstance{
