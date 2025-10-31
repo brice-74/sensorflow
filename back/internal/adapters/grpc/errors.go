@@ -23,18 +23,18 @@ func (h *ErrorHandler) Handle(err error, logCtx log.Contexts) error {
 	var e *errors.Error
 	if errors.As(err, &e) {
 		switch e.Code {
-		case errors.ErrNotFound:
+		case errors.CodeNotFound:
 			return status.Error(codes.NotFound, "resource not found")
-		case errors.ErrAlreadyExists:
+		case errors.CodeAlreadyExists:
 			return status.Error(codes.AlreadyExists, "resource already exists")
-		case errors.ErrInvalidInput:
+		case errors.CodeInvalidInput:
 			return status.Error(codes.InvalidArgument, "invalid input")
-		case errors.ErrInvalidReference:
+		case errors.CodeInvalidReference:
 			return status.Error(codes.FailedPrecondition, "invalid reference")
-		case errors.ErrTimeout:
+		case errors.CodeTimeout:
 			h.log.Error(err, logCtx)
 			return status.Error(codes.DeadlineExceeded, "request timeout")
-		case errors.ErrCanceled:
+		case errors.CodeCanceled:
 			h.log.Error(err, logCtx)
 			return status.Error(codes.Canceled, "request canceled")
 		}

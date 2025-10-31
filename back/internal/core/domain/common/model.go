@@ -12,15 +12,15 @@ type ULID struct {
 
 var _ Identifiable[ulid.ULID] = (*ULID)(nil)
 
-func (u *ULID) Identifier() ulid.ULID {
+func (u *ULID) GetID() ulid.ULID {
 	return u.ID
 }
 
-func (u *ULID) SetIdentifier(id ulid.ULID) {
+func (u *ULID) SetID(id ulid.ULID) {
 	u.ID = id
 }
 
-func (u *ULID) Touch() {
+func (u *ULID) TouchID() {
 	u.ID = ulid.NewOrdered()
 }
 
@@ -28,7 +28,7 @@ func (u *ULID) String() string {
 	return u.ID.String()
 }
 
-func (u *ULID) StringIdentifier() string {
+func (u *ULID) StringID() string {
 	return u.ID.String()
 }
 
@@ -79,6 +79,6 @@ func (v *VersionUnix) SetVersion(ver int64) {
 	v.Version = ver
 }
 
-func (v *VersionUnix) Touch() {
+func (v *VersionUnix) TouchVersion() {
 	v.Version = time.Now().UnixNano()
 }

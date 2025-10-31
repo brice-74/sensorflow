@@ -24,6 +24,10 @@ func NewSensorGateway(client *HealthyClient) *SensorGateway {
 	}
 }
 
+func (r *SensorGateway) CmdSetOne(ctx context.Context, entity *domain.SensorGateway) *StatusCmd {
+	return r.repo.CmdSetOne(ctx, entity.ID.String(), entity)
+}
+
 func (r *SensorGateway) GetOneByID(ctx context.Context, id ulid.ULID) (*domain.SensorGateway, error) {
 	return r.repo.GetOneByID(ctx, id.String())
 }

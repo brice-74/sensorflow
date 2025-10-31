@@ -6,10 +6,10 @@ import (
 )
 
 type Identifiable[ID fmt.Stringer] interface {
-	StringIdentifier() string
-	Identifier() ID
-	SetIdentifier(ID)
-	Touch()
+	StringID() string
+	GetID() ID
+	SetID(ID)
+	TouchID()
 }
 
 type Timestamped interface {
@@ -27,5 +27,5 @@ type SoftDeleted interface {
 type Versioned[T any] interface {
 	GetVersion() T
 	SetVersion(T)
-	Touch()
+	TouchVersion()
 }

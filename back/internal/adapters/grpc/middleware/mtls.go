@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/brice-74/sensorflow/internal/core/domain"
-	"github.com/brice-74/sensorflow/internal/core/ports"
 	"github.com/brice-74/sensorflow/internal/ctxvalues"
 	"github.com/brice-74/sensorflow/internal/log"
 	"github.com/brice-74/sensorflow/internal/types"
@@ -106,9 +105,9 @@ func (m *MTLSClientAuth) loadSensorGateway(ctx context.Context, cn string) (*dom
 		var e *errors.Error
 		if errors.As(err, &e) {
 			switch e.Code {
-			case errors.ErrTimeout,
-				errors.ErrCanceled,
-				errors.ErrInternal:
+			case errors.CodeTimeout,
+				errors.CodeCanceled,
+				errors.CodeInternal:
 				break
 			default:
 				return nil, status.Error(codes.Unauthenticated, "invalid sensor gateway ID")

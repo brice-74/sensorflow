@@ -82,7 +82,7 @@ func (r *repo[T]) cmdSetMany(ctx context.Context, cmdable redis.Cmdable, entitie
 	return statusCmd, boolCmds
 }
 
-func (r *repo[T]) cmdSetIDsByParentID(ctx context.Context, cmdable redis.Cmdable, ids []string, parentID string, relKey cache.EntityKey, ttl time.Duration) (*IntCmd, *BoolCmd) {
+func (r *repo[T]) cmdSetIDsByParentID(ctx context.Context, cmdable redis.Cmdable, parentID string, ids []string, relKey cache.EntityKey, ttl time.Duration) (*IntCmd, *BoolCmd) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
@@ -131,11 +131,11 @@ func (r *repo[T]) cmdGetByIDs(ctx context.Context, cmdable redis.Cmdable, ids []
 //
 
 func (r *repo[T]) CmdSetIDsByParentID(ctx context.Context, ids []string, parentID string, relKey cache.EntityKey) (*IntCmd, *BoolCmd) {
-	return r.cmdSetIDsByParentID(ctx, r.Cmdable(ctx), ids, parentID, relKey, r.DefaultTTL)
+	return r.cmdSetIDsByParentID(ctx, r.Cmdable(ctx), parentID, ids, relKey, r.DefaultTTL)
 }
 
 func (r *repo[T]) CmdSetIDsByParentIDTTL(ctx context.Context, ids []string, parentID string, relKey cache.EntityKey, ttl time.Duration) (*IntCmd, *BoolCmd) {
-	return r.cmdSetIDsByParentID(ctx, r.Cmdable(ctx), ids, parentID, relKey, ttl)
+	return r.cmdSetIDsByParentID(ctx, r.Cmdable(ctx), parentID, ids, relKey, ttl)
 }
 
 func (r *repo[T]) CmdSetMany(ctx context.Context, entities map[string]*T) (*StatusCmd, *MultiBoolCmd) {
@@ -170,12 +170,23 @@ func (r *repo[_]) CmdListIDsByParentID(ctx context.Context, id string, relKey ca
 // --- Unary calls ---
 //
 
-func (r *repo[T]) SetMany(ctx context.Context, entities map[string]*T) error {
-	insertCmd, ttlsCmds := r.cmdSetMany(ctx, r.UnaryCmdable(ctx), entities, r.DefaultTTL)
+func (r *repo[T]) SetIDsByParentID(ctx context.Context, parentID string, ids []string, relKey cache.EntityKey) error {
+	insertCmd, ttlCmd := r.cmdSetIDsByParentID(ctx, r.Cmdable(ctx), parentID, ids, relKey, r.DefaultTTL)
 	if _, err := insertCmd.Result(); err != nil {
 		return err
 	}
-	if _, err := ttlsCmds.Result(); err != nil {
+	if _, err := ttlCmd.Result(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r *repo[T]) SetMany(ctx context.Context, entities map[string]*T) error {
+	insertCmd, ttlCmds := r.cmdSetMany(ctx, r.UnaryCmdable(ctx), entities, r.DefaultTTL)
+	if _, err := insertCmd.Result(); err != nil {
+		return err
+	}
+	if _, err := ttlCmds.Result(); err != nil {
 		return err
 	}
 	return nil
