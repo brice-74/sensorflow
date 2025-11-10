@@ -13,18 +13,33 @@ import (
 )
 
 type SensorGateway struct {
-	dbRepo            ports.SensorGatewayRepository
+	dbRepo            ports.SensorGatewayRepository `check:"NonNil"`
 	dbInstanceRepo    ports.SensorInstanceRepository
 	redisRepo         redisadapter.SensorGateway
 	redisInstanceRepo redisadapter.SensorInstance
 	localCache        cache.Local[*domain.SensorGateway]
-	invalidator       cache.InvalidatorPublisher[string]
 	logger            log.Logger
 	asyncPool         ports.AsyncSubmitter
 }
 
-func NewSensorGateway() {
-
+func NewSensorGateway(
+	dbRepo ports.SensorGatewayRepository,
+	dbInstanceRepo ports.SensorInstanceRepository,
+	redisRepo redisadapter.SensorGateway,
+	redisInstanceRepo redisadapter.SensorInstance,
+	localCache cache.Local[*domain.SensorGateway],
+	logger log.Logger,
+	asyncPool ports.AsyncSubmitter,
+) *SensorGateway {
+	return &SensorGateway{
+		dbRepo:            dbRepo,
+		dbInstanceRepo:    dbInstanceRepo,
+		redisRepo:         redisRepo,
+		redisInstanceRepo: redisInstanceRepo,
+		localCache:        localCache,
+		logger:            logger,
+		asyncPool:         asyncPool,
+	}
 }
 
 func (o *SensorGateway) GetOneWithInstances(ctx context.Context, id ulid.ULID) (*domain.SensorGateway, error) {

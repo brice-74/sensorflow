@@ -13,48 +13,45 @@ import (
 // It marks itself down on request errors and tries to recover using configurable exponential backoff with optional jitter.
 type HealthyClient struct {
 	*redis.Client
-	isDown         atomic.Bool
-	pingTimeout    time.Duration
-	initialBackoff time.Duration
-	maxBackoff     time.Duration
-	multiplier     float64
-	jitterPct      float64
+	isDown atomic.Bool
+	opt    *Options
 }
 
 var _ Client = (*HealthyClient)(nil)
 
-type Option func(*HealthyClient)
+type Options struct {
+	PingTimeout    time.Duration
+	InitialBackoff time.Duration
+	MaxBackoff     time.Duration
+	Multiplier     float64
+	JitterPct      float64
+}
 
-func WithPingTimeout(timeout time.Duration) Option {
-	return func(h *HealthyClient) {
-		h.pingTimeout = timeout
+func (opts *Options) init() {
+	if opts.PingTimeout == 0 {
+		opts.PingTimeout = 500 * time.Millisecond
+	}
+	if opts.InitialBackoff == 0 {
+		opts.InitialBackoff = 100 * time.Millisecond
+	}
+	if opts.MaxBackoff == 0 {
+		opts.MaxBackoff = 30 * time.Second
+	}
+	if opts.Multiplier == 0 {
+		opts.Multiplier = 2
 	}
 }
 
-func WithBackoff(initial, max time.Duration, multiplier, jitterPct float64) Option {
-	return func(h *HealthyClient) {
-		h.initialBackoff = initial
-		h.maxBackoff = max
-		h.multiplier = multiplier
-		h.jitterPct = jitterPct
+func NewHealthyClient(client *redis.Client, opts *Options) *HealthyClient {
+	if opts == nil {
+		panic("redis: NewHealthyClient nil options")
 	}
-}
+	opts.init()
 
-func NewHealthyClient(client *redis.Client, opts ...Option) *HealthyClient {
-	h := &HealthyClient{
-		Client:         client,
-		pingTimeout:    500 * time.Millisecond,
-		initialBackoff: 100 * time.Millisecond,
-		maxBackoff:     30 * time.Second,
-		multiplier:     2,
-		jitterPct:      0.0, // default: no jitter
+	return &HealthyClient{
+		Client: client,
+		opt:    opts,
 	}
-
-	for _, opt := range opts {
-		opt(h)
-	}
-
-	return h
 }
 
 func (h *HealthyClient) HandleError(err error) error {
@@ -71,10 +68,10 @@ func (h *HealthyClient) markDown() {
 // tryRecover pings Redis periodically with exponential backoff and optional jitter until recovery.
 // How jitter works: if the calculated backoff is 1 s, then with 0.1 the actual delay will be randomly selected between 0.9 s and 1.1 s.
 func (h *HealthyClient) tryRecover() {
-	backoff := h.initialBackoff
+	backoff := h.opt.InitialBackoff
 
 	for h.isDown.Load() {
-		ctx, cancel := context.WithTimeout(context.Background(), h.pingTimeout)
+		ctx, cancel := context.WithTimeout(context.Background(), h.opt.PingTimeout)
 		err := h.Client.Ping(ctx).Err()
 		cancel()
 
@@ -84,14 +81,14 @@ func (h *HealthyClient) tryRecover() {
 		}
 
 		sleep := backoff
-		if h.jitterPct > 0 {
-			factor := 1 + (rand.Float64()*2-1)*h.jitterPct
+		if h.opt.JitterPct > 0 {
+			factor := 1 + (rand.Float64()*2-1)*h.opt.JitterPct
 			sleep = time.Duration(float64(sleep) * factor)
 		}
 
 		time.Sleep(sleep)
 
-		next := min(time.Duration(float64(backoff)*h.multiplier), h.maxBackoff)
+		next := min(time.Duration(float64(backoff)*h.opt.Multiplier), h.opt.MaxBackoff)
 		backoff = next
 	}
 }

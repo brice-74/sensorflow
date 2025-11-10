@@ -11,9 +11,6 @@ type sqlxRepo struct {
 }
 
 func NewSqlxRepo(db *sqlx.DB) *sqlxRepo {
-	if db == nil {
-		panic("db cannot be nil")
-	}
 	return &sqlxRepo{DB: db}
 }
 

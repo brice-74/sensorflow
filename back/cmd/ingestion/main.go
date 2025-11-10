@@ -8,8 +8,10 @@ import (
 
 	"github.com/brice-74/sensorflow/cmd/ingestion/app"
 	"github.com/brice-74/sensorflow/internal/adapters/postgres"
+	redisadapter "github.com/brice-74/sensorflow/internal/adapters/redis"
 	"github.com/brice-74/sensorflow/internal/config"
 	"github.com/brice-74/sensorflow/internal/log"
+	"github.com/redis/go-redis/v9"
 )
 
 func main() {
@@ -35,8 +37,14 @@ func main() {
 
 	sqlxDB := pgclient.Sqlx()
 
-	repos := app.NewRepositories(sqlxDB)
-	svcs := app.NewServices(repos)
+	redisClient := redis.NewClient(&redis.Options{})
+	defer redisClient.Close()
+
+	healthyRedisClient := redisadapter.NewHealthyClient(redisClient, &redisadapter.Options{})
+
+	pgRepos := app.NewPostgresRepositories(sqlxDB)
+	redisRepos := app.NewRedisRepositories(healthyRedisClient)
+	app.NewOrchestrators()
 
 	if err := app.ServeGRPC(cfg.GRPC, app.GRPCDeps{
 		Logger:               logger,

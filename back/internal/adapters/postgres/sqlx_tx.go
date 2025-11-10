@@ -27,9 +27,6 @@ type SqlxTxManager struct {
 var _ SqlxTx = (*SqlxTxManager)(nil)
 
 func NewSqlxTxManager(db *sqlx.DB) *SqlxTxManager {
-	if db == nil {
-		panic("db cannot be nil")
-	}
 	return &SqlxTxManager{db: db}
 }
 

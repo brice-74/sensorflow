@@ -12,14 +12,10 @@ type LocalCache[V any] struct {
 }
 
 func NewLocalCache[V any](
-	cfg ristretto.Config[string, any],
+	hub *ristretto.Cache[string, any],
 	defaultTTL time.Duration,
-) (*LocalCache[V], error) {
-	cache, err := ristretto.NewCache(&cfg)
-	if err != nil {
-		return nil, err
-	}
-	return &LocalCache[V]{hub: cache, defaultTTL: defaultTTL}, nil
+) *LocalCache[V] {
+	return &LocalCache[V]{hub: hub, defaultTTL: defaultTTL}
 }
 
 func (r *LocalCache[V]) Get(key string) (V, bool) {

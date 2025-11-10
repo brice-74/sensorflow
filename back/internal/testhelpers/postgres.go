@@ -76,8 +76,5 @@ func (p *PostgresContainer) Teardown(ctx context.Context) {
 }
 
 func (p *PostgresContainer) SqlxDB() *sqlx.DB {
-	if p.DB == nil {
-		panic("*sql.DB is nil")
-	}
 	return sqlx.NewDb(p.DB, "postgres")
 }
