@@ -9,12 +9,12 @@ import (
 )
 
 type SensorGateway struct {
-	*SqlxRepo
+	*sqlxRepo
 }
 
 var _ ports.SensorGatewayRepository = (*SensorGateway)(nil)
 
-func NewSensorGateway(repo *SqlxRepo) *SensorGateway {
+func NewSensorGateway(repo *sqlxRepo) *SensorGateway {
 	return &SensorGateway{repo}
 }
 
@@ -27,7 +27,7 @@ const sensorGatewayGetOneByIDQuery = `
 func (r *SensorGateway) GetOneByID(ctx context.Context, ID ulid.ULID) (*domain.SensorGateway, error) {
 	var gateway *domain.SensorGateway
 	err := r.
-		Executor(ctx).
+		ExecutorFromCtx(ctx).
 		SelectContext(
 			ctx,
 			gateway,

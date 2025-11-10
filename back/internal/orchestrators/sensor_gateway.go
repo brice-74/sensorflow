@@ -3,7 +3,6 @@ package orchestrators
 import (
 	"context"
 
-	"github.com/brice-74/sensorflow/internal/adapters/postgres"
 	redisadapter "github.com/brice-74/sensorflow/internal/adapters/redis"
 	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
@@ -14,8 +13,8 @@ import (
 )
 
 type SensorGateway struct {
-	dbRepo            postgres.SensorGateway
-	dbInstanceRepo    postgres.SensorInstance
+	dbRepo            ports.SensorGatewayRepository
+	dbInstanceRepo    ports.SensorInstanceRepository
 	redisRepo         redisadapter.SensorGateway
 	redisInstanceRepo redisadapter.SensorInstance
 	localCache        cache.Local[*domain.SensorGateway]
@@ -24,15 +23,19 @@ type SensorGateway struct {
 	asyncPool         ports.AsyncSubmitter
 }
 
-func (o *SensorGateway) GetOneWithInstances(ctx context.Context, ID ulid.ULID) (*domain.SensorGateway, error) {
-	strID := ID.String()
+func NewSensorGateway() {
+
+}
+
+func (o *SensorGateway) GetOneWithInstances(ctx context.Context, id ulid.ULID) (*domain.SensorGateway, error) {
+	strID := id.String()
 	hydratedKey := cache.FormatHydratedKey(cache.SensorGatewayKey, strID, cache.WithSensorInstancesKey)
 
 	if v, ok := o.localCache.Get(hydratedKey); ok {
 		return v, nil
 	}
 
-	if redisCli := o.redisRepo.Rdb; redisCli.IsHealthy() {
+	if redisCli := o.redisRepo.Client(); redisCli.IsHealthy() {
 		var (
 			redisErrors []error
 
@@ -51,9 +54,9 @@ func (o *SensorGateway) GetOneWithInstances(ctx context.Context, ID ulid.ULID) (
 			}
 		}()
 
-		pipe, ctxPipe := redisCli.Pipeline(ctx)
+		pipe, ctxPipe := redisCli.NewPipeline(ctx)
 
-		gatewayCmd := o.redisRepo.CmdGetOneByID(ctxPipe, strID)
+		gatewayCmd := o.redisRepo.CmdGetOneByStrID(ctxPipe, strID)
 		idsCmd := o.redisInstanceRepo.CmdListIDsByGatewayID(ctxPipe, strID)
 
 		if _, err := pipe.Exec(ctxPipe); err != nil {
@@ -84,7 +87,7 @@ func (o *SensorGateway) GetOneWithInstances(ctx context.Context, ID ulid.ULID) (
 
 		if gotIDsFromRedis {
 			if lenInstanceIDs := len(instanceIDs); lenInstanceIDs > 0 {
-				insts, err := o.redisInstanceRepo.GetByIDs(ctx, instanceIDs)
+				insts, err := o.redisInstanceRepo.GetManyByStrIDs(ctx, instanceIDs)
 				if err != nil {
 					if errors.Is(err, errors.ErrNotFound) {
 						gotInstancesFromRedis = true
@@ -107,7 +110,7 @@ func (o *SensorGateway) GetOneWithInstances(ctx context.Context, ID ulid.ULID) (
 				return gateway, nil
 			}
 
-			insts, err := o.dbInstanceRepo.ListByGatewayID(ctx, ID)
+			insts, err := o.dbInstanceRepo.ListByGatewayID(ctx, id)
 			if err != nil {
 				return nil, errors.WrapErr(err)
 			}
@@ -118,12 +121,12 @@ func (o *SensorGateway) GetOneWithInstances(ctx context.Context, ID ulid.ULID) (
 		}
 	}
 
-	gwFromDB, err := o.dbRepo.GetOneByID(ctx, ID)
+	gwFromDB, err := o.dbRepo.GetOneByID(ctx, id)
 	if err != nil {
 		return nil, errors.WrapErr(err)
 	}
 
-	instsFromDB, err := o.dbInstanceRepo.ListByGatewayID(ctx, ID)
+	instsFromDB, err := o.dbInstanceRepo.ListByGatewayID(ctx, id)
 	if err != nil {
 		return nil, errors.WrapErr(err)
 	}
@@ -131,7 +134,7 @@ func (o *SensorGateway) GetOneWithInstances(ctx context.Context, ID ulid.ULID) (
 	gwFromDB.SensorInstances = instsFromDB
 	o.localCache.Set(hydratedKey, gwFromDB)
 
-	if redisCli := o.redisRepo.Rdb; redisCli.IsHealthy() {
+	if redisCli := o.redisRepo.Client(); redisCli.IsHealthy() {
 		if err := o.asyncPool.Submit(func() {
 			var redisErrors []error
 			defer func() {
@@ -140,7 +143,7 @@ func (o *SensorGateway) GetOneWithInstances(ctx context.Context, ID ulid.ULID) (
 				}
 			}()
 
-			pipe, ctxPipe := redisCli.Pipeline(context.Background())
+			pipe, ctxPipe := redisCli.NewPipeline(context.Background())
 
 			setGtwCmd := o.redisRepo.CmdSetOne(ctxPipe, gwFromDB)
 			setInstsCmd, setInstsTtlCmds := o.redisInstanceRepo.CmdSetMany(ctxPipe, instsFromDB)

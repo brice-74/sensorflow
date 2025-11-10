@@ -21,7 +21,7 @@ type HealthyClient struct {
 	jitterPct      float64
 }
 
-var _ RedisCmdable = (*HealthyClient)(nil)
+var _ Client = (*HealthyClient)(nil)
 
 type Option func(*HealthyClient)
 
@@ -105,7 +105,12 @@ func (h *HealthyClient) Cmdable(ctx context.Context) redis.Cmdable {
 	return h.Client
 }
 
-func (h *HealthyClient) Pipeline(ctx context.Context) (redis.Pipeliner, context.Context) {
+func (h *HealthyClient) NewPipeline(ctx context.Context) (redis.Pipeliner, context.Context) {
 	pipe := h.Client.Pipeline()
 	return pipe, WithPipeline(ctx, pipe)
+}
+
+func (h *HealthyClient) NewConn(ctx context.Context) (redis.Cmdable, context.Context) {
+	conn := h.Client.Conn()
+	return conn, WithConn(ctx, conn)
 }

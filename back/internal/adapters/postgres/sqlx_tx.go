@@ -24,6 +24,8 @@ type SqlxTxManager struct {
 	depth int
 }
 
+var _ SqlxTx = (*SqlxTxManager)(nil)
+
 func NewSqlxTxManager(db *sqlx.DB) *SqlxTxManager {
 	if db == nil {
 		panic("db cannot be nil")
@@ -58,8 +60,12 @@ func (t *SqlxTxManager) WithTransaction(ctx context.Context, opts *sql.TxOptions
 	return sub.Commit(ctx)
 }
 
+func (t *SqlxTxManager) Begin(ctx context.Context, opts *sql.TxOptions) (SqlxTxFlat, error) {
+	return t.BeginC(ctx, opts)
+}
+
 // begin starts a transaction or nested savepoint.
-func (t *SqlxTxManager) Begin(ctx context.Context, opts *sql.TxOptions) (*SqlxTxManager, error) {
+func (t *SqlxTxManager) BeginC(ctx context.Context, opts *sql.TxOptions) (*SqlxTxManager, error) {
 	if t.depth == 0 {
 		tx, err := t.db.BeginTxx(ctx, opts)
 		if err != nil {

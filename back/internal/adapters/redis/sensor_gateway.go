@@ -2,10 +2,10 @@ package redis
 
 import (
 	"context"
+	"time"
 
 	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
-	"github.com/brice-74/sensorflow/internal/ports"
 	"github.com/brice-74/sensorflow/pkg/ulid"
 )
 
@@ -13,21 +13,22 @@ type sensorGateway struct {
 	repo[domain.SensorGateway]
 }
 
-var _ ports.SensorGatewayRepository = (*sensorGateway)(nil)
+var _ SensorGateway = (*sensorGateway)(nil)
 
-func NewSensorGateway(client *HealthyClient) *sensorGateway {
+func NewSensorGateway(client *HealthyClient, defaultTTL time.Duration) *sensorGateway {
 	return &sensorGateway{
 		repo: repo[domain.SensorGateway]{
-			Rdb: client,
-			Key: cache.SensorInstanceKey,
+			HealthyClient: client,
+			Key:           cache.SensorInstanceKey,
+			DefaultTTL:    defaultTTL,
 		},
 	}
 }
 
 func (r *sensorGateway) CmdSetOne(ctx context.Context, entity *domain.SensorGateway) *StatusCmd {
-	return r.repo.CmdSetOne(ctx, entity.ID.String(), entity)
+	return r.repo.CmdSetOneByStrID(ctx, entity.ID.String(), entity)
 }
 
 func (r *sensorGateway) GetOneByID(ctx context.Context, id ulid.ULID) (*domain.SensorGateway, error) {
-	return r.repo.GetOneByID(ctx, id.String())
+	return r.repo.GetOneByStrID(ctx, id.String())
 }

@@ -1,23 +1,40 @@
 package app
 
 import (
+	"time"
+
 	"github.com/brice-74/sensorflow/internal/adapters/postgres"
-	"github.com/brice-74/sensorflow/internal/adapters/postgres/repo"
-	"github.com/brice-74/sensorflow/internal/core/ports"
+	"github.com/brice-74/sensorflow/internal/adapters/redis"
+	"github.com/brice-74/sensorflow/internal/ports"
 	"github.com/jmoiron/sqlx"
 )
 
-type Repositories struct {
-	SensorGateway  ports.SensorGatewayRepo
-	SensorInstance ports.SensorInstanceRepo
+type PostgresRepositories struct {
+	SensorGateway  ports.SensorGatewayRepository
+	SensorInstance ports.SensorInstanceRepository
 }
 
-func NewRepositories(sqlxDB *sqlx.DB) *Repositories {
-	sqlxRepo := &postgres.SqlxRepo{DB: sqlxDB}
+func NewPostgresRepositories(sqlxDB *sqlx.DB) *PostgresRepositories {
+	sqlxRepo := postgres.NewSqlxRepo(sqlxDB)
 
-	repositories := Repositories{
-		SensorGateway:  repo.NewSensorGateway(sqlxRepo),
-		SensorInstance: repo.NewSensorInstance(sqlxRepo),
+	repositories := PostgresRepositories{
+		SensorGateway:  postgres.NewSensorGateway(sqlxRepo),
+		SensorInstance: postgres.NewSensorInstance(sqlxRepo),
+	}
+
+	return &repositories
+}
+
+type RedisRepositories struct {
+	SensorGateway  redis.SensorGateway
+	SensorInstance redis.SensorInstance
+}
+
+func NewRedisRepositories(client *redis.HealthyClient) *PostgresRepositories {
+
+	repositories := PostgresRepositories{
+		SensorGateway:  redis.NewSensorGateway(client, 10*time.Minute),
+		SensorInstance: redis.NewSensorInstance(client, 7*time.Minute),
 	}
 
 	return &repositories

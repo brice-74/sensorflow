@@ -7,19 +7,19 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type SqlxTx struct {
+type SqlxTxWrapper struct {
 	*sqlx.Tx
 }
 
-func (tx *SqlxTx) NamedQueryContext(ctx context.Context, query string, arg any) (*sqlx.Rows, error) {
+func (tx *SqlxTxWrapper) NamedQueryContext(ctx context.Context, query string, arg any) (*sqlx.Rows, error) {
 	return sqlx.NamedQueryContext(ctx, tx, query, arg)
 }
 
-type SqlxConn struct {
+type SqlxConnWrapper struct {
 	*sqlx.Conn
 }
 
-func (conn *SqlxConn) NamedExecContext(ctx context.Context, query string, arg any) (sql.Result, error) {
+func (conn *SqlxConnWrapper) NamedExecContext(ctx context.Context, query string, arg any) (sql.Result, error) {
 	q, args, err := sqlx.Named(query, arg)
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func (conn *SqlxConn) NamedExecContext(ctx context.Context, query string, arg an
 	return conn.ExecContext(ctx, q, args...)
 }
 
-func (conn *SqlxConn) NamedQueryContext(ctx context.Context, query string, arg any) (*sqlx.Rows, error) {
+func (conn *SqlxConnWrapper) NamedQueryContext(ctx context.Context, query string, arg any) (*sqlx.Rows, error) {
 	q, args, err := sqlx.Named(query, arg)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func (conn *SqlxConn) NamedQueryContext(ctx context.Context, query string, arg a
 	return conn.QueryxContext(ctx, q, args...)
 }
 
-func (conn *SqlxConn) MustExec(query string, args ...any) sql.Result {
+func (conn *SqlxConnWrapper) MustExec(query string, args ...any) sql.Result {
 	res, err := conn.ExecContext(context.Background(), query, args...)
 	if err != nil {
 		panic(err)
@@ -45,7 +45,7 @@ func (conn *SqlxConn) MustExec(query string, args ...any) sql.Result {
 	return res
 }
 
-func (conn *SqlxConn) MustExecContext(ctx context.Context, query string, args ...any) sql.Result {
+func (conn *SqlxConnWrapper) MustExecContext(ctx context.Context, query string, args ...any) sql.Result {
 	res, err := conn.ExecContext(ctx, query, args...)
 	if err != nil {
 		panic(err)

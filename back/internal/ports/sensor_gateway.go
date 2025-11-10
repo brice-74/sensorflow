@@ -11,6 +11,6 @@ type SensorGatewayRepository interface {
 	GetOneByID(ctx context.Context, id ulid.ULID) (*domain.SensorGateway, error)
 }
 
-type SensorGatewayRedisRepository interface {
-	SensorGatewayRepository
+type SensorGatewayOrchestrator interface {
+	GetOneWithInstances(ctx context.Context, ID ulid.ULID) (*domain.SensorGateway, error)
 }

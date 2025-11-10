@@ -9,12 +9,12 @@ import (
 )
 
 type SensorInstance struct {
-	*SqlxRepo
+	*sqlxRepo
 }
 
 var _ ports.SensorInstanceRepository = (*SensorInstance)(nil)
 
-func NewSensorInstance(repo *SqlxRepo) *SensorInstance {
+func NewSensorInstance(repo *sqlxRepo) *SensorInstance {
 	return &SensorInstance{repo}
 }
 
@@ -26,7 +26,7 @@ const sensorInstanceListByGatewayIDQuery = `
 func (r *SensorInstance) ListByGatewayID(ctx context.Context, gatewayID ulid.ULID) ([]*domain.SensorInstance, error) {
 	var sensors []*domain.SensorInstance
 	err := r.
-		Executor(ctx).
+		ExecutorFromCtx(ctx).
 		SelectContext(
 			ctx,
 			&sensors,
@@ -49,7 +49,7 @@ const sensorInstanceGetOneByIDQuery = `
 func (r *SensorInstance) GetOneByID(ctx context.Context, ID ulid.ULID) (*domain.SensorInstance, error) {
 	var gateway *domain.SensorInstance
 	err := r.
-		Executor(ctx).
+		ExecutorFromCtx(ctx).
 		SelectContext(
 			ctx,
 			gateway,
