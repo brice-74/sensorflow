@@ -11,7 +11,8 @@ import (
 	redisadapter "github.com/brice-74/sensorflow/internal/adapters/redis"
 	"github.com/brice-74/sensorflow/internal/config"
 	"github.com/brice-74/sensorflow/internal/log"
-	"github.com/redis/go-redis/v9"
+	"github.com/brice-74/sensorflow/kit"
+	"github.com/dgraph-io/ristretto/v2"
 )
 
 func main() {
@@ -37,18 +38,24 @@ func main() {
 
 	sqlxDB := pgclient.Sqlx()
 
-	redisClient := redis.NewClient(&redis.Options{})
+	redisClient := redisadapter.NewHealthyClientFromCfg(&cfg.Redis)
 	defer redisClient.Close()
 
-	healthyRedisClient := redisadapter.NewHealthyClient(redisClient, &redisadapter.Options{})
+	ristrettoCache, err := ristretto.NewCache(&ristretto.Config[string, any]{})
+	if err != nil {
+		logger.Fatal(err)
+		os.Exit(1)
+	}
+
+	workerPool := kit.NewWorkerPoolFromConfig(&cfg.WorkerPool, log.PanicHandler(logger))
 
 	pgRepos := app.NewPostgresRepositories(sqlxDB)
-	redisRepos := app.NewRedisRepositories(healthyRedisClient)
-	app.NewOrchestrators()
+	redisRepos := app.NewRedisRepositories(redisClient)
+	orchestrators := app.NewOrchestrators(redisRepos, pgRepos, ristrettoCache, logger, workerPool)
 
 	if err := app.ServeGRPC(cfg.GRPC, app.GRPCDeps{
-		Logger:               logger,
-		SensorGatewayService: svcs.SensorGateway,
+		Logger:                    logger,
+		SensorGatewayOrchestrator: orchestrators.SensorGateway,
 	}); err != nil {
 		logger.Error(err, log.Tags{"server": "closed"})
 	}

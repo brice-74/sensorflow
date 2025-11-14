@@ -30,9 +30,8 @@ type RedisRepositories struct {
 	SensorInstance redis.SensorInstance
 }
 
-func NewRedisRepositories(client *redis.HealthyClient) *PostgresRepositories {
-
-	repositories := PostgresRepositories{
+func NewRedisRepositories(client *redis.HealthyClient) *RedisRepositories {
+	repositories := RedisRepositories{
 		SensorGateway:  redis.NewSensorGateway(client, 10*time.Minute),
 		SensorInstance: redis.NewSensorInstance(client, 7*time.Minute),
 	}

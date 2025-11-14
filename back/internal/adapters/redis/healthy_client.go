@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/brice-74/sensorflow/internal/config"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -40,6 +41,42 @@ func (opts *Options) init() {
 	if opts.Multiplier == 0 {
 		opts.Multiplier = 2
 	}
+}
+
+func NewHealthyClientFromCfg(cfg *config.Redis) *HealthyClient {
+	client := redis.NewClient(&redis.Options{
+		Network:               cfg.Network,
+		Addr:                  cfg.Addr,
+		ClientName:            cfg.ClientName,
+		Username:              cfg.Username,
+		Password:              cfg.Password,
+		DB:                    cfg.DB,
+		MaxRetries:            cfg.MaxRetries,
+		MinRetryBackoff:       cfg.MinRetryBackoff,
+		MaxRetryBackoff:       cfg.MaxRetryBackoff,
+		DialTimeout:           cfg.DialTimeout,
+		ReadTimeout:           cfg.ReadTimeout,
+		WriteTimeout:          cfg.WriteTimeout,
+		ContextTimeoutEnabled: cfg.ContextTimeoutEnabled,
+		ReadBufferSize:        cfg.ReadBufferSize,
+		WriteBufferSize:       cfg.WriteBufferSize,
+		PoolFIFO:              cfg.PoolFIFO,
+		PoolSize:              cfg.PoolSize,
+		PoolTimeout:           cfg.PoolTimeout,
+		MinIdleConns:          cfg.MinIdleConns,
+		MaxIdleConns:          cfg.MaxIdleConns,
+		MaxActiveConns:        cfg.MaxActiveConns,
+		ConnMaxIdleTime:       cfg.ConnMaxIdleTime,
+		ConnMaxLifetime:       cfg.ConnMaxLifetime,
+	})
+
+	return NewHealthyClient(client, &Options{
+		PingTimeout:    cfg.HealthPingTimeout,
+		InitialBackoff: cfg.HealthInitialBackoff,
+		MaxBackoff:     cfg.HealthMaxBackoff,
+		Multiplier:     cfg.HealthMultiplier,
+		JitterPct:      cfg.HealthJitterPct,
+	})
 }
 
 func NewHealthyClient(client *redis.Client, opts *Options) *HealthyClient {

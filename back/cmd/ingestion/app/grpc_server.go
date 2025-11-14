@@ -21,8 +21,8 @@ type server struct {
 }
 
 type GRPCDeps struct {
-	Logger               log.Fiber
-	SensorGatewayService ports.SensorGatewayOrchestrator
+	Logger                    log.Fiber
+	SensorGatewayOrchestrator ports.SensorGatewayOrchestrator
 }
 
 func ServeGRPC(cfg config.GRPC, deps GRPCDeps) error {
@@ -31,7 +31,7 @@ func ServeGRPC(cfg config.GRPC, deps GRPCDeps) error {
 		return fmt.Errorf("failed to listen: %v", err)
 	}
 
-	tlsAuth := middleware.NewMTLSClientAuth(deps.Logger, deps.SensorGatewayService)
+	tlsAuth := middleware.NewMTLSClientAuth(deps.Logger, deps.SensorGatewayOrchestrator)
 
 	kaParams := keepalive.ServerParameters{
 		MaxConnectionIdle:     cfg.IdleTimeout,

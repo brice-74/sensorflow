@@ -19,11 +19,10 @@ import (
 // data in memory between log calls, allowing optimized direct
 // writing without memory overhead.
 type Logger struct {
-	zlog       zerolog.Logger
-	stackTrace bool
+	zlog zerolog.Logger
 }
 
-var _ log.Logger = (*Logger)(nil)
+var _ log.Fiber = (*Logger)(nil)
 
 func NewLogger(zlog zerolog.Logger) *Logger {
 	return &Logger{zlog: zlog}

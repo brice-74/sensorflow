@@ -13,7 +13,7 @@ import (
 )
 
 type SensorGateway struct {
-	dbRepo            ports.SensorGatewayRepository `check:"NonNil"`
+	dbRepo            ports.SensorGatewayRepository
 	dbInstanceRepo    ports.SensorInstanceRepository
 	redisRepo         redisadapter.SensorGateway
 	redisInstanceRepo redisadapter.SensorInstance

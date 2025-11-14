@@ -46,10 +46,12 @@ type Fiber interface {
 //	}
 type Sentry interface {
 	Fiber
-	// like Logger.With, this method must be able to clone the logger
+	//	like Logger.With, this method must be able to clone the logger
 	//	so that the new instance has a sentry hub available for future logging.
 	WithHub(hub *sentry.Hub, opts ...Option) Sentry
 	//	just a gateway method to breadscumb sentry use
 	AddBreadcrumb(*sentry.Breadcrumb, *sentry.BreadcrumbHint)
 	ClearBreadcrumbs()
+	//	use sentry panic management
+	ReportPanic(a any)
 }

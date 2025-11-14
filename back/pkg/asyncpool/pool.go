@@ -34,7 +34,6 @@ type WorkerPool struct {
 	wg       sync.WaitGroup
 	ctx      context.Context
 	cancel   context.CancelFunc
-	mu       sync.Mutex
 	isClosed atomic.Bool
 }
 
@@ -132,11 +131,9 @@ func (p *WorkerPool) tryScale() {
 // Shutdown gracefully stops the pool, waiting for all current and queued tasks to complete.
 // Timeout can be provided via context.
 func (p *WorkerPool) Shutdown(ctx context.Context) error {
-	p.mu.Lock()
 	if !p.isClosed.Swap(true) {
 		close(p.queue)
 	}
-	p.mu.Unlock()
 
 	done := make(chan struct{})
 	go func() {
@@ -155,12 +152,10 @@ func (p *WorkerPool) Shutdown(ctx context.Context) error {
 // ForceShutdown stops the pool immediately and drains pending tasks still queued.
 // Tasks that are currently executing are not forcibly .
 func (p *WorkerPool) ForceShutdown() {
-	p.mu.Lock()
 	if !p.isClosed.Swap(true) {
 		close(p.queue)
 		p.cancel()
 	}
-	p.mu.Unlock()
 
 	for range p.queue {
 	}

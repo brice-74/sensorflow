@@ -12,6 +12,8 @@ type Config struct {
 	config.Sentry
 	config.GRPC
 	config.Postgres
+	config.Redis
+	config.WorkerPool
 }
 
 func (c *Config) Define(loader *configpkg.Loader) {
@@ -21,6 +23,8 @@ func (c *Config) Define(loader *configpkg.Loader) {
 	c.Sentry.Define(loader)
 	c.GRPC.Define(loader)
 	c.Postgres.Define(loader)
+	c.Redis.Define(loader)
+	c.WorkerPool.Define(loader)
 }
 
 func ParseConfig() (*Config, error) {

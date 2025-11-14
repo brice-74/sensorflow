@@ -18,7 +18,7 @@ type Logger struct {
 	hub *sentry.Hub
 }
 
-var _ log.Logger = (*Logger)(nil)
+var _ log.Sentry = (*Logger)(nil)
 
 // NewLogger creates a new instance of Logger with a specified
 // Logger Client Options. So a Logger can contain only on sentry Client.
@@ -126,4 +126,8 @@ func (l *Logger) AddBreadcrumb(breadcrumb *sentry.Breadcrumb, hint *sentry.Bread
 // ClearBreadcrumbs removes all breadcrumbs from the current scope.
 func (l *Logger) ClearBreadcrumbs() {
 	l.hub.Scope().ClearBreadcrumbs()
+}
+
+func (l *Logger) ReportPanic(a any) {
+	l.hub.Recover(a)
 }
