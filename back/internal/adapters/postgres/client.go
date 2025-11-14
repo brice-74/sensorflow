@@ -6,6 +6,7 @@ import (
 	"net/url"
 
 	"github.com/brice-74/sensorflow/internal/config"
+	"github.com/brice-74/sensorflow/pkg/errors"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
@@ -28,7 +29,7 @@ func NewClient(ctx context.Context, cfg *config.Postgres) (Client, error) {
 
 	poolCfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return nil, err
+		return nil, errors.WrapErr(err)
 	}
 	poolCfg.MaxConns = int32(cfg.MaxOpenConns)
 	poolCfg.MinConns = int32(cfg.MaxIdleConns)
@@ -37,7 +38,7 @@ func NewClient(ctx context.Context, cfg *config.Postgres) (Client, error) {
 
 	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
 	if err != nil {
-		return nil, err
+		return nil, errors.WrapErr(err)
 	}
 
 	sqlxdb := sqlx.NewDb(stdlib.OpenDBFromPool(pool), "pgx")

@@ -53,35 +53,35 @@ waitnet $host $port 10 1
 if [[ ! -f "$token_path" ]]; then
    echo "🔑  Creating admin token..."
    output=$(influxdb3 create token --admin --host "$addr" 2>&1) || {
-      echo "[entrypoint]  ❌  Failed to create token. Output:"
+      echo "[entrypoint] Failed to create token. Output:"
       echo "$output"
       exit 1
    }
 
    token=$(echo "$output" | grep -oP 'apiv3_\S+' | head -n1) || true
    if [[ -z "${token:-}" ]]; then
-      echo "[entrypoint]  ❌  Failed to extract token from output:"
+      echo "[entrypoint] Failed to extract token from output:"
       echo "$output"
       exit 1
    fi
 
    echo "$token" > "$token_path"
-   echo "[entrypoint]  ✅  Token created and saved to $token_path"
+   echo "[entrypoint] Token created and saved to $token_path"
 else
    token=$(cat "$token_path")
-   echo "[entrypoint]  ✅  Token already exists at $token_path"
+   echo "[entrypoint] Token already exists at $token_path"
 fi
 
 # create database
 if influxdb3 show databases --host "$addr" --token "$token" | grep -q "$db_name"; then
-   echo "[entrypoint]  ✅  Database '$db_name' already exists."
+   echo "[entrypoint] Database '$db_name' already exists."
 else
-   echo "[entrypoint]  📦  Creating database '$db_name}'..."
+   echo "[entrypoint] Creating database '$db_name}'..."
    influxdb3 create database "$db_name" \
       --host "$addr" \
       --token "$token" \
       --retention-period "${retention}"
-   echo "[entrypoint]  ✅  Database created."
+   echo "[entrypoint] Database created."
 fi
 
 # keep script running after influx serve

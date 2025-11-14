@@ -14,7 +14,7 @@ waitnet() {
 
    for attempt in $(seq 1 "$max_attempts"); do
       if timeout 1 bash -c ">/dev/tcp/$host/$port" 2>/dev/null; then
-         echo "[waitnet]  ✅  Port $port on $host is available."
+         echo "[waitnet] Port $port on $host is available."
          return 0
       fi
       

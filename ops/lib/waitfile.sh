@@ -50,7 +50,7 @@ echo "[waitfile]  ⏳  Waiting for $file..."
 attempt=0
 while [ "$attempt" -lt "$max_attempts" ]; do
    if [ -s "$file" ]; then
-      echo "[waitfile]  ✅    File found, execute command"
+      echo "[waitfile] File found, execute command"
       if [ -n "$exec_cmd" ]; then
          eval "$exec_cmd"
       fi
@@ -60,5 +60,5 @@ while [ "$attempt" -lt "$max_attempts" ]; do
    sleep "$sleep_seconds"
 done
 
-echo "[waitfile]  ❌    File '$file' not found or empty after $max_attempts attempts."
+echo "[waitfile] File '$file' not found or empty after $max_attempts attempts."
 exit 1

@@ -14,11 +14,23 @@ services:
     networks:
       - sensorflow-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U root"]
+      test: ["CMD-SHELL", "pg_isready -U root -d sensorflow"]
       interval: 10s
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:8.2.3
+    container_name: sensorflow-redis
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    volumes:
+      - redisdata:/data
+    networks:
+      - sensorflow-net
+    command: ["redis-server", "--appendonly", "yes"]
+    
   nginx:
     build:
       context: ./grpc-reverse-proxy
@@ -84,6 +96,8 @@ services:
       - sensorflow-net
     depends_on:
       - influxdb
+      - postgres
+      - redis
     command: [ 
       "--file", "/shared/influx/admin.token",
       "--cmd", "export INFLUXDB_TOKEN=$(cat /shared/influx/admin.token)",
@@ -191,6 +205,7 @@ networks:
 volumes:
   shared:
   pgdata:
+  redisdata:
   kafkadata:
   influxdata:
   certs_data:

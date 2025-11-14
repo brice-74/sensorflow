@@ -17,26 +17,20 @@ var (
 
 var pcNameCache sync.Map
 
-func getCallerFuncName(skip int) string {
-	pc, _, _, ok := runtime.Caller(skip)
+func GetCaller(skip int) string {
+	_, file, line, ok := runtime.Caller(skip)
 	if !ok {
 		return "(unknown caller)"
 	}
 
-	if name, ok := pcNameCache.Load(pc); ok {
-		return name.(string)
-	}
-
-	name := runtime.FuncForPC(pc).Name()
-	actual, _ := pcNameCache.LoadOrStore(pc, name)
-	return actual.(string)
+	return fmt.Sprintf("%s:%d", file, line)
 }
 
 func wrap(err error, msg string, skip int) error {
 	if err == nil {
 		return nil
 	}
-	fn := getCallerFuncName(skip)
+	fn := GetCaller(skip)
 	if msg == "" {
 		return fmt.Errorf("%s: %w", fn, err)
 	}
@@ -74,7 +68,7 @@ func JoinWrap(errs ...error) error {
 		return nil
 	}
 
-	fn := getCallerFuncName(2)
+	fn := GetCaller(2)
 	joined := errors.Join(errs...)
 
 	return fmt.Errorf("%s: %w", fn, joined)

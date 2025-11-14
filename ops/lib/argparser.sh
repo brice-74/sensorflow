@@ -157,7 +157,7 @@ validate_required_options() {
          val=$(eval "echo \${OPTIONS_VALUES_$key}")
          if [ -z "$val" ]; then
             eval key_orig=\${OPTIONS_KEYS_$key:-$key}
-            errors="${errors}[argparser] ❌   Error: Missing required option: --${key_orig}\n"
+            errors="${errors}[argparser] Error: Missing required option: --${key_orig}\n"
             missing=1
          fi
       fi
