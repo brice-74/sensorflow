@@ -23,5 +23,5 @@ message SensorMeasurementsList {
 
 message SensorMeasurements {
    int64 timestamp = 1;
-   map<string, google.protobuf.Any> values = 3;
+   map<string, google.protobuf.Any> values = 2;
 }

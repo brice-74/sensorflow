@@ -8,7 +8,9 @@ import (
 	"syscall"
 	"time"
 
+	grpcadapter "github.com/brice-74/sensorflow/internal/adapters/grpc"
 	"github.com/brice-74/sensorflow/internal/adapters/grpc/middleware"
+	"github.com/brice-74/sensorflow/internal/adapters/grpc/proto"
 	"github.com/brice-74/sensorflow/internal/config"
 	"github.com/brice-74/sensorflow/internal/log"
 	"github.com/brice-74/sensorflow/internal/ports"
@@ -60,7 +62,7 @@ func ServeGRPC(cfg config.GRPC, deps GRPCDeps) error {
 		),
 	)
 
-	// todo: here register GRPC services
+	proto.RegisterSensorServiceServer(s, &grpcadapter.SensorMeasurementsService{})
 
 	shutdownError := make(chan error, 1)
 	signalChan := make(chan os.Signal, 1)

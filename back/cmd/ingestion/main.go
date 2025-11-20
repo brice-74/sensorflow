@@ -41,11 +41,7 @@ func main() {
 	redisClient := redisadapter.NewHealthyClientFromCfg(&cfg.Redis)
 	defer redisClient.Close()
 
-	ristrettoCache, err := ristretto.NewCache(&ristretto.Config[string, any]{})
-	if err != nil {
-		logger.Fatal(err)
-		os.Exit(1)
-	}
+	ristrettoCache := openLocalCache(logger)
 
 	workerPool := kit.NewWorkerPoolFromConfig(&cfg.WorkerPool, log.PanicHandler(logger))
 
@@ -72,4 +68,19 @@ func openPostgres(cfg *config.Postgres, logger log.Logger) postgres.Client {
 	}
 
 	return client
+}
+
+func openLocalCache(logger log.Logger) *ristretto.Cache[string, any] {
+	ristrettoCache, err := ristretto.NewCache(&ristretto.Config[string, any]{
+		NumCounters:        10_000,
+		MaxCost:            1_000,
+		BufferItems:        64,
+		Metrics:            false,
+		IgnoreInternalCost: true,
+	})
+	if err != nil {
+		logger.Fatal(err)
+		os.Exit(1)
+	}
+	return ristrettoCache
 }
