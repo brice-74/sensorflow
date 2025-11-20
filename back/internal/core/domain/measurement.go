@@ -37,49 +37,38 @@ func (t DataType) String() string {
 	}
 }
 
-// MeasurementProfile represents a template for a set of measurements.
-// If TenantID is nil, the profile is shared across tenants.
-type MeasurementProfile struct {
-	ID          ulid.ULID
-	TenantID    *ulid.ULID
-	Tenant      *Tenant
-	Name        string
-	Description *string
-	Groups      []*MeasurementGroup
-	Fields      []*MeasurementField
-	Tags        []*MeasurementTag
+type MeasurementProfileLogical struct {
+	ID                ulid.ULID
+	TenantID          *ulid.ULID // nil = shared
+	Tenant            *Tenant
+	PreviousVersionID *ulid.ULID
+	PreviousVersion   *MeasurementProfileLogical
+	Name              string
+	Description       *string
+	Version           uint16
+	IsActive          bool
+	Fields            []*MeasurementField
 	common.Timestamps
 	common.SoftDelete
 }
 
-// MeasurementGroup represents a logical set of measurements.
-type MeasurementGroup struct {
-	ID        ulid.ULID
+type MeasurementProfilePhysical struct {
 	ProfileID ulid.ULID
-	Profile   *MeasurementProfile
-	Name      string
-	common.Timestamps
+	DbType    string // "influx", "clickhouse"
+	DBName    string
+	TableName string // par version
+	TTL       string // "7d", "30d"…
 }
 
-// MeasurementField represents a data point.
+// MeasurementField represents a data point and can be an indexed tag for custom profiles.
 type MeasurementField struct {
 	ID          ulid.ULID
 	ProfileID   ulid.ULID
-	Profile     *MeasurementProfile
+	Profile     *MeasurementProfileLogical
 	Name        string
 	Description *string
 	Type        DataType
-	common.Timestamps
-	common.SoftDelete
-}
-
-// MeasurementTag represents a tag or indexed metadata.
-type MeasurementTag struct {
-	ID          ulid.ULID
-	ProfileID   ulid.ULID
-	Profile     *MeasurementProfile
-	Name        string
-	Description *string
+	IsTag       bool
 	common.Timestamps
 	common.SoftDelete
 }
