@@ -51,8 +51,8 @@ services:
   cli:
     build:
       context: .
-      dockerfile: Dockerfile.gowaitfile.dev
-    image: sensorflow/gowaitfile:dev
+      dockerfile: Dockerfile.dev
+    image: sensorflow/goback:dev
     pull_policy: never
     container_name: sensorflow-cli
     working_dir: /src
@@ -60,24 +60,19 @@ services:
       GO_SOURCE_FILE: /src/cmd/cli/main.go
       GO_BIN_PATH: /usr/local/bin/cli
       GO_BUILD_FLAGS: -buildvcs=false -gcflags="all=-N -l"
-      DATABASE_URL: 'postgres://root:S3ns0rF%210w%232025@postgres/sensorflow?sslmode=disable'
+      PG_DATABASE_URL: 'postgres://root:S3ns0rF%210w%232025@postgres/sensorflow?sslmode=disable'
     volumes:
       - ../back:/src
-      - shared:/shared/influx:ro
     env_file:
       - ./cli/.env.dev
     networks:
       - sensorflow-net
-    command: [ 
-      "--file", "/shared/influx/admin.token",
-      "--cmd", "export INFLUXDB_TOKEN=$(cat /shared/influx/admin.token)",
-    ]
 
   ingestion-api:
     build:
       context: .
-      dockerfile: Dockerfile.gowaitfile.dev
-    image: sensorflow/gowaitfile:dev
+      dockerfile: Dockerfile.dev
+    image: sensorflow/goback:dev
     pull_policy: never
     container_name: sensorflow-ingestion-api
     working_dir: /src
@@ -89,25 +84,20 @@ services:
       GO_BUILD_FLAGS: -buildvcs=false -gcflags="all=-N -l"
     volumes:
       - ../back:/src
-      - shared:/shared/influx:ro
     env_file:
       - ./ingestion/.env.dev
     networks:
       - sensorflow-net
     depends_on:
-      - influxdb
+      - clickhouse
       - postgres
       - redis
-    command: [ 
-      "--file", "/shared/influx/admin.token",
-      "--cmd", "export INFLUXDB_TOKEN=$(cat /shared/influx/admin.token)",
-    ]
 
   gateway-api:
     build:
       context: .
-      dockerfile: Dockerfile.gowaitfile.dev
-    image: sensorflow/gowaitfile:dev
+      dockerfile: Dockerfile.dev
+    image: sensorflow/goback:dev
     pull_policy: never
     container_name: sensorflow-gateway-api
     working_dir: /src
@@ -119,17 +109,13 @@ services:
       GO_BUILD_FLAGS: -buildvcs=false -gcflags="all=-N -l"
     volumes:
       - ../back:/src
-      - shared:/shared/influx:ro
     env_file:
       - ./gateway/.env.dev
     networks:
       - sensorflow-net
     depends_on:
-      - influxdb
-    command: [ 
-      "--file", "/shared/influx/admin.token",
-      "--cmd", "export INFLUXDB_TOKEN=$(cat /shared/influx/admin.token)",
-    ]
+      - postgres
+      - redis
     
   kafka:
     image: apache/kafka:4.0.0
@@ -156,58 +142,44 @@ services:
       - sensorflow-net
     depends_on:
       - kafka
-
-  influxdb:
-    build:
-      context: .
-      dockerfile: influxdb/Dockerfile.dev
-    image: sensorflow/influxdb:dev
-    pull_policy: never
-    container_name: sensorflow-influxdb3-core
-    platform: linux/amd64
+  
+  clickhouse:
+    image: clickhouse/clickhouse-server:25.9.6
+    container_name: clickhouse
+    hostname: clickhouse
     ports:
-      - 8181:8181 # Gateway gRPC/HTTP/SQL
+      - 8123:8123   # HTTP API
+      - 9000:9000   # Native TCP interface
+      - 9009:9009   # Interserver (cluster usage)
     volumes:
-      - influxdata:/var/lib/influxdb
-      - shared:/shared/influx:rw
-    env_file:
-      - ./influxdb/.env.dev
+      - clickhouse_data:/var/lib/clickhouse
+      - clickhouse_cold:/var/lib/clickhouse/cold_data
+      - clickhouse_logs:/var/log/clickhouse-server
+      - ./clickhouse/docker.xml:/etc/clickhouse-server/config.d/docker.xml:ro
+    environment:
+      - CLICKHOUSE_DB=default
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=
+      - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    restart: unless-stopped
     networks:
       - sensorflow-net
-    command: [ "--token-path", "/shared/influx/admin.token" ]
-
-  influxdb-ui:
-    build:
-      context: .
-      dockerfile: influxdb/Dockerfile.ui.dev
-    image: sensorflow/influxdb-ui:dev
-    pull_policy: never
-    container_name: sensorflow-influxdb3-ui
-    platform: linux/amd64
-    ports:
-      - 8002:80
-    volumes:
-      - shared:/shared/influx:ro
-    networks:
-      - sensorflow-net
-    depends_on:
-      - influxdb
-    command: [
-      "--token-path", "/shared/influx/admin.token",
-      "--db-name", "measurements",
-      "--influx-addr", "http://influxdb:8181"
-    ]
   
 networks:
   sensorflow-net:
     driver: bridge
 
 volumes:
-  shared:
+  clickhouse_data:
+  clickhouse_cold:
+  clickhouse_logs:
   pgdata:
   redisdata:
   kafkadata:
-  influxdata:
   certs_data:
     driver: local
     driver_opts:

@@ -1,0 +1,15 @@
+<yandex>
+  <storage_configuration>
+    <disks>
+      <cold><path>/var/lib/clickhouse/cold_data/</path></cold>
+    </disks>
+    <policies>
+      <hot_cold>
+        <volumes>
+          <hot><disk>default</disk></hot>
+          <cold><disk>cold</disk></cold>
+        </volumes>
+      </hot_cold>
+    </policies>
+  </storage_configuration>
+</yandex>

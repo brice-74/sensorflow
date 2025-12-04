@@ -13,13 +13,10 @@ de_cli := docker exec -it $(cli_container_name)
 #                              Core                               #
 #-----------------------------------------------------------------#
 
-.PHONY: start start/core stop reset
+.PHONY: start stop reset
 
 start:
 	@docker compose -f ./ops/docker-compose.dev.yml up -d 
-
-start/core:
-	@docker compose -f ./ops/docker-compose.dev.yml up -d cli gateway-api ingestion-api kafka influxdb postgres nginx
 
 stop:
 	@docker compose -f ./ops/docker-compose.dev.yml stop
@@ -80,26 +77,44 @@ clean/testcache:
 #                             Migrate                             #
 #-----------------------------------------------------------------#
 
-.PHONY: migrate/new migrate/up migrate/down migrate/goto
+.PHONY: migrate/pg/new migrate/pg/up migrate/pg/down migrate/pg/goto \
+	migrate/clickhouse/new migrate/clickhouse/up migrate/clickhouse/down migrate/clickhouse/goto
 
-migrate_path := ./internal/adapters/postgres/migrations
+pg_migrate_path := ./internal/adapters/postgres/migrations
 
-migrate/new:
-	@$(de_cli) migrate create -seq -ext=.sql -dir=${migrate_path} ${name}
+migrate/pg/new:
+	@$(call de_migrate_create,${pg_migrate_path},${name})
 
-migrate/up:
-	@$(call de_migrate,up,${step})
+migrate/pg/up:
+	@$(call de_migrate_exec,${PG_DATABASE_URL},up,${step})
 
-migrate/down:
-	@$(call de_migrate,down,${step})
+migrate/pg/down:
+	@$(call de_migrate_exec,${PG_DATABASE_URL},down,${step})
 
-migrate/goto:
-	@$(call de_migrate,goto,${version})
+migrate/pg/goto:
+	@$(call de_migrate_exec,${PG_DATABASE_URL},goto,${version})
 
-define de_migrate
-	@$(de_cli) sh -c 'migrate -path=${migrate_path} -database "$$DATABASE_URL" $(1) $(2)'
+clickhouse_migrate_path := ./internal/adapters/clickhouse/migrations
+
+migrate/clickhouse/new:
+	@$(call de_migrate_create,${clickhouse_migrate_path},${name})
+
+migrate/clickhouse/up:
+	@$(call de_migrate_exec,${CLICKHOUSE_DATABASE_URL},up,${step})
+
+migrate/clickhouse/down:
+	@$(call de_migrate_exec,${CLICKHOUSE_DATABASE_URL},down,${step})
+
+migrate/clickhouse/goto:
+	@$(call de_migrate_exec,${CLICKHOUSE_DATABASE_URL},goto,${version})
+
+define de_migrate_create
+	@$(de_cli) migrate create -seq -ext=.sql -dir=$(1) $(2)
 endef
 
+define de_migrate_exec
+	@$(de_cli) sh -c 'migrate -path=${migrate_path} -database "$(1)" $(2) $(2)'
+endef
 
 #-----------------------------------------------------------------#
 #                             Other                               #
