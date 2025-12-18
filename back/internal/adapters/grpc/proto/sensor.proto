@@ -4,24 +4,70 @@ option go_package = "github.com/brice-74/sensorflow/internal/adapters/grpc/proto
 
 package sensor;
 
-import "google/protobuf/empty.proto";
 import "google/protobuf/any.proto";
+import "google/protobuf/timestamp.proto";
 
 service SensorService {
-   rpc StreamMeasurements(stream SensorMeasurementsRequest) returns (google.protobuf.Empty);
-   rpc UnaryMeasurements(SensorMeasurementsRequest) returns (google.protobuf.Empty);
+  rpc StreamMeasurements(stream SensorMeasurementsRequest) returns (stream IngestAck);
+  rpc UnaryMeasurements(SensorMeasurementsRequest) returns (IngestAck);
+}
+
+enum AckMode {
+  ACK_MODE_UNSPECIFIED = 0;
+  ACK_MODE_FULL = 1; // stats + erreurs (par défaut)
+  ACK_MODE_STATS_ONLY = 2; // accepted/rejected uniquement
+  ACK_MODE_NONE = 3; // fire-and-forget
+}
+
+message IngestOptions {
+  AckMode ack_mode = 1;
+  optional uint32 max_rejected_details = 2; 
+  optional uint32 ack_every_n = 3; 
+  optional uint32 ack_max_interval_ms = 4;
+}
+
+enum IngestStatus {
+  INGEST_STATUS_UNSPECIFIED = 0;
+  INGEST_STATUS_OK = 1;
+  INGEST_STATUS_PARTIAL = 2;
+  INGEST_STATUS_THROTTLED = 3;
+  INGEST_STATUS_REJECTED = 4;
+}
+
+message IngestAck {
+  uint64 accepted = 1;
+  uint64 rejected = 2;
+  IngestStatus status = 3;
+  optional string message = 4;
+  repeated RejectedDetail rejected_details = 5;
+}
+
+enum RejectionCode {
+  UNKNOWN = 0;
+  INVALID_VALUE = 1;
+  TIMESTAMP_MISSING = 2;
+  SENSOR_NOT_FOUND = 3;
+}
+
+message RejectedDetail {
+  string sensor_id = 1;
+  RejectionCode code = 2;
+  string reason = 3; 
+  uint64 count = 4;  
 }
 
 message SensorMeasurementsRequest {
-   // string represents a sensor ID 
-   map<string, SensorMeasurementsList> values = 1;
+  repeated SensorMeasurementsForSensor sensors = 1;
+  optional IngestOptions options = 2;
 }
 
-message SensorMeasurementsList {
-   repeated SensorMeasurements measurements = 1;
+message SensorMeasurementsForSensor {
+  string sensor_id = 1;
+  string profile_id = 2;
+  repeated SensorMeasurement measurements = 3;
 }
 
-message SensorMeasurements {
-   int64 timestamp = 1;
-   map<string, google.protobuf.Any> values = 2;
+message SensorMeasurement {
+  optional google.protobuf.Timestamp measured_at = 1;
+  map<string, google.protobuf.Any> values = 2;
 }

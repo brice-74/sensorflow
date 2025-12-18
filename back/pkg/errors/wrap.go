@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
-	"sync"
 )
 
 // used to avoid importing the stdlib "errors".
@@ -14,8 +13,6 @@ var (
 	Unwrap = errors.Unwrap
 	Join   = errors.Join
 )
-
-var pcNameCache sync.Map
 
 func GetCaller(skip int) string {
 	_, file, line, ok := runtime.Caller(skip)

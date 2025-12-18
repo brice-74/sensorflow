@@ -67,22 +67,21 @@ type MeasurementDatabase struct {
 
 type MeasurementTable struct {
 	common.ULID
-	DatabaseID ulid.ULID
 
-	Name                 string
-	TTL                  string // "7d", "30d", etc.
-	PartitioningStrategy string // "month", "week", "day"
-	IsDedicated          bool   // table dédiée ou mutualisée
-	EnableColdStorage    bool
+	DatabaseID ulid.ULID
+	Name       string
+
+	Plan                 string  // ex: "custom", "shared_generic", "shared_custom"
+	HotTTL               *string // ex: "7d"
+	ColdTTL              *string // ex: "90d"
+	PartitioningStrategy string  // ex: "month", "week", "day"
+	ColdVolumeName       *string
+	TTLReference         string // "ingest_time", "measure_time"
 }
 
 type MeasurementProfileBinding struct {
-	common.ULID
 	SensorInstanceID      ulid.ULID
 	LogicalProfileID      ulid.ULID
 	MeasurementTableID    ulid.ULID
 	MeasurementDatabaseID ulid.ULID
-
-	EffectiveFrom int64  // timestamp de début
-	EffectiveTo   *int64 // nil si actif
 }

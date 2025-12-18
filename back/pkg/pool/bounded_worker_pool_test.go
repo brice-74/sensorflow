@@ -1,6 +1,6 @@
 //go:build unit
 
-package asyncpool_test
+package pool_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/brice-74/sensorflow/pkg/asyncpool"
+	"github.com/brice-74/sensorflow/pkg/pool"
 )
 
 func waitUntil(t *testing.T, cond func() bool, timeout time.Duration) {
@@ -25,65 +25,65 @@ func waitUntil(t *testing.T, cond func() bool, timeout time.Duration) {
 
 func TestSubmitAndExecution(t *testing.T) {
 	var count atomic.Int64
-	pool := asyncpool.NewWorkerPool(asyncpool.WithMinWorkers(1), asyncpool.WithMaxWorkers(4))
-	defer pool.ForceShutdown()
+	p := pool.NewBoundedWorkerPool(pool.WithMinWorkers(1), pool.WithMaxWorkers(4))
+	defer p.ForceShutdown()
 
-	for range 10 {
-		if err := pool.Submit(func() { count.Add(1) }); err != nil {
+	for i := 0; i < 10; i++ {
+		if err := p.Submit(pool.VoidTask(func() { count.Add(1) })); err != nil {
 			t.Fatalf("submit failed: %v", err)
 		}
 	}
 
 	waitUntil(t, func() bool { return count.Load() == 10 }, 2*time.Second)
-	if pool.QueueLength() != 0 {
-		t.Errorf("expected queue empty, got %d", pool.QueueLength())
+	if p.QueueLength() != 0 {
+		t.Errorf("expected queue empty, got %d", p.QueueLength())
 	}
 }
 
 func TestScalingBehavior(t *testing.T) {
-	pool := asyncpool.NewWorkerPool(asyncpool.WithMinWorkers(1), asyncpool.WithMaxWorkers(5))
-	defer pool.ForceShutdown()
+	p := pool.NewBoundedWorkerPool(pool.WithMinWorkers(1), pool.WithMaxWorkers(5))
+	defer p.ForceShutdown()
 
 	var wg sync.WaitGroup
 	wg.Add(20)
-	for range 20 {
-		pool.Submit(func() {
+	for i := 0; i < 20; i++ {
+		_ = p.Submit(pool.VoidTask(func() {
 			time.Sleep(100 * time.Millisecond)
 			wg.Done()
-		})
+		}))
 	}
 
-	waitUntil(t, func() bool { return pool.ActiveWorkers() > 1 }, 1*time.Second)
+	waitUntil(t, func() bool { return p.ActiveWorkers() > 1 }, 1*time.Second)
 
 	wg.Wait()
 }
 
 func TestPanicHandler(t *testing.T) {
 	var recovered atomic.Bool
-	pool := asyncpool.NewWorkerPool(asyncpool.WithPanicHandler(func(r any) {
+	p := pool.NewBoundedWorkerPool(pool.WithPanicHandler(func(r any) {
 		recovered.Store(true)
 	}))
-	defer pool.ForceShutdown()
+	defer p.ForceShutdown()
 
-	_ = pool.Submit(func() { panic("boom") })
+	_ = p.Submit(pool.VoidTask(func() { panic("boom") }))
 
 	waitUntil(t, func() bool { return recovered.Load() }, 1*time.Second)
 }
 
 func TestShutdownGraceful(t *testing.T) {
 	var count atomic.Int64
-	pool := asyncpool.NewWorkerPool(asyncpool.WithMinWorkers(1), asyncpool.WithMaxWorkers(1))
-	for range 5 {
-		pool.Submit(func() {
+	p := pool.NewBoundedWorkerPool(pool.WithMinWorkers(1), pool.WithMaxWorkers(1))
+	for i := 0; i < 5; i++ {
+		_ = p.Submit(pool.VoidTask(func() {
 			time.Sleep(50 * time.Millisecond)
 			count.Add(1)
-		})
+		}))
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	err := pool.Shutdown(ctx)
+	err := p.Shutdown(ctx)
 	if err != nil {
 		t.Fatalf("expected graceful shutdown, got %v", err)
 	}
@@ -94,43 +94,43 @@ func TestShutdownGraceful(t *testing.T) {
 }
 
 func TestShutdownTimeout(t *testing.T) {
-	pool := asyncpool.NewWorkerPool(asyncpool.WithMinWorkers(1), asyncpool.WithMaxWorkers(1))
-	for range 2 {
-		pool.Submit(func() { time.Sleep(300 * time.Millisecond) })
+	p := pool.NewBoundedWorkerPool(pool.WithMinWorkers(1), pool.WithMaxWorkers(1))
+	for i := 0; i < 2; i++ {
+		_ = p.Submit(pool.VoidTask(func() { time.Sleep(300 * time.Millisecond) }))
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
-	err := pool.Shutdown(ctx)
-	if err != asyncpool.ErrShutdownTimeout {
+	err := p.Shutdown(ctx)
+	if err != pool.ErrShutdownTimeout {
 		t.Fatalf("expected ErrShutdownTimeout, got %v", err)
 	}
 }
 
 func TestForceShutdownDrainsQueue(t *testing.T) {
 	var count atomic.Int64
-	pool := asyncpool.NewWorkerPool(asyncpool.WithMinWorkers(1), asyncpool.WithMaxWorkers(1))
+	p := pool.NewBoundedWorkerPool(pool.WithMinWorkers(1), pool.WithMaxWorkers(1))
 
 	var started sync.WaitGroup
 	started.Add(1)
 
-	err := pool.Submit(func() {
+	err := p.Submit(pool.VoidTask(func() {
 		started.Done()
 		time.Sleep(200 * time.Millisecond)
 		count.Add(1)
-	})
+	}))
 	if err != nil {
 		t.Fatalf("submit failed: %v", err)
 	}
 
-	for range 5 {
-		_ = pool.Submit(func() { count.Add(1) })
+	for i := 0; i < 5; i++ {
+		_ = p.Submit(pool.VoidTask(func() { count.Add(1) }))
 	}
 
 	started.Wait()
 
-	pool.ForceShutdown()
+	p.ForceShutdown()
 
 	final := count.Load()
 	if final != 1 {
@@ -139,21 +139,20 @@ func TestForceShutdownDrainsQueue(t *testing.T) {
 }
 
 func TestSubmitAfterShutdown(t *testing.T) {
-	pool := asyncpool.NewWorkerPool()
-	_ = pool.Submit(func() {})
-	_ = pool.Shutdown(context.Background())
+	p := pool.NewBoundedWorkerPool()
+	_ = p.Submit(pool.VoidTask(func() {}))
+	_ = p.Shutdown(context.Background())
 
-	err := pool.Submit(func() {})
-	if err != asyncpool.ErrQueueClosed {
+	err := p.Submit(pool.VoidTask(func() {}))
+	if err != pool.ErrQueueClosed {
 		t.Errorf("expected ErrQueueClosed, got %v", err)
 	}
 }
 
 func TestIdleWorkerExit(t *testing.T) {
-	pool := asyncpool.NewWorkerPool(asyncpool.WithMinWorkers(0), asyncpool.WithMaxWorkers(2), asyncpool.WithIdleTimeout(100*time.Millisecond))
-	defer pool.ForceShutdown()
-
-	pool.Submit(func() {})
-	waitUntil(t, func() bool { return pool.ActiveWorkers() > 0 }, 500*time.Millisecond)
-	waitUntil(t, func() bool { return pool.ActiveWorkers() == 0 }, 2*time.Second)
+	p := pool.NewBoundedWorkerPool(pool.WithMinWorkers(0), pool.WithMaxWorkers(2), pool.WithIdleTimeout(100*time.Millisecond))
+	defer p.ForceShutdown()
+	_ = p.Submit(pool.VoidTask(func() {}))
+	waitUntil(t, func() bool { return p.ActiveWorkers() > 0 }, 500*time.Millisecond)
+	waitUntil(t, func() bool { return p.ActiveWorkers() == 0 }, 2*time.Second)
 }

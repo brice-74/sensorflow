@@ -18,10 +18,6 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
-// todo: compose GRPC services
-type server struct {
-}
-
 type GRPCDeps struct {
 	Logger                    log.Fiber
 	SensorGatewayOrchestrator ports.SensorGatewayOrchestrator
