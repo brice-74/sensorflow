@@ -19,16 +19,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	SensorService_StreamMeasurements_FullMethodName = "/sensor.SensorService/StreamMeasurements"
-	SensorService_UnaryMeasurements_FullMethodName  = "/sensor.SensorService/UnaryMeasurements"
+	SensorService_StreamCustomMeasurements_FullMethodName    = "/sensor.SensorService/StreamCustomMeasurements"
+	SensorService_UnaryCustomMeasurements_FullMethodName     = "/sensor.SensorService/UnaryCustomMeasurements"
+	SensorService_StreamAccelGyroMeasurements_FullMethodName = "/sensor.SensorService/StreamAccelGyroMeasurements"
+	SensorService_UnaryAccelGyroMeasurements_FullMethodName  = "/sensor.SensorService/UnaryAccelGyroMeasurements"
 )
 
 // SensorServiceClient is the client API for SensorService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SensorServiceClient interface {
-	StreamMeasurements(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[SensorMeasurementsRequest, IngestAck], error)
-	UnaryMeasurements(ctx context.Context, in *SensorMeasurementsRequest, opts ...grpc.CallOption) (*IngestAck, error)
+	StreamCustomMeasurements(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[CustomMeasurementsRequest, IngestAck], error)
+	UnaryCustomMeasurements(ctx context.Context, in *CustomMeasurementsRequest, opts ...grpc.CallOption) (*IngestAck, error)
+	StreamAccelGyroMeasurements(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[AccelGyroMeasurementsRequest, IngestAck], error)
+	UnaryAccelGyroMeasurements(ctx context.Context, in *AccelGyroMeasurementsRequest, opts ...grpc.CallOption) (*IngestAck, error)
 }
 
 type sensorServiceClient struct {
@@ -39,23 +43,46 @@ func NewSensorServiceClient(cc grpc.ClientConnInterface) SensorServiceClient {
 	return &sensorServiceClient{cc}
 }
 
-func (c *sensorServiceClient) StreamMeasurements(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[SensorMeasurementsRequest, IngestAck], error) {
+func (c *sensorServiceClient) StreamCustomMeasurements(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[CustomMeasurementsRequest, IngestAck], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &SensorService_ServiceDesc.Streams[0], SensorService_StreamMeasurements_FullMethodName, cOpts...)
+	stream, err := c.cc.NewStream(ctx, &SensorService_ServiceDesc.Streams[0], SensorService_StreamCustomMeasurements_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[SensorMeasurementsRequest, IngestAck]{ClientStream: stream}
+	x := &grpc.GenericClientStream[CustomMeasurementsRequest, IngestAck]{ClientStream: stream}
 	return x, nil
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type SensorService_StreamMeasurementsClient = grpc.BidiStreamingClient[SensorMeasurementsRequest, IngestAck]
+type SensorService_StreamCustomMeasurementsClient = grpc.BidiStreamingClient[CustomMeasurementsRequest, IngestAck]
 
-func (c *sensorServiceClient) UnaryMeasurements(ctx context.Context, in *SensorMeasurementsRequest, opts ...grpc.CallOption) (*IngestAck, error) {
+func (c *sensorServiceClient) UnaryCustomMeasurements(ctx context.Context, in *CustomMeasurementsRequest, opts ...grpc.CallOption) (*IngestAck, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(IngestAck)
-	err := c.cc.Invoke(ctx, SensorService_UnaryMeasurements_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, SensorService_UnaryCustomMeasurements_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *sensorServiceClient) StreamAccelGyroMeasurements(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[AccelGyroMeasurementsRequest, IngestAck], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &SensorService_ServiceDesc.Streams[1], SensorService_StreamAccelGyroMeasurements_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[AccelGyroMeasurementsRequest, IngestAck]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type SensorService_StreamAccelGyroMeasurementsClient = grpc.BidiStreamingClient[AccelGyroMeasurementsRequest, IngestAck]
+
+func (c *sensorServiceClient) UnaryAccelGyroMeasurements(ctx context.Context, in *AccelGyroMeasurementsRequest, opts ...grpc.CallOption) (*IngestAck, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(IngestAck)
+	err := c.cc.Invoke(ctx, SensorService_UnaryAccelGyroMeasurements_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -66,8 +93,10 @@ func (c *sensorServiceClient) UnaryMeasurements(ctx context.Context, in *SensorM
 // All implementations must embed UnimplementedSensorServiceServer
 // for forward compatibility.
 type SensorServiceServer interface {
-	StreamMeasurements(grpc.BidiStreamingServer[SensorMeasurementsRequest, IngestAck]) error
-	UnaryMeasurements(context.Context, *SensorMeasurementsRequest) (*IngestAck, error)
+	StreamCustomMeasurements(grpc.BidiStreamingServer[CustomMeasurementsRequest, IngestAck]) error
+	UnaryCustomMeasurements(context.Context, *CustomMeasurementsRequest) (*IngestAck, error)
+	StreamAccelGyroMeasurements(grpc.BidiStreamingServer[AccelGyroMeasurementsRequest, IngestAck]) error
+	UnaryAccelGyroMeasurements(context.Context, *AccelGyroMeasurementsRequest) (*IngestAck, error)
 	mustEmbedUnimplementedSensorServiceServer()
 }
 
@@ -78,11 +107,17 @@ type SensorServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedSensorServiceServer struct{}
 
-func (UnimplementedSensorServiceServer) StreamMeasurements(grpc.BidiStreamingServer[SensorMeasurementsRequest, IngestAck]) error {
-	return status.Error(codes.Unimplemented, "method StreamMeasurements not implemented")
+func (UnimplementedSensorServiceServer) StreamCustomMeasurements(grpc.BidiStreamingServer[CustomMeasurementsRequest, IngestAck]) error {
+	return status.Error(codes.Unimplemented, "method StreamCustomMeasurements not implemented")
 }
-func (UnimplementedSensorServiceServer) UnaryMeasurements(context.Context, *SensorMeasurementsRequest) (*IngestAck, error) {
-	return nil, status.Error(codes.Unimplemented, "method UnaryMeasurements not implemented")
+func (UnimplementedSensorServiceServer) UnaryCustomMeasurements(context.Context, *CustomMeasurementsRequest) (*IngestAck, error) {
+	return nil, status.Error(codes.Unimplemented, "method UnaryCustomMeasurements not implemented")
+}
+func (UnimplementedSensorServiceServer) StreamAccelGyroMeasurements(grpc.BidiStreamingServer[AccelGyroMeasurementsRequest, IngestAck]) error {
+	return status.Error(codes.Unimplemented, "method StreamAccelGyroMeasurements not implemented")
+}
+func (UnimplementedSensorServiceServer) UnaryAccelGyroMeasurements(context.Context, *AccelGyroMeasurementsRequest) (*IngestAck, error) {
+	return nil, status.Error(codes.Unimplemented, "method UnaryAccelGyroMeasurements not implemented")
 }
 func (UnimplementedSensorServiceServer) mustEmbedUnimplementedSensorServiceServer() {}
 func (UnimplementedSensorServiceServer) testEmbeddedByValue()                       {}
@@ -105,27 +140,52 @@ func RegisterSensorServiceServer(s grpc.ServiceRegistrar, srv SensorServiceServe
 	s.RegisterService(&SensorService_ServiceDesc, srv)
 }
 
-func _SensorService_StreamMeasurements_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(SensorServiceServer).StreamMeasurements(&grpc.GenericServerStream[SensorMeasurementsRequest, IngestAck]{ServerStream: stream})
+func _SensorService_StreamCustomMeasurements_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(SensorServiceServer).StreamCustomMeasurements(&grpc.GenericServerStream[CustomMeasurementsRequest, IngestAck]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type SensorService_StreamMeasurementsServer = grpc.BidiStreamingServer[SensorMeasurementsRequest, IngestAck]
+type SensorService_StreamCustomMeasurementsServer = grpc.BidiStreamingServer[CustomMeasurementsRequest, IngestAck]
 
-func _SensorService_UnaryMeasurements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SensorMeasurementsRequest)
+func _SensorService_UnaryCustomMeasurements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CustomMeasurementsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(SensorServiceServer).UnaryMeasurements(ctx, in)
+		return srv.(SensorServiceServer).UnaryCustomMeasurements(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: SensorService_UnaryMeasurements_FullMethodName,
+		FullMethod: SensorService_UnaryCustomMeasurements_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SensorServiceServer).UnaryMeasurements(ctx, req.(*SensorMeasurementsRequest))
+		return srv.(SensorServiceServer).UnaryCustomMeasurements(ctx, req.(*CustomMeasurementsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _SensorService_StreamAccelGyroMeasurements_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(SensorServiceServer).StreamAccelGyroMeasurements(&grpc.GenericServerStream[AccelGyroMeasurementsRequest, IngestAck]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type SensorService_StreamAccelGyroMeasurementsServer = grpc.BidiStreamingServer[AccelGyroMeasurementsRequest, IngestAck]
+
+func _SensorService_UnaryAccelGyroMeasurements_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AccelGyroMeasurementsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SensorServiceServer).UnaryAccelGyroMeasurements(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: SensorService_UnaryAccelGyroMeasurements_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SensorServiceServer).UnaryAccelGyroMeasurements(ctx, req.(*AccelGyroMeasurementsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -138,14 +198,24 @@ var SensorService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*SensorServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "UnaryMeasurements",
-			Handler:    _SensorService_UnaryMeasurements_Handler,
+			MethodName: "UnaryCustomMeasurements",
+			Handler:    _SensorService_UnaryCustomMeasurements_Handler,
+		},
+		{
+			MethodName: "UnaryAccelGyroMeasurements",
+			Handler:    _SensorService_UnaryAccelGyroMeasurements_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "StreamMeasurements",
-			Handler:       _SensorService_StreamMeasurements_Handler,
+			StreamName:    "StreamCustomMeasurements",
+			Handler:       _SensorService_StreamCustomMeasurements_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "StreamAccelGyroMeasurements",
+			Handler:       _SensorService_StreamAccelGyroMeasurements_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},

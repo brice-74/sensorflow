@@ -145,3 +145,11 @@ ORDER BY (tenant_id, sensor_id, timestamp);
 * **TTL et cold storage** : plusieurs tables TTL possibles, option cold storage via volumes, TTL personnalisé = table dédiée
 * ClickHouse gère ingestion massive via `MergeTree`, `PARTITION BY`, `ORDER BY`
 * SQL possible sur Maps, index limité pour éviter explosion cardinalité
+
+
+
+| Champ       | Unité envoyée | Unité stockée | Conversion à l’ingestion |
+| ----------- | ------------- | ------------- | ------------------------ |
+| temperature | °F            | °C            | °C = (°F - 32) * 5/9     |
+| accel_x/y/z | g             | m/s²          | m/s² = g * 9.80665       |
+| gyro_x/y/z  | rad/s         | °/s           | °/s = rad/s * 180/π      |

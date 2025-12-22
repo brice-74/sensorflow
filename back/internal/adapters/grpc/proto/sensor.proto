@@ -8,8 +8,11 @@ import "google/protobuf/any.proto";
 import "google/protobuf/timestamp.proto";
 
 service SensorService {
-  rpc StreamMeasurements(stream SensorMeasurementsRequest) returns (stream IngestAck);
-  rpc UnaryMeasurements(SensorMeasurementsRequest) returns (IngestAck);
+  rpc StreamCustomMeasurements(stream CustomMeasurementsRequest) returns (stream IngestAck);
+  rpc UnaryCustomMeasurements(CustomMeasurementsRequest) returns (IngestAck);
+
+  rpc StreamAccelGyroMeasurements(stream AccelGyroMeasurementsRequest) returns (stream IngestAck);
+  rpc UnaryAccelGyroMeasurements(AccelGyroMeasurementsRequest) returns (IngestAck);
 }
 
 enum AckMode {
@@ -56,18 +59,64 @@ message RejectedDetail {
   uint64 count = 4;  
 }
 
-message SensorMeasurementsRequest {
-  repeated SensorMeasurementsForSensor sensors = 1;
+message CustomMeasurementsRequest {
+  repeated CustomMeasurementsForSensor sensors = 1;
   optional IngestOptions options = 2;
 }
 
-message SensorMeasurementsForSensor {
+message CustomMeasurementsForSensor {
   string sensor_id = 1;
   string profile_id = 2;
-  repeated SensorMeasurement measurements = 3;
+  repeated CustomMeasurement measurements = 3;
 }
 
-message SensorMeasurement {
-  optional google.protobuf.Timestamp measured_at = 1;
+message CustomMeasurement {
+  google.protobuf.Timestamp measured_at = 1;
   map<string, google.protobuf.Any> values = 2;
+}
+
+enum TemperatureUnit {
+  CELSIUS = 0; // °C
+  FFAHRENHEIT = 1; // °F
+  KELVIN = 2; // K
+}
+
+enum AccelUnit {
+  M_S2 = 0; // m/s²
+  G = 1; // g
+}
+
+enum GyroUnit {
+  DEG_S = 0; // °/s
+  RAD_S = 1; // rad/s
+}
+
+message IngestAccelGyroOptions {
+  optional IngestOptions ingest_options = 1;
+  optional AccelUnit accel_unit = 2;
+  optional GyroUnit gyro_unit = 3;
+  optional TemperatureUnit temperature_unit = 4;
+}
+
+message AccelGyroMeasurementsRequest {
+  repeated AccelGyroMeasurementsForSensor sensors = 1;
+  optional IngestAccelGyroOptions options = 2;
+}
+
+message  AccelGyroMeasurementsForSensor {
+  string sensor_id = 1;
+  repeated CustomMeasurement measurements = 3;
+}
+
+message AccelGyroMeasurement {
+  google.protobuf.Timestamp measured_at = 1;
+  double accel_x = 2;
+  double accel_y = 3;
+  double accel_z = 4;
+  double gyro_x = 5;
+  double gyro_y = 6;
+  double gyro_z = 7;
+  optional double temperature = 8;
+  optional double vibration_rms = 9;
+  optional double vibration_peak = 10;
 }

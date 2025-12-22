@@ -7,14 +7,13 @@ import (
 	"github.com/brice-74/sensorflow/internal/adapters/grpc/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type SensorMeasurementsService struct {
 	proto.UnimplementedSensorServiceServer
 }
 
-func (svc *SensorMeasurementsService) StreamMeasurements(srv proto.SensorService_StreamMeasurementsServer) error {
+func (svc *SensorMeasurementsService) StreamMeasurements(srv proto.SensorService_StreamCustomMeasurementsServer) error {
 	var accepted, rejected uint64
 
 	for {
@@ -34,8 +33,8 @@ func (svc *SensorMeasurementsService) StreamMeasurements(srv proto.SensorService
 	}
 }
 
-func (svc *SensorMeasurementsService) UnaryMeasurements(ctx context.Context, req *proto.SensorMeasurementsRequest) (*emptyproto.Empty, error) {
-	return new(emptypb.Empty), nil
+func (svc *SensorMeasurementsService) UnaryMeasurements(ctx context.Context, req *proto.CustomMeasurementsRequest) (*proto.IngestAck, error) {
+	return new(proto.IngestAck), nil
 }
 
 func computeIngestStatus(

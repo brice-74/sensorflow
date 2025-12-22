@@ -182,6 +182,147 @@ func (RejectionCode) EnumDescriptor() ([]byte, []int) {
 	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{2}
 }
 
+type TemperatureUnit int32
+
+const (
+	TemperatureUnit_CELSIUS     TemperatureUnit = 0 // °C
+	TemperatureUnit_FFAHRENHEIT TemperatureUnit = 1 // °F
+	TemperatureUnit_KELVIN      TemperatureUnit = 2 // K
+)
+
+// Enum value maps for TemperatureUnit.
+var (
+	TemperatureUnit_name = map[int32]string{
+		0: "CELSIUS",
+		1: "FFAHRENHEIT",
+		2: "KELVIN",
+	}
+	TemperatureUnit_value = map[string]int32{
+		"CELSIUS":     0,
+		"FFAHRENHEIT": 1,
+		"KELVIN":      2,
+	}
+)
+
+func (x TemperatureUnit) Enum() *TemperatureUnit {
+	p := new(TemperatureUnit)
+	*p = x
+	return p
+}
+
+func (x TemperatureUnit) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TemperatureUnit) Descriptor() protoreflect.EnumDescriptor {
+	return file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[3].Descriptor()
+}
+
+func (TemperatureUnit) Type() protoreflect.EnumType {
+	return &file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[3]
+}
+
+func (x TemperatureUnit) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TemperatureUnit.Descriptor instead.
+func (TemperatureUnit) EnumDescriptor() ([]byte, []int) {
+	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{3}
+}
+
+type AccelUnit int32
+
+const (
+	AccelUnit_M_S2 AccelUnit = 0 // m/s²
+	AccelUnit_G    AccelUnit = 1 // g
+)
+
+// Enum value maps for AccelUnit.
+var (
+	AccelUnit_name = map[int32]string{
+		0: "M_S2",
+		1: "G",
+	}
+	AccelUnit_value = map[string]int32{
+		"M_S2": 0,
+		"G":    1,
+	}
+)
+
+func (x AccelUnit) Enum() *AccelUnit {
+	p := new(AccelUnit)
+	*p = x
+	return p
+}
+
+func (x AccelUnit) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (AccelUnit) Descriptor() protoreflect.EnumDescriptor {
+	return file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[4].Descriptor()
+}
+
+func (AccelUnit) Type() protoreflect.EnumType {
+	return &file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[4]
+}
+
+func (x AccelUnit) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use AccelUnit.Descriptor instead.
+func (AccelUnit) EnumDescriptor() ([]byte, []int) {
+	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{4}
+}
+
+type GyroUnit int32
+
+const (
+	GyroUnit_DEG_S GyroUnit = 0 // °/s
+	GyroUnit_RAD_S GyroUnit = 1 // rad/s
+)
+
+// Enum value maps for GyroUnit.
+var (
+	GyroUnit_name = map[int32]string{
+		0: "DEG_S",
+		1: "RAD_S",
+	}
+	GyroUnit_value = map[string]int32{
+		"DEG_S": 0,
+		"RAD_S": 1,
+	}
+)
+
+func (x GyroUnit) Enum() *GyroUnit {
+	p := new(GyroUnit)
+	*p = x
+	return p
+}
+
+func (x GyroUnit) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (GyroUnit) Descriptor() protoreflect.EnumDescriptor {
+	return file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[5].Descriptor()
+}
+
+func (GyroUnit) Type() protoreflect.EnumType {
+	return &file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[5]
+}
+
+func (x GyroUnit) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use GyroUnit.Descriptor instead.
+func (GyroUnit) EnumDescriptor() ([]byte, []int) {
+	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{5}
+}
+
 type IngestOptions struct {
 	state              protoimpl.MessageState `protogen:"open.v1"`
 	AckMode            AckMode                `protobuf:"varint,1,opt,name=ack_mode,json=ackMode,proto3,enum=sensor.AckMode" json:"ack_mode,omitempty"`
@@ -394,28 +535,28 @@ func (x *RejectedDetail) GetCount() uint64 {
 	return 0
 }
 
-type SensorMeasurementsRequest struct {
+type CustomMeasurementsRequest struct {
 	state         protoimpl.MessageState         `protogen:"open.v1"`
-	Sensors       []*SensorMeasurementsForSensor `protobuf:"bytes,1,rep,name=sensors,proto3" json:"sensors,omitempty"`
+	Sensors       []*CustomMeasurementsForSensor `protobuf:"bytes,1,rep,name=sensors,proto3" json:"sensors,omitempty"`
 	Options       *IngestOptions                 `protobuf:"bytes,2,opt,name=options,proto3,oneof" json:"options,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SensorMeasurementsRequest) Reset() {
-	*x = SensorMeasurementsRequest{}
+func (x *CustomMeasurementsRequest) Reset() {
+	*x = CustomMeasurementsRequest{}
 	mi := &file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SensorMeasurementsRequest) String() string {
+func (x *CustomMeasurementsRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SensorMeasurementsRequest) ProtoMessage() {}
+func (*CustomMeasurementsRequest) ProtoMessage() {}
 
-func (x *SensorMeasurementsRequest) ProtoReflect() protoreflect.Message {
+func (x *CustomMeasurementsRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -427,48 +568,48 @@ func (x *SensorMeasurementsRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SensorMeasurementsRequest.ProtoReflect.Descriptor instead.
-func (*SensorMeasurementsRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use CustomMeasurementsRequest.ProtoReflect.Descriptor instead.
+func (*CustomMeasurementsRequest) Descriptor() ([]byte, []int) {
 	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *SensorMeasurementsRequest) GetSensors() []*SensorMeasurementsForSensor {
+func (x *CustomMeasurementsRequest) GetSensors() []*CustomMeasurementsForSensor {
 	if x != nil {
 		return x.Sensors
 	}
 	return nil
 }
 
-func (x *SensorMeasurementsRequest) GetOptions() *IngestOptions {
+func (x *CustomMeasurementsRequest) GetOptions() *IngestOptions {
 	if x != nil {
 		return x.Options
 	}
 	return nil
 }
 
-type SensorMeasurementsForSensor struct {
+type CustomMeasurementsForSensor struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	SensorId      string                 `protobuf:"bytes,1,opt,name=sensor_id,json=sensorId,proto3" json:"sensor_id,omitempty"`
 	ProfileId     string                 `protobuf:"bytes,2,opt,name=profile_id,json=profileId,proto3" json:"profile_id,omitempty"`
-	Measurements  []*SensorMeasurement   `protobuf:"bytes,3,rep,name=measurements,proto3" json:"measurements,omitempty"`
+	Measurements  []*CustomMeasurement   `protobuf:"bytes,3,rep,name=measurements,proto3" json:"measurements,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SensorMeasurementsForSensor) Reset() {
-	*x = SensorMeasurementsForSensor{}
+func (x *CustomMeasurementsForSensor) Reset() {
+	*x = CustomMeasurementsForSensor{}
 	mi := &file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SensorMeasurementsForSensor) String() string {
+func (x *CustomMeasurementsForSensor) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SensorMeasurementsForSensor) ProtoMessage() {}
+func (*CustomMeasurementsForSensor) ProtoMessage() {}
 
-func (x *SensorMeasurementsForSensor) ProtoReflect() protoreflect.Message {
+func (x *CustomMeasurementsForSensor) ProtoReflect() protoreflect.Message {
 	mi := &file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -480,54 +621,54 @@ func (x *SensorMeasurementsForSensor) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SensorMeasurementsForSensor.ProtoReflect.Descriptor instead.
-func (*SensorMeasurementsForSensor) Descriptor() ([]byte, []int) {
+// Deprecated: Use CustomMeasurementsForSensor.ProtoReflect.Descriptor instead.
+func (*CustomMeasurementsForSensor) Descriptor() ([]byte, []int) {
 	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *SensorMeasurementsForSensor) GetSensorId() string {
+func (x *CustomMeasurementsForSensor) GetSensorId() string {
 	if x != nil {
 		return x.SensorId
 	}
 	return ""
 }
 
-func (x *SensorMeasurementsForSensor) GetProfileId() string {
+func (x *CustomMeasurementsForSensor) GetProfileId() string {
 	if x != nil {
 		return x.ProfileId
 	}
 	return ""
 }
 
-func (x *SensorMeasurementsForSensor) GetMeasurements() []*SensorMeasurement {
+func (x *CustomMeasurementsForSensor) GetMeasurements() []*CustomMeasurement {
 	if x != nil {
 		return x.Measurements
 	}
 	return nil
 }
 
-type SensorMeasurement struct {
+type CustomMeasurement struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	MeasuredAt    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=measured_at,json=measuredAt,proto3,oneof" json:"measured_at,omitempty"`
+	MeasuredAt    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=measured_at,json=measuredAt,proto3" json:"measured_at,omitempty"`
 	Values        map[string]*anypb.Any  `protobuf:"bytes,2,rep,name=values,proto3" json:"values,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SensorMeasurement) Reset() {
-	*x = SensorMeasurement{}
+func (x *CustomMeasurement) Reset() {
+	*x = CustomMeasurement{}
 	mi := &file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SensorMeasurement) String() string {
+func (x *CustomMeasurement) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SensorMeasurement) ProtoMessage() {}
+func (*CustomMeasurement) ProtoMessage() {}
 
-func (x *SensorMeasurement) ProtoReflect() protoreflect.Message {
+func (x *CustomMeasurement) ProtoReflect() protoreflect.Message {
 	mi := &file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -539,23 +680,311 @@ func (x *SensorMeasurement) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SensorMeasurement.ProtoReflect.Descriptor instead.
-func (*SensorMeasurement) Descriptor() ([]byte, []int) {
+// Deprecated: Use CustomMeasurement.ProtoReflect.Descriptor instead.
+func (*CustomMeasurement) Descriptor() ([]byte, []int) {
 	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *SensorMeasurement) GetMeasuredAt() *timestamppb.Timestamp {
+func (x *CustomMeasurement) GetMeasuredAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.MeasuredAt
 	}
 	return nil
 }
 
-func (x *SensorMeasurement) GetValues() map[string]*anypb.Any {
+func (x *CustomMeasurement) GetValues() map[string]*anypb.Any {
 	if x != nil {
 		return x.Values
 	}
 	return nil
+}
+
+type IngestAccelGyroOptions struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	IngestOptions   *IngestOptions         `protobuf:"bytes,1,opt,name=ingest_options,json=ingestOptions,proto3,oneof" json:"ingest_options,omitempty"`
+	AccelUnit       *AccelUnit             `protobuf:"varint,2,opt,name=accel_unit,json=accelUnit,proto3,enum=sensor.AccelUnit,oneof" json:"accel_unit,omitempty"`
+	GyroUnit        *GyroUnit              `protobuf:"varint,3,opt,name=gyro_unit,json=gyroUnit,proto3,enum=sensor.GyroUnit,oneof" json:"gyro_unit,omitempty"`
+	TemperatureUnit *TemperatureUnit       `protobuf:"varint,4,opt,name=temperature_unit,json=temperatureUnit,proto3,enum=sensor.TemperatureUnit,oneof" json:"temperature_unit,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *IngestAccelGyroOptions) Reset() {
+	*x = IngestAccelGyroOptions{}
+	mi := &file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *IngestAccelGyroOptions) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*IngestAccelGyroOptions) ProtoMessage() {}
+
+func (x *IngestAccelGyroOptions) ProtoReflect() protoreflect.Message {
+	mi := &file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use IngestAccelGyroOptions.ProtoReflect.Descriptor instead.
+func (*IngestAccelGyroOptions) Descriptor() ([]byte, []int) {
+	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *IngestAccelGyroOptions) GetIngestOptions() *IngestOptions {
+	if x != nil {
+		return x.IngestOptions
+	}
+	return nil
+}
+
+func (x *IngestAccelGyroOptions) GetAccelUnit() AccelUnit {
+	if x != nil && x.AccelUnit != nil {
+		return *x.AccelUnit
+	}
+	return AccelUnit_M_S2
+}
+
+func (x *IngestAccelGyroOptions) GetGyroUnit() GyroUnit {
+	if x != nil && x.GyroUnit != nil {
+		return *x.GyroUnit
+	}
+	return GyroUnit_DEG_S
+}
+
+func (x *IngestAccelGyroOptions) GetTemperatureUnit() TemperatureUnit {
+	if x != nil && x.TemperatureUnit != nil {
+		return *x.TemperatureUnit
+	}
+	return TemperatureUnit_CELSIUS
+}
+
+type AccelGyroMeasurementsRequest struct {
+	state         protoimpl.MessageState            `protogen:"open.v1"`
+	Sensors       []*AccelGyroMeasurementsForSensor `protobuf:"bytes,1,rep,name=sensors,proto3" json:"sensors,omitempty"`
+	Options       *IngestAccelGyroOptions           `protobuf:"bytes,2,opt,name=options,proto3,oneof" json:"options,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AccelGyroMeasurementsRequest) Reset() {
+	*x = AccelGyroMeasurementsRequest{}
+	mi := &file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccelGyroMeasurementsRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccelGyroMeasurementsRequest) ProtoMessage() {}
+
+func (x *AccelGyroMeasurementsRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccelGyroMeasurementsRequest.ProtoReflect.Descriptor instead.
+func (*AccelGyroMeasurementsRequest) Descriptor() ([]byte, []int) {
+	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *AccelGyroMeasurementsRequest) GetSensors() []*AccelGyroMeasurementsForSensor {
+	if x != nil {
+		return x.Sensors
+	}
+	return nil
+}
+
+func (x *AccelGyroMeasurementsRequest) GetOptions() *IngestAccelGyroOptions {
+	if x != nil {
+		return x.Options
+	}
+	return nil
+}
+
+type AccelGyroMeasurementsForSensor struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	SensorId      string                 `protobuf:"bytes,1,opt,name=sensor_id,json=sensorId,proto3" json:"sensor_id,omitempty"`
+	Measurements  []*CustomMeasurement   `protobuf:"bytes,3,rep,name=measurements,proto3" json:"measurements,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AccelGyroMeasurementsForSensor) Reset() {
+	*x = AccelGyroMeasurementsForSensor{}
+	mi := &file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccelGyroMeasurementsForSensor) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccelGyroMeasurementsForSensor) ProtoMessage() {}
+
+func (x *AccelGyroMeasurementsForSensor) ProtoReflect() protoreflect.Message {
+	mi := &file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccelGyroMeasurementsForSensor.ProtoReflect.Descriptor instead.
+func (*AccelGyroMeasurementsForSensor) Descriptor() ([]byte, []int) {
+	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *AccelGyroMeasurementsForSensor) GetSensorId() string {
+	if x != nil {
+		return x.SensorId
+	}
+	return ""
+}
+
+func (x *AccelGyroMeasurementsForSensor) GetMeasurements() []*CustomMeasurement {
+	if x != nil {
+		return x.Measurements
+	}
+	return nil
+}
+
+type AccelGyroMeasurement struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	MeasuredAt    *timestamppb.Timestamp `protobuf:"bytes,1,opt,name=measured_at,json=measuredAt,proto3" json:"measured_at,omitempty"`
+	AccelX        float64                `protobuf:"fixed64,2,opt,name=accel_x,json=accelX,proto3" json:"accel_x,omitempty"`
+	AccelY        float64                `protobuf:"fixed64,3,opt,name=accel_y,json=accelY,proto3" json:"accel_y,omitempty"`
+	AccelZ        float64                `protobuf:"fixed64,4,opt,name=accel_z,json=accelZ,proto3" json:"accel_z,omitempty"`
+	GyroX         float64                `protobuf:"fixed64,5,opt,name=gyro_x,json=gyroX,proto3" json:"gyro_x,omitempty"`
+	GyroY         float64                `protobuf:"fixed64,6,opt,name=gyro_y,json=gyroY,proto3" json:"gyro_y,omitempty"`
+	GyroZ         float64                `protobuf:"fixed64,7,opt,name=gyro_z,json=gyroZ,proto3" json:"gyro_z,omitempty"`
+	Temperature   *float64               `protobuf:"fixed64,8,opt,name=temperature,proto3,oneof" json:"temperature,omitempty"`
+	VibrationRms  *float64               `protobuf:"fixed64,9,opt,name=vibration_rms,json=vibrationRms,proto3,oneof" json:"vibration_rms,omitempty"`
+	VibrationPeak *float64               `protobuf:"fixed64,10,opt,name=vibration_peak,json=vibrationPeak,proto3,oneof" json:"vibration_peak,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *AccelGyroMeasurement) Reset() {
+	*x = AccelGyroMeasurement{}
+	mi := &file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[9]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *AccelGyroMeasurement) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*AccelGyroMeasurement) ProtoMessage() {}
+
+func (x *AccelGyroMeasurement) ProtoReflect() protoreflect.Message {
+	mi := &file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[9]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use AccelGyroMeasurement.ProtoReflect.Descriptor instead.
+func (*AccelGyroMeasurement) Descriptor() ([]byte, []int) {
+	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{9}
+}
+
+func (x *AccelGyroMeasurement) GetMeasuredAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.MeasuredAt
+	}
+	return nil
+}
+
+func (x *AccelGyroMeasurement) GetAccelX() float64 {
+	if x != nil {
+		return x.AccelX
+	}
+	return 0
+}
+
+func (x *AccelGyroMeasurement) GetAccelY() float64 {
+	if x != nil {
+		return x.AccelY
+	}
+	return 0
+}
+
+func (x *AccelGyroMeasurement) GetAccelZ() float64 {
+	if x != nil {
+		return x.AccelZ
+	}
+	return 0
+}
+
+func (x *AccelGyroMeasurement) GetGyroX() float64 {
+	if x != nil {
+		return x.GyroX
+	}
+	return 0
+}
+
+func (x *AccelGyroMeasurement) GetGyroY() float64 {
+	if x != nil {
+		return x.GyroY
+	}
+	return 0
+}
+
+func (x *AccelGyroMeasurement) GetGyroZ() float64 {
+	if x != nil {
+		return x.GyroZ
+	}
+	return 0
+}
+
+func (x *AccelGyroMeasurement) GetTemperature() float64 {
+	if x != nil && x.Temperature != nil {
+		return *x.Temperature
+	}
+	return 0
+}
+
+func (x *AccelGyroMeasurement) GetVibrationRms() float64 {
+	if x != nil && x.VibrationRms != nil {
+		return *x.VibrationRms
+	}
+	return 0
+}
+
+func (x *AccelGyroMeasurement) GetVibrationPeak() float64 {
+	if x != nil && x.VibrationPeak != nil {
+		return *x.VibrationPeak
+	}
+	return 0
 }
 
 var File_back_internal_adapters_grpc_proto_sensor_proto protoreflect.FileDescriptor
@@ -584,24 +1013,58 @@ const file_back_internal_adapters_grpc_proto_sensor_proto_rawDesc = "" +
 	"\x04code\x18\x02 \x01(\x0e2\x15.sensor.RejectionCodeR\x04code\x12\x16\n" +
 	"\x06reason\x18\x03 \x01(\tR\x06reason\x12\x14\n" +
 	"\x05count\x18\x04 \x01(\x04R\x05count\"\x9c\x01\n" +
-	"\x19SensorMeasurementsRequest\x12=\n" +
-	"\asensors\x18\x01 \x03(\v2#.sensor.SensorMeasurementsForSensorR\asensors\x124\n" +
+	"\x19CustomMeasurementsRequest\x12=\n" +
+	"\asensors\x18\x01 \x03(\v2#.sensor.CustomMeasurementsForSensorR\asensors\x124\n" +
 	"\aoptions\x18\x02 \x01(\v2\x15.sensor.IngestOptionsH\x00R\aoptions\x88\x01\x01B\n" +
 	"\n" +
 	"\b_options\"\x98\x01\n" +
-	"\x1bSensorMeasurementsForSensor\x12\x1b\n" +
+	"\x1bCustomMeasurementsForSensor\x12\x1b\n" +
 	"\tsensor_id\x18\x01 \x01(\tR\bsensorId\x12\x1d\n" +
 	"\n" +
 	"profile_id\x18\x02 \x01(\tR\tprofileId\x12=\n" +
-	"\fmeasurements\x18\x03 \x03(\v2\x19.sensor.SensorMeasurementR\fmeasurements\"\xf5\x01\n" +
-	"\x11SensorMeasurement\x12@\n" +
-	"\vmeasured_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampH\x00R\n" +
-	"measuredAt\x88\x01\x01\x12=\n" +
-	"\x06values\x18\x02 \x03(\v2%.sensor.SensorMeasurement.ValuesEntryR\x06values\x1aO\n" +
+	"\fmeasurements\x18\x03 \x03(\v2\x19.sensor.CustomMeasurementR\fmeasurements\"\xe0\x01\n" +
+	"\x11CustomMeasurement\x12;\n" +
+	"\vmeasured_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"measuredAt\x12=\n" +
+	"\x06values\x18\x02 \x03(\v2%.sensor.CustomMeasurement.ValuesEntryR\x06values\x1aO\n" +
 	"\vValuesEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12*\n" +
-	"\x05value\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\x05value:\x028\x01B\x0e\n" +
-	"\f_measured_at*b\n" +
+	"\x05value\x18\x02 \x01(\v2\x14.google.protobuf.AnyR\x05value:\x028\x01\"\xd4\x02\n" +
+	"\x16IngestAccelGyroOptions\x12A\n" +
+	"\x0eingest_options\x18\x01 \x01(\v2\x15.sensor.IngestOptionsH\x00R\ringestOptions\x88\x01\x01\x125\n" +
+	"\n" +
+	"accel_unit\x18\x02 \x01(\x0e2\x11.sensor.AccelUnitH\x01R\taccelUnit\x88\x01\x01\x122\n" +
+	"\tgyro_unit\x18\x03 \x01(\x0e2\x10.sensor.GyroUnitH\x02R\bgyroUnit\x88\x01\x01\x12G\n" +
+	"\x10temperature_unit\x18\x04 \x01(\x0e2\x17.sensor.TemperatureUnitH\x03R\x0ftemperatureUnit\x88\x01\x01B\x11\n" +
+	"\x0f_ingest_optionsB\r\n" +
+	"\v_accel_unitB\f\n" +
+	"\n" +
+	"_gyro_unitB\x13\n" +
+	"\x11_temperature_unit\"\xab\x01\n" +
+	"\x1cAccelGyroMeasurementsRequest\x12@\n" +
+	"\asensors\x18\x01 \x03(\v2&.sensor.AccelGyroMeasurementsForSensorR\asensors\x12=\n" +
+	"\aoptions\x18\x02 \x01(\v2\x1e.sensor.IngestAccelGyroOptionsH\x00R\aoptions\x88\x01\x01B\n" +
+	"\n" +
+	"\b_options\"|\n" +
+	"\x1eAccelGyroMeasurementsForSensor\x12\x1b\n" +
+	"\tsensor_id\x18\x01 \x01(\tR\bsensorId\x12=\n" +
+	"\fmeasurements\x18\x03 \x03(\v2\x19.sensor.CustomMeasurementR\fmeasurements\"\x95\x03\n" +
+	"\x14AccelGyroMeasurement\x12;\n" +
+	"\vmeasured_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
+	"measuredAt\x12\x17\n" +
+	"\aaccel_x\x18\x02 \x01(\x01R\x06accelX\x12\x17\n" +
+	"\aaccel_y\x18\x03 \x01(\x01R\x06accelY\x12\x17\n" +
+	"\aaccel_z\x18\x04 \x01(\x01R\x06accelZ\x12\x15\n" +
+	"\x06gyro_x\x18\x05 \x01(\x01R\x05gyroX\x12\x15\n" +
+	"\x06gyro_y\x18\x06 \x01(\x01R\x05gyroY\x12\x15\n" +
+	"\x06gyro_z\x18\a \x01(\x01R\x05gyroZ\x12%\n" +
+	"\vtemperature\x18\b \x01(\x01H\x00R\vtemperature\x88\x01\x01\x12(\n" +
+	"\rvibration_rms\x18\t \x01(\x01H\x01R\fvibrationRms\x88\x01\x01\x12*\n" +
+	"\x0evibration_peak\x18\n" +
+	" \x01(\x01H\x02R\rvibrationPeak\x88\x01\x01B\x0e\n" +
+	"\f_temperatureB\x10\n" +
+	"\x0e_vibration_rmsB\x11\n" +
+	"\x0f_vibration_peak*b\n" +
 	"\aAckMode\x12\x18\n" +
 	"\x14ACK_MODE_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rACK_MODE_FULL\x10\x01\x12\x17\n" +
@@ -617,10 +1080,23 @@ const file_back_internal_adapters_grpc_proto_sensor_proto_rawDesc = "" +
 	"\aUNKNOWN\x10\x00\x12\x11\n" +
 	"\rINVALID_VALUE\x10\x01\x12\x15\n" +
 	"\x11TIMESTAMP_MISSING\x10\x02\x12\x14\n" +
-	"\x10SENSOR_NOT_FOUND\x10\x032\xaa\x01\n" +
-	"\rSensorService\x12N\n" +
-	"\x12StreamMeasurements\x12!.sensor.SensorMeasurementsRequest\x1a\x11.sensor.IngestAck(\x010\x01\x12I\n" +
-	"\x11UnaryMeasurements\x12!.sensor.SensorMeasurementsRequest\x1a\x11.sensor.IngestAckB=Z;github.com/brice-74/sensorflow/internal/adapters/grpc/protob\x06proto3"
+	"\x10SENSOR_NOT_FOUND\x10\x03*;\n" +
+	"\x0fTemperatureUnit\x12\v\n" +
+	"\aCELSIUS\x10\x00\x12\x0f\n" +
+	"\vFFAHRENHEIT\x10\x01\x12\n" +
+	"\n" +
+	"\x06KELVIN\x10\x02*\x1c\n" +
+	"\tAccelUnit\x12\b\n" +
+	"\x04M_S2\x10\x00\x12\x05\n" +
+	"\x01G\x10\x01* \n" +
+	"\bGyroUnit\x12\t\n" +
+	"\x05DEG_S\x10\x00\x12\t\n" +
+	"\x05RAD_S\x10\x012\xe9\x02\n" +
+	"\rSensorService\x12T\n" +
+	"\x18StreamCustomMeasurements\x12!.sensor.CustomMeasurementsRequest\x1a\x11.sensor.IngestAck(\x010\x01\x12O\n" +
+	"\x17UnaryCustomMeasurements\x12!.sensor.CustomMeasurementsRequest\x1a\x11.sensor.IngestAck\x12Z\n" +
+	"\x1bStreamAccelGyroMeasurements\x12$.sensor.AccelGyroMeasurementsRequest\x1a\x11.sensor.IngestAck(\x010\x01\x12U\n" +
+	"\x1aUnaryAccelGyroMeasurements\x12$.sensor.AccelGyroMeasurementsRequest\x1a\x11.sensor.IngestAckB=Z;github.com/brice-74/sensorflow/internal/adapters/grpc/protob\x06proto3"
 
 var (
 	file_back_internal_adapters_grpc_proto_sensor_proto_rawDescOnce sync.Once
@@ -634,42 +1110,61 @@ func file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP() []byte {
 	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescData
 }
 
-var file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes = make([]protoimpl.EnumInfo, 3)
-var file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
+var file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_back_internal_adapters_grpc_proto_sensor_proto_goTypes = []any{
-	(AckMode)(0),                        // 0: sensor.AckMode
-	(IngestStatus)(0),                   // 1: sensor.IngestStatus
-	(RejectionCode)(0),                  // 2: sensor.RejectionCode
-	(*IngestOptions)(nil),               // 3: sensor.IngestOptions
-	(*IngestAck)(nil),                   // 4: sensor.IngestAck
-	(*RejectedDetail)(nil),              // 5: sensor.RejectedDetail
-	(*SensorMeasurementsRequest)(nil),   // 6: sensor.SensorMeasurementsRequest
-	(*SensorMeasurementsForSensor)(nil), // 7: sensor.SensorMeasurementsForSensor
-	(*SensorMeasurement)(nil),           // 8: sensor.SensorMeasurement
-	nil,                                 // 9: sensor.SensorMeasurement.ValuesEntry
-	(*timestamppb.Timestamp)(nil),       // 10: google.protobuf.Timestamp
-	(*anypb.Any)(nil),                   // 11: google.protobuf.Any
+	(AckMode)(0),                           // 0: sensor.AckMode
+	(IngestStatus)(0),                      // 1: sensor.IngestStatus
+	(RejectionCode)(0),                     // 2: sensor.RejectionCode
+	(TemperatureUnit)(0),                   // 3: sensor.TemperatureUnit
+	(AccelUnit)(0),                         // 4: sensor.AccelUnit
+	(GyroUnit)(0),                          // 5: sensor.GyroUnit
+	(*IngestOptions)(nil),                  // 6: sensor.IngestOptions
+	(*IngestAck)(nil),                      // 7: sensor.IngestAck
+	(*RejectedDetail)(nil),                 // 8: sensor.RejectedDetail
+	(*CustomMeasurementsRequest)(nil),      // 9: sensor.CustomMeasurementsRequest
+	(*CustomMeasurementsForSensor)(nil),    // 10: sensor.CustomMeasurementsForSensor
+	(*CustomMeasurement)(nil),              // 11: sensor.CustomMeasurement
+	(*IngestAccelGyroOptions)(nil),         // 12: sensor.IngestAccelGyroOptions
+	(*AccelGyroMeasurementsRequest)(nil),   // 13: sensor.AccelGyroMeasurementsRequest
+	(*AccelGyroMeasurementsForSensor)(nil), // 14: sensor.AccelGyroMeasurementsForSensor
+	(*AccelGyroMeasurement)(nil),           // 15: sensor.AccelGyroMeasurement
+	nil,                                    // 16: sensor.CustomMeasurement.ValuesEntry
+	(*timestamppb.Timestamp)(nil),          // 17: google.protobuf.Timestamp
+	(*anypb.Any)(nil),                      // 18: google.protobuf.Any
 }
 var file_back_internal_adapters_grpc_proto_sensor_proto_depIdxs = []int32{
 	0,  // 0: sensor.IngestOptions.ack_mode:type_name -> sensor.AckMode
 	1,  // 1: sensor.IngestAck.status:type_name -> sensor.IngestStatus
-	5,  // 2: sensor.IngestAck.rejected_details:type_name -> sensor.RejectedDetail
+	8,  // 2: sensor.IngestAck.rejected_details:type_name -> sensor.RejectedDetail
 	2,  // 3: sensor.RejectedDetail.code:type_name -> sensor.RejectionCode
-	7,  // 4: sensor.SensorMeasurementsRequest.sensors:type_name -> sensor.SensorMeasurementsForSensor
-	3,  // 5: sensor.SensorMeasurementsRequest.options:type_name -> sensor.IngestOptions
-	8,  // 6: sensor.SensorMeasurementsForSensor.measurements:type_name -> sensor.SensorMeasurement
-	10, // 7: sensor.SensorMeasurement.measured_at:type_name -> google.protobuf.Timestamp
-	9,  // 8: sensor.SensorMeasurement.values:type_name -> sensor.SensorMeasurement.ValuesEntry
-	11, // 9: sensor.SensorMeasurement.ValuesEntry.value:type_name -> google.protobuf.Any
-	6,  // 10: sensor.SensorService.StreamMeasurements:input_type -> sensor.SensorMeasurementsRequest
-	6,  // 11: sensor.SensorService.UnaryMeasurements:input_type -> sensor.SensorMeasurementsRequest
-	4,  // 12: sensor.SensorService.StreamMeasurements:output_type -> sensor.IngestAck
-	4,  // 13: sensor.SensorService.UnaryMeasurements:output_type -> sensor.IngestAck
-	12, // [12:14] is the sub-list for method output_type
-	10, // [10:12] is the sub-list for method input_type
-	10, // [10:10] is the sub-list for extension type_name
-	10, // [10:10] is the sub-list for extension extendee
-	0,  // [0:10] is the sub-list for field type_name
+	10, // 4: sensor.CustomMeasurementsRequest.sensors:type_name -> sensor.CustomMeasurementsForSensor
+	6,  // 5: sensor.CustomMeasurementsRequest.options:type_name -> sensor.IngestOptions
+	11, // 6: sensor.CustomMeasurementsForSensor.measurements:type_name -> sensor.CustomMeasurement
+	17, // 7: sensor.CustomMeasurement.measured_at:type_name -> google.protobuf.Timestamp
+	16, // 8: sensor.CustomMeasurement.values:type_name -> sensor.CustomMeasurement.ValuesEntry
+	6,  // 9: sensor.IngestAccelGyroOptions.ingest_options:type_name -> sensor.IngestOptions
+	4,  // 10: sensor.IngestAccelGyroOptions.accel_unit:type_name -> sensor.AccelUnit
+	5,  // 11: sensor.IngestAccelGyroOptions.gyro_unit:type_name -> sensor.GyroUnit
+	3,  // 12: sensor.IngestAccelGyroOptions.temperature_unit:type_name -> sensor.TemperatureUnit
+	14, // 13: sensor.AccelGyroMeasurementsRequest.sensors:type_name -> sensor.AccelGyroMeasurementsForSensor
+	12, // 14: sensor.AccelGyroMeasurementsRequest.options:type_name -> sensor.IngestAccelGyroOptions
+	11, // 15: sensor.AccelGyroMeasurementsForSensor.measurements:type_name -> sensor.CustomMeasurement
+	17, // 16: sensor.AccelGyroMeasurement.measured_at:type_name -> google.protobuf.Timestamp
+	18, // 17: sensor.CustomMeasurement.ValuesEntry.value:type_name -> google.protobuf.Any
+	9,  // 18: sensor.SensorService.StreamCustomMeasurements:input_type -> sensor.CustomMeasurementsRequest
+	9,  // 19: sensor.SensorService.UnaryCustomMeasurements:input_type -> sensor.CustomMeasurementsRequest
+	13, // 20: sensor.SensorService.StreamAccelGyroMeasurements:input_type -> sensor.AccelGyroMeasurementsRequest
+	13, // 21: sensor.SensorService.UnaryAccelGyroMeasurements:input_type -> sensor.AccelGyroMeasurementsRequest
+	7,  // 22: sensor.SensorService.StreamCustomMeasurements:output_type -> sensor.IngestAck
+	7,  // 23: sensor.SensorService.UnaryCustomMeasurements:output_type -> sensor.IngestAck
+	7,  // 24: sensor.SensorService.StreamAccelGyroMeasurements:output_type -> sensor.IngestAck
+	7,  // 25: sensor.SensorService.UnaryAccelGyroMeasurements:output_type -> sensor.IngestAck
+	22, // [22:26] is the sub-list for method output_type
+	18, // [18:22] is the sub-list for method input_type
+	18, // [18:18] is the sub-list for extension type_name
+	18, // [18:18] is the sub-list for extension extendee
+	0,  // [0:18] is the sub-list for field type_name
 }
 
 func init() { file_back_internal_adapters_grpc_proto_sensor_proto_init() }
@@ -680,14 +1175,16 @@ func file_back_internal_adapters_grpc_proto_sensor_proto_init() {
 	file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[0].OneofWrappers = []any{}
 	file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[1].OneofWrappers = []any{}
 	file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[3].OneofWrappers = []any{}
-	file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[5].OneofWrappers = []any{}
+	file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[6].OneofWrappers = []any{}
+	file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[7].OneofWrappers = []any{}
+	file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes[9].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_back_internal_adapters_grpc_proto_sensor_proto_rawDesc), len(file_back_internal_adapters_grpc_proto_sensor_proto_rawDesc)),
-			NumEnums:      3,
-			NumMessages:   7,
+			NumEnums:      6,
+			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

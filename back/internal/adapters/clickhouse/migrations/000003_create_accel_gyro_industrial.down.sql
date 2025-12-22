@@ -1,0 +1,1 @@
+DROP TABLE IF EXISTS sensorflow_generic.accel_gyro_industrial;
