@@ -3,32 +3,32 @@ package common
 import (
 	"time"
 
-	"github.com/brice-74/sensorflow/pkg/ulid"
+	"github.com/google/uuid"
 )
 
-type ULID struct {
-	ID ulid.ULID `db:"id"`
+type UUID struct {
+	ID uuid.UUID `db:"id"`
 }
 
-var _ Identifiable[ulid.ULID] = (*ULID)(nil)
+var _ Identifiable[uuid.UUID] = (*UUID)(nil)
 
-func (u *ULID) GetID() ulid.ULID {
+func (u *UUID) GetID() uuid.UUID {
 	return u.ID
 }
 
-func (u *ULID) SetID(id ulid.ULID) {
+func (u *UUID) SetID(id uuid.UUID) {
 	u.ID = id
 }
 
-func (u *ULID) TouchID() {
-	u.ID = ulid.NewOrdered()
+func (u *UUID) TouchID() {
+	u.ID = uuid.New()
 }
 
-func (u *ULID) String() string {
+func (u *UUID) String() string {
 	return u.ID.String()
 }
 
-func (u *ULID) StringID() string {
+func (u *UUID) StringID() string {
 	return u.ID.String()
 }
 

@@ -5,7 +5,7 @@ import (
 
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/ports"
-	"github.com/brice-74/sensorflow/pkg/ulid"
+	"github.com/google/uuid"
 )
 
 type SensorInstance struct {
@@ -23,7 +23,7 @@ const sensorInstanceListByGatewayIDQuery = `
 	WHERE sensor_gateway_id = $1 AND deleted_at IS NULL
 `
 
-func (r *SensorInstance) ListByGatewayID(ctx context.Context, gatewayID ulid.ULID) ([]*domain.SensorInstance, error) {
+func (r *SensorInstance) ListByGatewayID(ctx context.Context, gatewayID uuid.UUID) ([]*domain.SensorInstance, error) {
 	var sensors []*domain.SensorInstance
 	err := r.
 		ExecutorFromCtx(ctx).
@@ -46,7 +46,7 @@ const sensorInstanceGetOneByIDQuery = `
 	LIMIT 1
 `
 
-func (r *SensorInstance) GetOneByID(ctx context.Context, ID ulid.ULID) (*domain.SensorInstance, error) {
+func (r *SensorInstance) GetOneByID(ctx context.Context, ID uuid.UUID) (*domain.SensorInstance, error) {
 	var gateway *domain.SensorInstance
 	err := r.
 		ExecutorFromCtx(ctx).

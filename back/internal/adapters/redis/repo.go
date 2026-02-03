@@ -74,7 +74,7 @@ func (r *repo[T]) cmdSetMany(ctx context.Context, cmdable redis.Cmdable, entitie
 
 	statusCmd := &StatusCmd{
 		Cmd:      cmdable.MSet(ctx, pairs...),
-		markDown: r.markDown,
+		markDown: r.MarkDown,
 	}
 
 	var boolCmds *MultiBoolCmd
@@ -96,14 +96,14 @@ func (r *repo[T]) cmdSetIDsByParentID(ctx context.Context, cmdable redis.Cmdable
 	key := cache.FormatHasManyKey(r.Key, parentID, relKey)
 	intcmd := &IntCmd{
 		Cmd:      cmdable.SAdd(ctx, key, ids),
-		markDown: r.markDown,
+		markDown: r.MarkDown,
 	}
 
 	var boolcmd *BoolCmd
 	if ttl > 0 {
 		boolcmd = &BoolCmd{
 			Cmd:      cmdable.Expire(ctx, key, ttl),
-			markDown: r.markDown,
+			markDown: r.MarkDown,
 		}
 	}
 
@@ -113,23 +113,23 @@ func (r *repo[T]) cmdSetIDsByParentID(ctx context.Context, cmdable redis.Cmdable
 func (r *repo[T]) cmdSetOne(ctx context.Context, cmdable redis.Cmdable, id string, entity *T, ttl time.Duration) *StatusCmd {
 	return &StatusCmd{
 		Cmd:      cmdable.Set(ctx, cache.FormatKey(r.Key, id), entity, ttl),
-		markDown: r.markDown,
+		markDown: r.MarkDown,
 	}
 }
 
 func (r *repo[T]) cmdListIDsByParentID(ctx context.Context, cmdable redis.Cmdable, id string, relKey cache.EntityKey) *StringSliceCmd {
 	return &StringSliceCmd{
 		Cmd:      cmdable.SMembers(ctx, cache.FormatHasManyKey(r.Key, id, relKey)),
-		markDown: r.markDown,
+		markDown: r.MarkDown,
 	}
 }
 
 func (r *repo[T]) cmdGetOneByID(ctx context.Context, cmdable redis.Cmdable, id string) *StringCmdGob[T] {
-	return &StringCmdGob[T]{Cmd: cmdable.Get(ctx, cache.FormatKey(r.Key, id)), markDown: r.markDown}
+	return &StringCmdGob[T]{Cmd: cmdable.Get(ctx, cache.FormatKey(r.Key, id)), markDown: r.MarkDown}
 }
 
 func (r *repo[T]) cmdGetByIDs(ctx context.Context, cmdable redis.Cmdable, ids []string) *SliceCmdGob[T] {
-	return &SliceCmdGob[T]{Cmd: cmdable.MGet(ctx, cache.FormatKeys(cache.SensorInstanceKey, ids)...), markDown: r.markDown}
+	return &SliceCmdGob[T]{Cmd: cmdable.MGet(ctx, cache.FormatKeys(cache.SensorInstanceKey, ids)...), markDown: r.MarkDown}
 }
 
 //

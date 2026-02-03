@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS sensorflow_generic.accel_gyro_hf
+CREATE TABLE IF NOT EXISTS sensorflow_generic.accel_gyro_realtime
 (
   tenant_id UUID,
   device_id UUID,

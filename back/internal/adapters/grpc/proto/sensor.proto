@@ -77,7 +77,7 @@ message CustomMeasurement {
 
 enum TemperatureUnit {
   CELSIUS = 0; // °C
-  FFAHRENHEIT = 1; // °F
+  FAHRENHEIT = 1; // °F
   KELVIN = 2; // K
 }
 
@@ -103,9 +103,9 @@ message AccelGyroMeasurementsRequest {
   optional IngestAccelGyroOptions options = 2;
 }
 
-message  AccelGyroMeasurementsForSensor {
+message AccelGyroMeasurementsForSensor {
   string sensor_id = 1;
-  repeated CustomMeasurement measurements = 3;
+  repeated AccelGyroMeasurement measurements = 2;
 }
 
 message AccelGyroMeasurement {

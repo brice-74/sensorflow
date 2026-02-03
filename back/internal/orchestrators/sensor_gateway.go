@@ -9,7 +9,7 @@ import (
 	"github.com/brice-74/sensorflow/internal/log"
 	"github.com/brice-74/sensorflow/internal/ports"
 	"github.com/brice-74/sensorflow/pkg/errors"
-	"github.com/brice-74/sensorflow/pkg/ulid"
+	"github.com/google/uuid"
 )
 
 type SensorGateway struct {
@@ -42,7 +42,7 @@ func NewSensorGateway(
 	}
 }
 
-func (o *SensorGateway) GetOneWithInstances(ctx context.Context, id ulid.ULID) (*domain.SensorGateway, error) {
+func (o *SensorGateway) GetOneWithInstances(ctx context.Context, id uuid.UUID) (*domain.SensorGateway, error) {
 	hydratedKey := cache.FormatHydratedKey(cache.SensorGatewayKey, id.String(), cache.WithSensorInstancesKey)
 
 	if gw, ok := o.localCache.Get(hydratedKey); ok {
@@ -71,7 +71,7 @@ func (o *SensorGateway) GetOneWithInstances(ctx context.Context, id ulid.ULID) (
 
 // getFromRedis tries to fetch gateway + instances from Redis
 // Returns the gateway and true if gateway was found (even if instances were missing)
-func (o *SensorGateway) getFromRedisWithInstances(ctx context.Context, id ulid.ULID) (*domain.SensorGateway, bool) {
+func (o *SensorGateway) getFromRedisWithInstances(ctx context.Context, id uuid.UUID) (*domain.SensorGateway, bool) {
 	strID := id.String()
 
 	var (
@@ -137,7 +137,7 @@ func (o *SensorGateway) getFromRedisWithInstances(ctx context.Context, id ulid.U
 }
 
 // getFromDB fetches gateway + instances from DB
-func (o *SensorGateway) getFromDB(ctx context.Context, id ulid.ULID) (*domain.SensorGateway, error) {
+func (o *SensorGateway) getFromDB(ctx context.Context, id uuid.UUID) (*domain.SensorGateway, error) {
 	gw, err := o.dbRepo.GetOneByID(ctx, id)
 	if err != nil {
 		return nil, errors.WrapErr(err)

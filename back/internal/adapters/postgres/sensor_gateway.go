@@ -5,7 +5,7 @@ import (
 
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/ports"
-	"github.com/brice-74/sensorflow/pkg/ulid"
+	"github.com/google/uuid"
 )
 
 type SensorGateway struct {
@@ -24,7 +24,7 @@ const sensorGatewayGetOneByIDQuery = `
 	LIMIT 1
 `
 
-func (r *SensorGateway) GetOneByID(ctx context.Context, ID ulid.ULID) (*domain.SensorGateway, error) {
+func (r *SensorGateway) GetOneByID(ctx context.Context, ID uuid.UUID) (*domain.SensorGateway, error) {
 	var gateway *domain.SensorGateway
 	err := r.
 		ExecutorFromCtx(ctx).

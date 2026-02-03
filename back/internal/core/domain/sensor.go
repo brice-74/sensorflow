@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/brice-74/sensorflow/internal/core/domain/common"
-	"github.com/brice-74/sensorflow/pkg/ulid"
+	"github.com/google/uuid"
 )
 
 type SensorStatus uint8
@@ -33,11 +33,11 @@ func (s SensorStatus) String() string {
 
 // SensorInstance represents an instance of a sensor attached to a device
 type SensorInstance struct {
-	SensorGatewayID ulid.ULID `db:"sensor_gateway_id"`
+	SensorGatewayID uuid.UUID `db:"sensor_gateway_id"`
 	SensorGateway   *SensorGateway
 	Status          SensorStatus `db:"status"`
 	Firmware        *string      `db:"firmware"`
-	common.ULID
+	common.UUID
 	common.Timestamps
 	common.SoftDelete
 	common.VersionUnix
@@ -46,13 +46,13 @@ type SensorInstance struct {
 // Gateway represents a central program or device that collects data from one or multiple sensors
 // and forwards it to the system. It acts as the main entry point for sensor data ingestion.
 type SensorGateway struct {
-	TenantID        ulid.ULID `db:"tenant_id"`
+	TenantID        uuid.UUID `db:"tenant_id"`
 	Tenant          *Tenant
 	Name            string  `db:"name"`
 	Location        *string `db:"location"`
 	Firmware        *string `db:"firmware"`
 	SensorInstances []*SensorInstance
-	common.ULID
+	common.UUID
 	common.Timestamps
 	common.SoftDelete
 	common.VersionUnix

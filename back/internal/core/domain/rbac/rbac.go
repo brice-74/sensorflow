@@ -2,7 +2,7 @@ package rbac
 
 import (
 	"github.com/brice-74/sensorflow/internal/core/domain/common"
-	"github.com/brice-74/sensorflow/pkg/ulid"
+	"github.com/google/uuid"
 )
 
 type Model struct {
@@ -12,17 +12,17 @@ type Model struct {
 
 // create unique index on every fields
 type ModelHasRole struct {
-	RoleID       ulid.ULID
+	RoleID       uuid.UUID
 	ModelID      int64
-	ModelInnerID ulid.ULID
+	ModelInnerID uuid.UUID
 }
 
 // create unique index on (TenantID, GuardID, Name)
 type Role struct {
-	ID ulid.ULID
+	ID uuid.UUID
 	// An undefined tenantID means that the role is native and therefore cannot be modified externally.
-	TenantID    *ulid.ULID
-	GuardID     ulid.ULID
+	TenantID    *uuid.UUID
+	GuardID     uuid.UUID
 	Name        string
 	Description string
 	common.Timestamps
@@ -30,7 +30,7 @@ type Role struct {
 
 // create unique index on (RoleID, PermissionID)
 type RoleHasPermission struct {
-	RoleID       ulid.ULID
+	RoleID       uuid.UUID
 	PermissionID int64
 }
 

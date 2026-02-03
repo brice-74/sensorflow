@@ -3,7 +3,7 @@ package rbac
 type GuardType uint8
 
 const (
-	GuardTypeUnknow = iota
+	GuardTypeUnknow GuardType = iota
 	GuardTypeUser
 	GuardTypeSensorGateway
 	GuardTypeAPIGateway
@@ -19,7 +19,7 @@ type Guard struct {
 type ActionType uint8
 
 const (
-	ActionTypeUnknow = iota
+	ActionTypeUnknow ActionType = iota
 	ActionTypeRead
 	ActionTypeCreate
 	ActionTypeUpdate

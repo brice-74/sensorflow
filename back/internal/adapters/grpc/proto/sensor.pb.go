@@ -185,22 +185,22 @@ func (RejectionCode) EnumDescriptor() ([]byte, []int) {
 type TemperatureUnit int32
 
 const (
-	TemperatureUnit_CELSIUS     TemperatureUnit = 0 // °C
-	TemperatureUnit_FFAHRENHEIT TemperatureUnit = 1 // °F
-	TemperatureUnit_KELVIN      TemperatureUnit = 2 // K
+	TemperatureUnit_CELSIUS    TemperatureUnit = 0 // °C
+	TemperatureUnit_FAHRENHEIT TemperatureUnit = 1 // °F
+	TemperatureUnit_KELVIN     TemperatureUnit = 2 // K
 )
 
 // Enum value maps for TemperatureUnit.
 var (
 	TemperatureUnit_name = map[int32]string{
 		0: "CELSIUS",
-		1: "FFAHRENHEIT",
+		1: "FAHRENHEIT",
 		2: "KELVIN",
 	}
 	TemperatureUnit_value = map[string]int32{
-		"CELSIUS":     0,
-		"FFAHRENHEIT": 1,
-		"KELVIN":      2,
+		"CELSIUS":    0,
+		"FAHRENHEIT": 1,
+		"KELVIN":     2,
 	}
 )
 
@@ -820,9 +820,9 @@ func (x *AccelGyroMeasurementsRequest) GetOptions() *IngestAccelGyroOptions {
 }
 
 type AccelGyroMeasurementsForSensor struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	SensorId      string                 `protobuf:"bytes,1,opt,name=sensor_id,json=sensorId,proto3" json:"sensor_id,omitempty"`
-	Measurements  []*CustomMeasurement   `protobuf:"bytes,3,rep,name=measurements,proto3" json:"measurements,omitempty"`
+	state         protoimpl.MessageState  `protogen:"open.v1"`
+	SensorId      string                  `protobuf:"bytes,1,opt,name=sensor_id,json=sensorId,proto3" json:"sensor_id,omitempty"`
+	Measurements  []*AccelGyroMeasurement `protobuf:"bytes,2,rep,name=measurements,proto3" json:"measurements,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -864,7 +864,7 @@ func (x *AccelGyroMeasurementsForSensor) GetSensorId() string {
 	return ""
 }
 
-func (x *AccelGyroMeasurementsForSensor) GetMeasurements() []*CustomMeasurement {
+func (x *AccelGyroMeasurementsForSensor) GetMeasurements() []*AccelGyroMeasurement {
 	if x != nil {
 		return x.Measurements
 	}
@@ -1045,10 +1045,10 @@ const file_back_internal_adapters_grpc_proto_sensor_proto_rawDesc = "" +
 	"\asensors\x18\x01 \x03(\v2&.sensor.AccelGyroMeasurementsForSensorR\asensors\x12=\n" +
 	"\aoptions\x18\x02 \x01(\v2\x1e.sensor.IngestAccelGyroOptionsH\x00R\aoptions\x88\x01\x01B\n" +
 	"\n" +
-	"\b_options\"|\n" +
+	"\b_options\"\x7f\n" +
 	"\x1eAccelGyroMeasurementsForSensor\x12\x1b\n" +
-	"\tsensor_id\x18\x01 \x01(\tR\bsensorId\x12=\n" +
-	"\fmeasurements\x18\x03 \x03(\v2\x19.sensor.CustomMeasurementR\fmeasurements\"\x95\x03\n" +
+	"\tsensor_id\x18\x01 \x01(\tR\bsensorId\x12@\n" +
+	"\fmeasurements\x18\x02 \x03(\v2\x1c.sensor.AccelGyroMeasurementR\fmeasurements\"\x95\x03\n" +
 	"\x14AccelGyroMeasurement\x12;\n" +
 	"\vmeasured_at\x18\x01 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
 	"measuredAt\x12\x17\n" +
@@ -1080,10 +1080,11 @@ const file_back_internal_adapters_grpc_proto_sensor_proto_rawDesc = "" +
 	"\aUNKNOWN\x10\x00\x12\x11\n" +
 	"\rINVALID_VALUE\x10\x01\x12\x15\n" +
 	"\x11TIMESTAMP_MISSING\x10\x02\x12\x14\n" +
-	"\x10SENSOR_NOT_FOUND\x10\x03*;\n" +
+	"\x10SENSOR_NOT_FOUND\x10\x03*:\n" +
 	"\x0fTemperatureUnit\x12\v\n" +
-	"\aCELSIUS\x10\x00\x12\x0f\n" +
-	"\vFFAHRENHEIT\x10\x01\x12\n" +
+	"\aCELSIUS\x10\x00\x12\x0e\n" +
+	"\n" +
+	"FAHRENHEIT\x10\x01\x12\n" +
 	"\n" +
 	"\x06KELVIN\x10\x02*\x1c\n" +
 	"\tAccelUnit\x12\b\n" +
@@ -1149,7 +1150,7 @@ var file_back_internal_adapters_grpc_proto_sensor_proto_depIdxs = []int32{
 	3,  // 12: sensor.IngestAccelGyroOptions.temperature_unit:type_name -> sensor.TemperatureUnit
 	14, // 13: sensor.AccelGyroMeasurementsRequest.sensors:type_name -> sensor.AccelGyroMeasurementsForSensor
 	12, // 14: sensor.AccelGyroMeasurementsRequest.options:type_name -> sensor.IngestAccelGyroOptions
-	11, // 15: sensor.AccelGyroMeasurementsForSensor.measurements:type_name -> sensor.CustomMeasurement
+	15, // 15: sensor.AccelGyroMeasurementsForSensor.measurements:type_name -> sensor.AccelGyroMeasurement
 	17, // 16: sensor.AccelGyroMeasurement.measured_at:type_name -> google.protobuf.Timestamp
 	18, // 17: sensor.CustomMeasurement.ValuesEntry.value:type_name -> google.protobuf.Any
 	9,  // 18: sensor.SensorService.StreamCustomMeasurements:input_type -> sensor.CustomMeasurementsRequest

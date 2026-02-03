@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/brice-74/sensorflow/internal/core/domain/common"
-	"github.com/brice-74/sensorflow/pkg/ulid"
+	"github.com/google/uuid"
 )
 
 type DataType uint8
@@ -122,13 +122,13 @@ func (t DataType) String() string {
 }
 
 type MeasurementLogicalProfile struct {
-	common.ULID
-	TenantID ulid.ULID
+	common.UUID
+	TenantID uuid.UUID
 	Name     string
 	Version  uint16
 	IsActive bool
 
-	PreviousVersionID *ulid.ULID
+	PreviousVersionID *uuid.UUID
 	Fields            []*MeasurementField
 
 	common.Timestamps
@@ -136,25 +136,22 @@ type MeasurementLogicalProfile struct {
 }
 
 type MeasurementField struct {
-	common.ULID
-	LogicalProfileID ulid.ULID
+	common.UUID
+	LogicalProfileID uuid.UUID
 	Name             string
 	Type             DataType
 	IsTag            bool
 }
 
 type MeasurementDatabase struct {
-	common.ULID
-	Name     string
-	Host     string
-	User     string
-	Password string
+	common.UUID
+	Name string
 }
 
 type MeasurementTable struct {
-	common.ULID
+	common.UUID
 
-	DatabaseID ulid.ULID
+	DatabaseID uuid.UUID
 	Name       string
 
 	Plan                 string  // ex: "custom", "shared_generic"
@@ -165,10 +162,10 @@ type MeasurementTable struct {
 }
 
 type MeasurementProfileBinding struct {
-	SensorInstanceID      ulid.ULID
-	LogicalProfileID      *ulid.ULID
-	MeasurementTableID    ulid.ULID
-	MeasurementDatabaseID ulid.ULID
+	SensorInstanceID      uuid.UUID
+	LogicalProfileID      *uuid.UUID
+	MeasurementTableID    uuid.UUID
+	MeasurementDatabaseID uuid.UUID
 
 	common.Timestamps
 	common.SoftDelete

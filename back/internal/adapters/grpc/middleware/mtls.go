@@ -9,7 +9,7 @@ import (
 	"github.com/brice-74/sensorflow/internal/ports"
 	"github.com/brice-74/sensorflow/internal/types"
 	"github.com/brice-74/sensorflow/pkg/errors"
-	"github.com/brice-74/sensorflow/pkg/ulid"
+	"github.com/google/uuid"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -95,9 +95,9 @@ func (m *MTLSClientAuth) handleContext(ctx context.Context) (context.Context, er
 }
 
 func (m *MTLSClientAuth) loadSensorGateway(ctx context.Context, cn string) (*domain.SensorGateway, error) {
-	id, err := ulid.Parse(cn)
+	id, err := uuid.Parse(cn)
 	if err != nil {
-		m.log.Error(errors.Wrap(err, "invalid ulid"), log.Contexts{"dn": {"cn": cn}})
+		m.log.Error(errors.Wrap(err, "invalid uuid"), log.Contexts{"dn": {"cn": cn}})
 		return nil, status.Error(codes.Unauthenticated, "invalid sensor gateway ID")
 	}
 

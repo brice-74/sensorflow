@@ -6,7 +6,7 @@ import (
 
 	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
-	"github.com/brice-74/sensorflow/pkg/ulid"
+	"github.com/google/uuid"
 )
 
 type sensorGateway struct {
@@ -29,6 +29,6 @@ func (r *sensorGateway) CmdSetOne(ctx context.Context, entity *domain.SensorGate
 	return r.repo.CmdSetOneByStrID(ctx, entity.ID.String(), entity)
 }
 
-func (r *sensorGateway) GetOneByID(ctx context.Context, id ulid.ULID) (*domain.SensorGateway, error) {
+func (r *sensorGateway) GetOneByID(ctx context.Context, id uuid.UUID) (*domain.SensorGateway, error) {
 	return r.repo.GetOneByStrID(ctx, id.String())
 }

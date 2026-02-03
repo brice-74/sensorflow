@@ -7,7 +7,7 @@ import (
 	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/ports"
-	"github.com/brice-74/sensorflow/pkg/ulid"
+	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -17,7 +17,7 @@ type Client interface {
 	NewConn(ctx context.Context) (redis.Cmdable, context.Context)
 	NewPipeline(ctx context.Context) (redis.Pipeliner, context.Context)
 	HandleError(err error) error
-	IsHealthy() bool
+	IsAlive() bool
 }
 
 type Repo[T any] interface {
@@ -57,5 +57,5 @@ type SensorInstance interface {
 	ports.SensorInstanceRepository
 	CmdSetMany(ctx context.Context, insts []*domain.SensorInstance) (*StatusCmd, *MultiBoolCmd)
 	CmdListIDsByGatewayID(ctx context.Context, gtwID string) *StringSliceCmd
-	SetIDsByGatewayID(ctx context.Context, gtwID ulid.ULID, insts []*domain.SensorInstance) error
+	SetIDsByGatewayID(ctx context.Context, gtwID uuid.UUID, insts []*domain.SensorInstance) error
 }

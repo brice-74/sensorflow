@@ -4,13 +4,13 @@ import (
 	"context"
 
 	"github.com/brice-74/sensorflow/internal/core/domain"
-	"github.com/brice-74/sensorflow/pkg/ulid"
+	"github.com/google/uuid"
 )
 
 type SensorGatewayRepository interface {
-	GetOneByID(ctx context.Context, id ulid.ULID) (*domain.SensorGateway, error)
+	GetOneByID(ctx context.Context, id uuid.UUID) (*domain.SensorGateway, error)
 }
 
 type SensorGatewayOrchestrator interface {
-	GetOneWithInstances(ctx context.Context, ID ulid.ULID) (*domain.SensorGateway, error)
+	GetOneWithInstances(ctx context.Context, ID uuid.UUID) (*domain.SensorGateway, error)
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/core/domain/common"
-	"github.com/brice-74/sensorflow/pkg/ulid"
+	"github.com/google/uuid"
 )
 
 type sensorInstance struct {
@@ -34,14 +34,14 @@ func (r *sensorInstance) CmdListIDsByGatewayID(ctx context.Context, gtwID string
 	return r.repo.CmdListStrIDsByParentID(ctx, gtwID, cache.SensorGatewayKey)
 }
 
-func (r *sensorInstance) ListByGatewayID(ctx context.Context, gtwID ulid.ULID) ([]*domain.SensorInstance, error) {
+func (r *sensorInstance) ListByGatewayID(ctx context.Context, gtwID uuid.UUID) ([]*domain.SensorInstance, error) {
 	return r.repo.GetManyByParentStrID(ctx, gtwID.String(), cache.SensorGatewayKey)
 }
 
-func (r *sensorInstance) SetIDsByGatewayID(ctx context.Context, gtwID ulid.ULID, insts []*domain.SensorInstance) error {
+func (r *sensorInstance) SetIDsByGatewayID(ctx context.Context, gtwID uuid.UUID, insts []*domain.SensorInstance) error {
 	return r.repo.SetStrIDsByParentID(ctx, gtwID.String(), common.SliceToIDs(insts), cache.SensorGatewayKey)
 }
 
-func (r *sensorInstance) GetOneByID(ctx context.Context, ID ulid.ULID) (*domain.SensorInstance, error) {
+func (r *sensorInstance) GetOneByID(ctx context.Context, ID uuid.UUID) (*domain.SensorInstance, error) {
 	return r.repo.GetOneByStrID(ctx, ID.String())
 }
