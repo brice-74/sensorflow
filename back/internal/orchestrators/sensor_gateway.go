@@ -49,7 +49,7 @@ func (o *SensorGateway) GetOneWithInstances(ctx context.Context, id uuid.UUID) (
 		return gw, nil
 	}
 
-	if redisCli := o.redisRepo.Client(); redisCli.IsHealthy() {
+	if redisCli := o.redisRepo.Client(); redisCli.IsAlive() {
 		if gw, found := o.getFromRedisWithInstances(ctx, id); found {
 			return gw, nil
 		}
@@ -62,7 +62,7 @@ func (o *SensorGateway) GetOneWithInstances(ctx context.Context, id uuid.UUID) (
 
 	o.localCache.Set(hydratedKey, gw)
 
-	if redisCli := o.redisRepo.Client(); redisCli.IsHealthy() {
+	if redisCli := o.redisRepo.Client(); redisCli.IsAlive() {
 		o.asyncSetRedis(gw)
 	}
 

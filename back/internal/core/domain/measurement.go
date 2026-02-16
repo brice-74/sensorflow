@@ -145,7 +145,8 @@ type MeasurementField struct {
 
 type MeasurementDatabase struct {
 	common.UUID
-	Name string
+	Name       string
+	ClusterKey string
 }
 
 type MeasurementTable struct {

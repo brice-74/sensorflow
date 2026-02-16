@@ -87,6 +87,12 @@ func (l *Loader) Parse() error {
 	return nil
 }
 
+func (l *Loader) StringSlice(dst *[]string, flagName, envName string, defaultVal []string, desc string, prefix ...string) *Option[[]string] {
+	return AddSliceOption(l, dst, flagName, envName, defaultVal, desc, ",",
+		func(s string) (string, error) { return s, nil },
+	)
+}
+
 func (l *Loader) String(dst *string, flagName, envName, defaultVal, desc string, prefix ...string) *Option[string] {
 	return AddOption(l, dst, flagName, envName, defaultVal, desc,
 		func(s string) (string, error) { return s, nil },

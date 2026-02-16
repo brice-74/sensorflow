@@ -6,24 +6,6 @@ import (
 	"github.com/brice-74/sensorflow/pkg/config"
 )
 
-type InfluxDB struct {
-	URL, Token, Database           string
-	Timeout, IdleConnectionTimeout time.Duration
-	MaxIdleConnections             int
-}
-
-func (c *InfluxDB) Define(loader *config.Loader) {
-	loader.String(&c.URL, "influxdb_url", "INFLUXDB_URL", "", "influxDB v3 api url").
-		Required()
-	loader.String(&c.Token, "influxdb_token", "INFLUXDB_TOKEN", "", "influxDB v3 token access").
-		Required()
-	loader.String(&c.Database, "influxdb_database", "INFLUXDB_DATABSE", "", "influxDB v3 database name").
-		Required()
-	loader.Duration(&c.Timeout, "influxdb_timeout", "INFLUXDB_TIMEOUT", 10*time.Second, "influxDB v3 request timeout")
-	loader.Duration(&c.IdleConnectionTimeout, "influxdb_idle_connection_timeout", "INFLUXDB_IDLE_CONNECTION_TIMEOUT", 90*time.Second, "influxDB v3 idle connection timeout")
-	loader.Int(&c.MaxIdleConnections, "influxdb_max_idle_connections", "INFLUXDB_MAX_IDLE_CONNECTIONS", 10, "influxDB v3 max idle connexions")
-}
-
 type Postgres struct {
 	Host, Port, Database, User, Password string
 	MaxOpenConns, MaxIdleConns           int
@@ -56,8 +38,15 @@ func (c *Postgres) Define(loader *config.Loader) {
 	)
 }
 
+type HeartbeatWatcher struct {
+	HealthPingTimeout                      time.Duration
+	HealthInitialBackoff, HealthMaxBackoff time.Duration
+	HealthMultiplier                       float64
+	HealthJitterPct                        float64
+}
+
 type Redis struct {
-	// Base redis.Options fields
+	HeartbeatWatcher
 	Network, Addr, ClientName                  string
 	Username, Password                         string
 	DB, MaxRetries                             int
@@ -70,12 +59,6 @@ type Redis struct {
 	PoolTimeout                                time.Duration
 	MinIdleConns, MaxIdleConns, MaxActiveConns int
 	ConnMaxIdleTime, ConnMaxLifetime           time.Duration
-
-	// HealthyClient wrapper options
-	HealthPingTimeout                      time.Duration
-	HealthInitialBackoff, HealthMaxBackoff time.Duration
-	HealthMultiplier                       float64
-	HealthJitterPct                        float64
 }
 
 func (c *Redis) Define(loader *config.Loader) {
@@ -140,4 +123,196 @@ func (c *Redis) Define(loader *config.Loader) {
 		"REDIS_HEALTH_MULTIPLIER", 2, "Backoff multiplier for redis recovery")
 	loader.Float64(&c.HealthJitterPct, "redis_health_jitter_pct",
 		"REDIS_HEALTH_JITTER_PCT", 0.0, "Jitter percentage for redis recovery")
+}
+
+type Clickhouse struct {
+	HeartbeatWatcher
+	Addrs                []string
+	Protocol             string
+	Username             string
+	Password             string
+	Database             string
+	MaxRetries           int
+	MinRetryBackoff      time.Duration
+	MaxRetryBackoff      time.Duration
+	DialTimeout          time.Duration
+	ReadTimeout          time.Duration
+	WriteTimeout         time.Duration
+	MaxOpenConns         int
+	MaxIdleConns         int
+	ConnMaxIdleTime      time.Duration
+	ConnMaxLifetime      time.Duration
+	HttpMaxConnsPerHost  int
+	BlockBufferSize      int
+	MaxCompressionBuffer int
+}
+
+func (c *Clickhouse) Define(loader *config.Loader) {
+	// Connection
+	loader.StringSlice(&c.Addrs,
+		"clickhouse_addrs",
+		"CLICKHOUSE_ADDRS",
+		[]string{"localhost:9000"},
+		"ClickHouse addresses (comma separated)",
+	).Required()
+
+	loader.String(&c.Protocol,
+		"clickhouse_protocol",
+		"CLICKHOUSE_PROTOCOL",
+		"native",
+		"ClickHouse protocol (native or http)",
+	)
+
+	loader.String(&c.Username,
+		"clickhouse_username",
+		"CLICKHOUSE_USERNAME",
+		"default",
+		"ClickHouse username",
+	)
+
+	loader.String(&c.Password,
+		"clickhouse_password",
+		"CLICKHOUSE_PASSWORD",
+		"",
+		"ClickHouse password",
+	)
+
+	loader.String(&c.Database,
+		"clickhouse_database",
+		"CLICKHOUSE_DATABASE",
+		"default",
+		"Default ClickHouse database",
+	)
+
+	// Retry
+	loader.Int(&c.MaxRetries,
+		"clickhouse_max_retries",
+		"CLICKHOUSE_MAX_RETRIES",
+		3,
+		"Max retries before giving up",
+	)
+
+	loader.Duration(&c.MinRetryBackoff,
+		"clickhouse_min_retry_backoff",
+		"CLICKHOUSE_MIN_RETRY_BACKOFF",
+		100*time.Millisecond,
+		"Minimum retry backoff",
+	)
+
+	loader.Duration(&c.MaxRetryBackoff,
+		"clickhouse_max_retry_backoff",
+		"CLICKHOUSE_MAX_RETRY_BACKOFF",
+		5*time.Second,
+		"Maximum retry backoff",
+	)
+
+	// Timeouts
+	loader.Duration(&c.DialTimeout,
+		"clickhouse_dial_timeout",
+		"CLICKHOUSE_DIAL_TIMEOUT",
+		5*time.Second,
+		"Dial timeout",
+	)
+
+	loader.Duration(&c.ReadTimeout,
+		"clickhouse_read_timeout",
+		"CLICKHOUSE_READ_TIMEOUT",
+		5*time.Second,
+		"Read timeout",
+	)
+
+	loader.Duration(&c.WriteTimeout,
+		"clickhouse_write_timeout",
+		"CLICKHOUSE_WRITE_TIMEOUT",
+		5*time.Second,
+		"Write timeout",
+	)
+
+	// Pooling
+	loader.Int(&c.MaxOpenConns,
+		"clickhouse_max_open_conns",
+		"CLICKHOUSE_MAX_OPEN_CONNS",
+		20,
+		"Maximum number of open connections",
+	)
+
+	loader.Int(&c.MaxIdleConns,
+		"clickhouse_max_idle_conns",
+		"CLICKHOUSE_MAX_IDLE_CONNS",
+		10,
+		"Maximum number of idle connections",
+	)
+
+	loader.Duration(&c.ConnMaxIdleTime,
+		"clickhouse_conn_max_idle_time",
+		"CLICKHOUSE_CONN_MAX_IDLE_TIME",
+		30*time.Minute,
+		"Maximum idle time",
+	)
+
+	loader.Duration(&c.ConnMaxLifetime,
+		"clickhouse_conn_max_lifetime",
+		"CLICKHOUSE_CONN_MAX_LIFETIME",
+		1*time.Hour,
+		"Maximum connection lifetime",
+	)
+
+	// HTTP specific
+	loader.Int(&c.HttpMaxConnsPerHost,
+		"clickhouse_http_max_conns_per_host",
+		"CLICKHOUSE_HTTP_MAX_CONNS_PER_HOST",
+		100,
+		"Max HTTP connections per host",
+	)
+
+	// Performance
+	loader.Int(&c.BlockBufferSize,
+		"clickhouse_block_buffer_size",
+		"CLICKHOUSE_BLOCK_BUFFER_SIZE",
+		2,
+		"Block buffer size",
+	)
+
+	loader.Int(&c.MaxCompressionBuffer,
+		"clickhouse_max_compression_buffer",
+		"CLICKHOUSE_MAX_COMPRESSION_BUFFER",
+		2*1024*1024,
+		"Max compression buffer size",
+	)
+
+	// Health wrapper (comme Redis)
+	loader.Duration(&c.HealthPingTimeout,
+		"clickhouse_health_ping_timeout",
+		"CLICKHOUSE_HEALTH_PING_TIMEOUT",
+		500*time.Millisecond,
+		"Ping timeout for ClickHouse health check",
+	)
+
+	loader.Duration(&c.HealthInitialBackoff,
+		"clickhouse_health_initial_backoff",
+		"CLICKHOUSE_HEALTH_INITIAL_BACKOFF",
+		200*time.Millisecond,
+		"Initial backoff for ClickHouse recovery",
+	)
+
+	loader.Duration(&c.HealthMaxBackoff,
+		"clickhouse_health_max_backoff",
+		"CLICKHOUSE_HEALTH_MAX_BACKOFF",
+		30*time.Second,
+		"Max backoff for ClickHouse recovery",
+	)
+
+	loader.Float64(&c.HealthMultiplier,
+		"clickhouse_health_multiplier",
+		"CLICKHOUSE_HEALTH_MULTIPLIER",
+		2,
+		"Backoff multiplier for ClickHouse recovery",
+	)
+
+	loader.Float64(&c.HealthJitterPct,
+		"clickhouse_health_jitter_pct",
+		"CLICKHOUSE_HEALTH_JITTER_PCT",
+		0.0,
+		"Jitter percentage for ClickHouse recovery",
+	)
 }

@@ -4,9 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"reflect"
+	"strings"
 )
 
-type Option[T comparable] struct {
+type Option[T any] struct {
 	flagName     string
 	envName      string
 	desc         string
@@ -16,9 +18,11 @@ type Option[T comparable] struct {
 	fromString   func(string) (T, error)
 	required     bool
 	validationFn func(T) error
+	isZeroFn     func(T) bool
 }
 
-// parse implements configOption for Option[T]
+var _ option = (*Option[any])(nil)
+
 func (o *Option[T]) parse(mode Mode) error {
 	var raw string
 	switch mode {
@@ -44,8 +48,7 @@ func (o *Option[T]) parse(mode Mode) error {
 		*o.dst = val
 	}
 
-	isZero := isZero(*o.dst)
-	if o.required && isZero {
+	if o.required && o.isZeroFn(*o.dst) {
 		return fmt.Errorf("missing required config %s (env=%s)", o.flagName, o.envName)
 	}
 
@@ -71,19 +74,17 @@ func (o *Option[T]) Validate(fn func(T) error) *Option[T] {
 	return o
 }
 
-func isZero[T comparable](val T) bool {
-	var zero T
-	return val == zero
+func isZero[T any](val T) bool {
+	return reflect.ValueOf(val).IsZero()
 }
 
 // AddOption registers a generic Option[T]
-func AddOption[T comparable](
+func AddOption[T any](
 	l *Loader,
 	dst *T,
 	flagName, envName string,
 	defaultVal T,
 	desc string,
-	// parseEnv converts a string to T
 	fromString func(string) (T, error),
 ) *Option[T] {
 	if dst == nil {
@@ -99,6 +100,7 @@ func AddOption[T comparable](
 		defaultVal: defaultVal,
 		dst:        dst,
 		fromString: fromString,
+		isZeroFn:   isZero[T],
 	}
 
 	if l.mode != EnvOnly {
@@ -106,5 +108,34 @@ func AddOption[T comparable](
 	}
 
 	l.options = append(l.options, opt)
+	return opt
+}
+
+func AddSliceOption[T any](
+	l *Loader,
+	dst *[]T,
+	flagName, envName string,
+	defaultVal []T,
+	desc string,
+	separator string,
+	fromStringIter func(string) (T, error),
+) *Option[[]T] {
+	opt := AddOption(l, dst, flagName, envName, defaultVal, desc, func(s string) ([]T, error) {
+		parts := strings.Split(s, separator)
+		var result []T
+		for _, part := range parts {
+			val, err := fromStringIter(part)
+			if err != nil {
+				return nil, err
+			}
+			result = append(result, val)
+		}
+		return result, nil
+	})
+
+	opt.isZeroFn = func(val []T) bool {
+		return len(val) == 0
+	}
+
 	return opt
 }

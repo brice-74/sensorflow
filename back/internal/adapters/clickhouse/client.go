@@ -1,29 +1,75 @@
 package clickhouse
 
 import (
+	"context"
 	"sync"
 	"time"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/brice-74/sensorflow/internal/config"
 	"github.com/brice-74/sensorflow/pkg/errors"
-	"github.com/google/uuid"
+	"github.com/brice-74/sensorflow/pkg/heartbeat"
 )
 
+type ClientAliveCapable struct{ clickhouse.Conn }
+
+func (c *ClientAliveCapable) Alive(ctx context.Context) bool {
+	return c.Ping(ctx) == nil
+}
+
 type ClientWrapper struct {
-	conn     clickhouse.Conn
+	*heartbeat.Watcher[*ClientAliveCapable]
 	lastUsed time.Time
-	dsn      string
+	ttl      time.Duration
+}
+
+func NewClientWrapper(managerTTL time.Duration, cfg *config.Clickhouse) *ClientWrapper {
+	conn, err := clickhouse.Open(&clickhouse.Options{
+		Addr:                 cfg.Addrs,
+		ReadTimeout:          cfg.ReadTimeout,
+		DialTimeout:          cfg.DialTimeout,
+		MaxOpenConns:         cfg.MaxOpenConns,
+		MaxIdleConns:         cfg.MaxIdleConns,
+		ConnMaxLifetime:      cfg.ConnMaxLifetime,
+		HttpMaxConnsPerHost:  cfg.HttpMaxConnsPerHost,
+		BlockBufferSize:      uint8(cfg.BlockBufferSize),
+		MaxCompressionBuffer: cfg.MaxCompressionBuffer,
+	})
+	if err != nil {
+		return nil
+	}
+
+	aliveCapable := &ClientAliveCapable{
+		Conn: conn,
+	}
+
+	watcher := heartbeat.NewWatcher(aliveCapable, nil, &heartbeat.Options{
+		PingTimeout:    cfg.HealthPingTimeout,
+		InitialBackoff: cfg.HealthInitialBackoff,
+		MaxBackoff:     cfg.HealthMaxBackoff,
+		Multiplier:     cfg.HealthMultiplier,
+		JitterPct:      cfg.HealthJitterPct,
+	})
+
+	return &ClientWrapper{
+		Watcher: watcher,
+		ttl:     managerTTL,
+	}
 }
 
 type ClientManager struct {
 	clients sync.Map
-	ttl     time.Duration
+	tick    time.Duration
 	stopCh  chan struct{}
 }
 
-func NewClientManager(ttl time.Duration) *ClientManager {
+func NewClientManager(tick time.Duration) *ClientManager {
+	if tick <= 0 {
+		tick = 10 * time.Second
+	}
+
 	m := &ClientManager{
-		ttl:     ttl,
+		tick:    tick,
 		clients: sync.Map{},
 		stopCh:  make(chan struct{}),
 	}
@@ -32,49 +78,36 @@ func NewClientManager(ttl time.Duration) *ClientManager {
 	return m
 }
 
-func (m *ClientManager) UpsertDatabase(dbID uuid.UUID, dsn string) {
-	if val, ok := m.clients.Load(dbID); ok {
-		w := val.(*ClientWrapper)
-		if w.dsn != dsn {
-			w.conn.Close()
-			m.clients.Delete(dbID)
+/*
+	func (m *ClientManager) GetClient(dbID uuid.UUID) (clickhouse.Conn, error) {
+		val, ok := m.clients.Load(dbID)
+		if !ok {
+			return nil, errors.WrapMsg("unknown database")
 		}
-		return
-	}
 
-	m.clients.Store(dbID, &ClientWrapper{
-		dsn: dsn,
-	})
-}
+		w := val.(*ClientWrapper)
 
-func (m *ClientManager) GetClient(dbID uuid.UUID) (clickhouse.Conn, error) {
-	val, ok := m.clients.Load(dbID)
-	if !ok {
-		return nil, errors.WrapMsg("unknown database")
-	}
+		if w.Client != nil {
+			w.lastUsed = time.Now()
+			return w.Client, nil
+		}
 
-	w := val.(*ClientWrapper)
+		conn, err := clickhouse.Open(&clickhouse.Options{
+			Addr: []string{w.dsn},
+		})
+		if err != nil {
+			return nil, err
+		}
 
-	if w.conn != nil {
+		w.Client = conn
 		w.lastUsed = time.Now()
-		return w.conn, nil
+
+		return conn, nil
 	}
-
-	conn, err := clickhouse.Open(&clickhouse.Options{
-		Addr: []string{w.dsn},
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	w.conn = conn
-	w.lastUsed = time.Now()
-
-	return conn, nil
-}
+*/
 
 func (m *ClientManager) cleanupTTL() {
-	ticker := time.NewTicker(m.ttl)
+	ticker := time.NewTicker(m.tick)
 	defer ticker.Stop()
 
 	for {
@@ -82,8 +115,8 @@ func (m *ClientManager) cleanupTTL() {
 		case <-ticker.C:
 			m.clients.Range(func(key, value any) bool {
 				wrapper := value.(*ClientWrapper)
-				if wrapper.conn != nil && time.Since(wrapper.lastUsed) > m.ttl {
-					wrapper.conn.Close()
+				if wrapper.Client != nil && time.Since(wrapper.lastUsed) > wrapper.ttl {
+					wrapper.Client.Close()
 					m.clients.Delete(key)
 				}
 				return true
@@ -101,8 +134,8 @@ func (m *ClientManager) CloseAll() error {
 	var errs []error
 	m.clients.Range(func(key, value any) bool {
 		wrapper := value.(*ClientWrapper)
-		if wrapper.conn != nil {
-			if err := wrapper.conn.Close(); err != nil {
+		if wrapper.Client != nil {
+			if err := wrapper.Client.Close(); err != nil {
 				errs = append(errs, err)
 			}
 		}
