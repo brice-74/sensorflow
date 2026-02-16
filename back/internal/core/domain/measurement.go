@@ -116,7 +116,6 @@ func (t DataType) ClickHouseType() string {
 	}
 }
 
-// Optional debug
 func (t DataType) String() string {
 	return fmt.Sprintf("%s (%d)", t.GoString(), t)
 }
@@ -145,8 +144,7 @@ type MeasurementField struct {
 
 type MeasurementDatabase struct {
 	common.UUID
-	Name       string
-	ClusterKey string
+	Name string
 }
 
 type MeasurementTable struct {

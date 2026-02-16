@@ -7,21 +7,8 @@ import (
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/pkg/errors"
+	"github.com/google/uuid"
 )
-
-type Repo[T any] interface {
-	NewBatch(ctx context.Context) (Batch[T], error)
-}
-
-type Batch[T any] interface {
-	Append(...T) error
-	Flush() error
-	Send() error
-}
-
-type repo struct {
-	conn clickhouse.Conn
-}
 
 type (
 	AccelGyroStdRepo        repo
@@ -29,16 +16,22 @@ type (
 	AccelGyroRealtimeRepo   repo
 )
 
-func (r *AccelGyroStdRepo) NewBatch(ctx context.Context) (Batch[domain.AccelGyroMeasurement], error) {
-	return accelGyroNewBatch(ctx, r.conn, "_std")
+func (r *AccelGyroStdRepo) NewBatch(ctx context.Context, dbID uuid.UUID) (Batch[domain.AccelGyroMeasurement], error) {
+	return doWithRegistry(ctx, r.registry, dbID, func(ctx context.Context, conn clickhouse.Conn) (Batch[domain.AccelGyroMeasurement], error) {
+		return accelGyroNewBatch(ctx, conn, "_std")
+	})
 }
 
-func (r *AccelGyroIndustrialRepo) NewBatch(ctx context.Context) (Batch[domain.AccelGyroMeasurement], error) {
-	return accelGyroNewBatch(ctx, r.conn, "_industrial")
+func (r *AccelGyroIndustrialRepo) NewBatch(ctx context.Context, dbID uuid.UUID) (Batch[domain.AccelGyroMeasurement], error) {
+	return doWithRegistry(ctx, r.registry, dbID, func(ctx context.Context, conn clickhouse.Conn) (Batch[domain.AccelGyroMeasurement], error) {
+		return accelGyroNewBatch(ctx, conn, "_industrial")
+	})
 }
 
-func (r *AccelGyroRealtimeRepo) NewBatch(ctx context.Context) (Batch[domain.AccelGyroMeasurement], error) {
-	return accelGyroNewBatch(ctx, r.conn, "_realtime")
+func (r *AccelGyroRealtimeRepo) NewBatch(ctx context.Context, dbID uuid.UUID) (Batch[domain.AccelGyroMeasurement], error) {
+	return doWithRegistry(ctx, r.registry, dbID, func(ctx context.Context, conn clickhouse.Conn) (Batch[domain.AccelGyroMeasurement], error) {
+		return accelGyroNewBatch(ctx, conn, "_realtime")
+	})
 }
 
 func accelGyroNewBatch(
@@ -78,6 +71,8 @@ func accelGyroNewBatch(
 }
 
 type AccelGyrobatch struct{ driver.Batch }
+
+var _ Batch[domain.AccelGyroMeasurement] = (*AccelGyrobatch)(nil)
 
 func (b *AccelGyrobatch) Append(rows ...domain.AccelGyroMeasurement) error {
 	for _, m := range rows {
