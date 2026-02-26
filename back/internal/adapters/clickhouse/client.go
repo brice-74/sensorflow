@@ -41,12 +41,13 @@ func NewHealthyClient(cfg *config.Clickhouse) *HealthyClient {
 	}
 
 	watcher := heartbeat.NewWatcher(aliveCapable, HandleError, &heartbeat.Options{
+		RecoverTimeout: cfg.HealthRecoverTimeout,
 		PingTimeout:    cfg.HealthPingTimeout,
 		InitialBackoff: cfg.HealthInitialBackoff,
 		MaxBackoff:     cfg.HealthMaxBackoff,
 		Multiplier:     cfg.HealthMultiplier,
 		JitterPct:      cfg.HealthJitterPct,
-	})
+	}, false)
 
 	return (*HealthyClient)(watcher)
 }

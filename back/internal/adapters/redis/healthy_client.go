@@ -51,12 +51,13 @@ func NewHealthyClientFromCfg(cfg *config.Redis) *HealthyClient {
 	aliveCapable := ClientAliveCapable(*client)
 
 	watcher := heartbeat.NewWatcher(&aliveCapable, HandleError, &heartbeat.Options{
+		RecoverTimeout: cfg.HealthRecoverTimeout,
 		PingTimeout:    cfg.HealthPingTimeout,
 		InitialBackoff: cfg.HealthInitialBackoff,
 		MaxBackoff:     cfg.HealthMaxBackoff,
 		Multiplier:     cfg.HealthMultiplier,
 		JitterPct:      cfg.HealthJitterPct,
-	})
+	}, false)
 
 	healthyClient := HealthyClient{
 		Watcher: watcher,

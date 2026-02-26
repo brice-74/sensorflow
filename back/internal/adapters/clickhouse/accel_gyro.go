@@ -11,27 +11,45 @@ import (
 )
 
 type (
-	AccelGyroStdRepo        repo
-	AccelGyroIndustrialRepo repo
-	AccelGyroRealtimeRepo   repo
+	AccelGyroStdDynamicRepo        dynamicRepo
+	AccelGyroIndustrialDynamicRepo dynamicRepo
+	AccelGyroRealtimeDynamicRepo   dynamicRepo
 )
 
-func (r *AccelGyroStdRepo) NewBatch(ctx context.Context, dbID uuid.UUID) (Batch[domain.AccelGyroMeasurement], error) {
+func (r *AccelGyroStdDynamicRepo) NewBatch(ctx context.Context, dbID uuid.UUID) (Batch[domain.AccelGyroMeasurement], error) {
 	return doWithRegistry(ctx, r.registry, dbID, func(ctx context.Context, conn clickhouse.Conn) (Batch[domain.AccelGyroMeasurement], error) {
 		return accelGyroNewBatch(ctx, conn, "_std")
 	})
 }
 
-func (r *AccelGyroIndustrialRepo) NewBatch(ctx context.Context, dbID uuid.UUID) (Batch[domain.AccelGyroMeasurement], error) {
+func (r *AccelGyroIndustrialDynamicRepo) NewBatch(ctx context.Context, dbID uuid.UUID) (Batch[domain.AccelGyroMeasurement], error) {
 	return doWithRegistry(ctx, r.registry, dbID, func(ctx context.Context, conn clickhouse.Conn) (Batch[domain.AccelGyroMeasurement], error) {
 		return accelGyroNewBatch(ctx, conn, "_industrial")
 	})
 }
 
-func (r *AccelGyroRealtimeRepo) NewBatch(ctx context.Context, dbID uuid.UUID) (Batch[domain.AccelGyroMeasurement], error) {
+func (r *AccelGyroRealtimeDynamicRepo) NewBatch(ctx context.Context, dbID uuid.UUID) (Batch[domain.AccelGyroMeasurement], error) {
 	return doWithRegistry(ctx, r.registry, dbID, func(ctx context.Context, conn clickhouse.Conn) (Batch[domain.AccelGyroMeasurement], error) {
 		return accelGyroNewBatch(ctx, conn, "_realtime")
 	})
+}
+
+type (
+	AccelGyroStdRepo        repo
+	AccelGyroIndustrialRepo repo
+	AccelGyroRealtimeRepo   repo
+)
+
+func (r *AccelGyroStdRepo) NewBatch(ctx context.Context) (Batch[domain.AccelGyroMeasurement], error) {
+	return accelGyroNewBatch(ctx, r.client.Client, "_std")
+}
+
+func (r *AccelGyroIndustrialRepo) NewBatch(ctx context.Context) (Batch[domain.AccelGyroMeasurement], error) {
+	return accelGyroNewBatch(ctx, r.client.Client, "_industrial")
+}
+
+func (r *AccelGyroRealtimeRepo) NewBatch(ctx context.Context) (Batch[domain.AccelGyroMeasurement], error) {
+	return accelGyroNewBatch(ctx, r.client.Client, "_realtime")
 }
 
 func accelGyroNewBatch(
@@ -67,14 +85,14 @@ func accelGyroNewBatch(
 		return nil, err
 	}
 
-	return &AccelGyrobatch{batch}, nil
+	return &AccelGyroBatch{batch}, nil
 }
 
-type AccelGyrobatch struct{ driver.Batch }
+type AccelGyroBatch struct{ driver.Batch }
 
-var _ Batch[domain.AccelGyroMeasurement] = (*AccelGyrobatch)(nil)
+var _ Batch[domain.AccelGyroMeasurement] = (*AccelGyroBatch)(nil)
 
-func (b *AccelGyrobatch) Append(rows ...domain.AccelGyroMeasurement) error {
+func (b *AccelGyroBatch) Append(rows ...domain.AccelGyroMeasurement) error {
 	for _, m := range rows {
 		err := b.Batch.Append(
 			m.TenantID,

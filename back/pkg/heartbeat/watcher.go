@@ -8,6 +8,7 @@ import (
 )
 
 type Options struct {
+	RecoverTimeout time.Duration
 	PingTimeout    time.Duration
 	InitialBackoff time.Duration
 	MaxBackoff     time.Duration
@@ -39,18 +40,26 @@ type Watcher[T AliveCapable] struct {
 	isDown      atomic.Bool
 	opt         *Options
 	handleError func(error, func()) error
+	isAliveCh   chan bool
+	cancel      context.CancelFunc
 }
 
-func NewWatcher[T AliveCapable](client T, handleError func(error, func()) error, opts *Options) *Watcher[T] {
+func NewWatcher[T AliveCapable](client T, handleError func(error, func()) error, opts *Options, useIsAliveCh bool) *Watcher[T] {
 	if opts == nil {
 		panic("heartbeat: Watcher nil options")
 	}
 	opts.init()
 
+	var ch chan bool
+	if useIsAliveCh {
+		ch = make(chan bool, 1)
+	}
+
 	return &Watcher[T]{
 		Client:      client,
 		opt:         opts,
 		handleError: handleError,
+		isAliveCh:   ch,
 	}
 }
 
@@ -58,22 +67,48 @@ func (l *Watcher[T]) HandleError(err error) error {
 	return l.handleError(err, l.MarkDown)
 }
 
-func (l *Watcher[T]) MarkDown() {
-	if !l.isDown.Swap(true) {
-		go l.tryRecover()
+func (l *Watcher[T]) CancelRecover() {
+	if l.cancel != nil {
+		l.cancel()
 	}
 }
 
-func (l *Watcher[T]) tryRecover() {
+func (l *Watcher[T]) MarkDown() {
+	if !l.isDown.Swap(true) {
+		l.emit(false)
+		ctx, cancel := context.WithCancel(context.Background())
+		l.cancel = cancel
+		go l.tryRecover(ctx)
+	}
+}
+
+func (l *Watcher[T]) tryRecover(ctx context.Context) {
 	backoff := l.opt.InitialBackoff
 
+	var recoverCtx context.Context
+	var cancel context.CancelFunc
+
+	if l.opt.RecoverTimeout > 0 {
+		recoverCtx, cancel = context.WithTimeout(ctx, l.opt.RecoverTimeout)
+		defer cancel()
+	} else {
+		recoverCtx = ctx
+	}
+
 	for l.isDown.Load() {
-		ctx, cancel := context.WithTimeout(context.Background(), l.opt.PingTimeout)
-		alive := l.Client.Alive(ctx)
-		cancel()
+		select {
+		case <-recoverCtx.Done():
+			return
+		default:
+		}
+
+		cctx, cancelPing := context.WithTimeout(recoverCtx, l.opt.PingTimeout)
+		alive := l.Client.Alive(cctx)
+		cancelPing()
 
 		if alive {
 			l.isDown.Store(false)
+			l.emit(true)
 			return
 		}
 
@@ -83,11 +118,34 @@ func (l *Watcher[T]) tryRecover() {
 			sleep = time.Duration(float64(sleep) * factor)
 		}
 
-		time.Sleep(sleep)
+		select {
+		case <-recoverCtx.Done():
+			return
+		case <-time.After(sleep):
+		}
+
 		backoff = min(time.Duration(float64(backoff)*l.opt.Multiplier), l.opt.MaxBackoff)
 	}
 }
 
 func (l *Watcher[T]) IsAlive() bool {
 	return !l.isDown.Load()
+}
+
+func (l *Watcher[T]) IsAliveCh() <-chan bool {
+	return l.isAliveCh
+}
+
+func (l *Watcher[T]) emit(alive bool) {
+	if l.isAliveCh == nil {
+		return
+	}
+	select {
+	case <-l.isAliveCh:
+	default:
+	}
+	select {
+	case l.isAliveCh <- alive:
+	default:
+	}
 }

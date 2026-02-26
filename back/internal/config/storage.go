@@ -39,6 +39,7 @@ func (c *Postgres) Define(loader *config.Loader) {
 }
 
 type HeartbeatWatcher struct {
+	HealthRecoverTimeout                   time.Duration
 	HealthPingTimeout                      time.Duration
 	HealthInitialBackoff, HealthMaxBackoff time.Duration
 	HealthMultiplier                       float64
@@ -112,6 +113,8 @@ func (c *Redis) Define(loader *config.Loader) {
 		"REDIS_CONN_MAX_LIFETIME", 0, "Max lifetime for redis connections")
 
 	// HealthyClient (wrapper)
+	loader.Duration(&c.HealthRecoverTimeout, "redis_health_recover_timeout", "REDIS_HEALTH_RECOVER_TIMEOUT",
+		0, "Timeout for redis recovery attempts (0 to disable)")
 	loader.Duration(&c.HealthPingTimeout, "redis_health_ping_timeout", "REDIS_HEALTH_PING_TIMEOUT",
 		500*time.Millisecond, "Ping timeout for redis health check")
 	loader.Duration(&c.HealthInitialBackoff, "redis_health_initial_backoff",
@@ -281,6 +284,9 @@ func (c *Clickhouse) Define(loader *config.Loader) {
 	)
 
 	// Health wrapper (comme Redis)
+	loader.Duration(&c.HealthRecoverTimeout, "clickhouse_health_recover_timeout", "CLICKHOUSE_HEALTH_RECOVER_TIMEOUT",
+		0, "Timeout for ClickHouse recovery attempts (0 to disable)")
+
 	loader.Duration(&c.HealthPingTimeout,
 		"clickhouse_health_ping_timeout",
 		"CLICKHOUSE_HEALTH_PING_TIMEOUT",
