@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-type Pool interface {
+type PoolCore interface {
 	Submit(task Task) error
 }
 
@@ -37,6 +37,8 @@ type BoundedPool struct {
 	cancel   context.CancelFunc
 	isClosed atomic.Bool
 }
+
+var _ PoolCore = (*BoundedPool)(nil)
 
 func NewBoundedPool(opts ...BoundedPoolOption) *BoundedPool {
 	p := &BoundedPool{

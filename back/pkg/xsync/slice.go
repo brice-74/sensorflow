@@ -98,10 +98,7 @@ func (s *BatchSlice[T]) TakeBatchCopy(max int) []T {
 		return nil
 	}
 
-	n := len(s.slice)
-	if n > max {
-		n = max
-	}
+	n := min(len(s.slice), max)
 
 	batch := append([]T(nil), s.slice[:n]...)
 	s.slice = s.shrinkIfNeeded(s.slice[n:])
@@ -128,7 +125,7 @@ func (s *BatchSlice[T]) TakeBatchWithRelease(max int, fn func(batch []T)) {
 }
 
 // CommitN removes the first n rows
-func (s *BatchSlice[T]) CommitN(n int) {
+func (s *BatchSlice[T]) Commit(n int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -140,7 +137,7 @@ func (s *BatchSlice[T]) CommitN(n int) {
 }
 
 // CommitNAndRelease removes the first n rows and releases them to the pool
-func (s *BatchSlice[T]) CommitNAndRelease(n int) {
+func (s *BatchSlice[T]) CommitAndRelease(n int) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -155,38 +152,6 @@ func (s *BatchSlice[T]) CommitNAndRelease(n int) {
 	batch := s.slice[:n]
 	s.slice = s.shrinkIfNeeded(s.slice[n:])
 	s.Release(batch)
-}
-
-// CommitBatch removes the exact given rows from the buffer
-func (s *BatchSlice[T]) CommitBatch(rows []T) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	n := len(rows)
-	if n >= len(s.slice) {
-		s.slice = nil
-		return
-	}
-
-	s.slice = s.shrinkIfNeeded(s.slice[n:])
-}
-
-// CommitAndRelease removes the exact given rows and releases to the pool
-func (s *BatchSlice[T]) CommitAndRelease(rows []T) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	n := len(rows)
-	if n >= len(s.slice) {
-		if s.pool != nil {
-			s.pool.Put(s.slice)
-		}
-		s.slice = nil
-		return
-	}
-
-	s.slice = s.shrinkIfNeeded(s.slice[n:])
-	s.Release(rows)
 }
 
 // Release puts a slice back into the pool if pool is defined
