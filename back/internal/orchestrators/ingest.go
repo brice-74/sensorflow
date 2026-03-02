@@ -9,6 +9,19 @@ import (
 	"github.com/brice-74/sensorflow/pkg/xsync"
 )
 
+type IngestStatus uint8
+
+const (
+	INGEST_STATUS_UNSPECIFIED    IngestStatus = iota
+	INGEST_STATUS_OK                          // Tout fonctionne normalement
+	INGEST_STATUS_PENDING                     // Buffer important (> maxFlushRows*2)
+	INGEST_STATUS_RETRYING_MAIN               // Retry sur le niveau principal
+	INGEST_STATUS_RETRYING_LEVEL              // Retry sur un niveau fallback
+	INGEST_STATUS_LEVEL_FALLBACK              // Niveau fallback utilisé, ingestion OK
+	INGEST_STATUS_ERROR                       // Tous les niveaux ont échoué
+	INGEST_STATUS_STOPPED                     // Ingestor arrêté
+)
+
 type IngestionLevel[T any] interface {
 	Name() string
 	Write(rows []T) error
@@ -19,22 +32,21 @@ type Ingestor[T any] struct {
 	rowsBuf xsync.BatchSlice[T]
 
 	levels       []IngestionLevel[T]
-	currentLevel int
+	currentLevel int // current active ingestion level
 
-	// flush config
 	tick         time.Duration
 	maxFlushRows int
 	flushDelay   time.Duration
-	lastFlush    atomic.Int64
+	lastFlushAt  atomic.Int64
 
-	// retry / fallback policy
 	retryDelay              time.Duration
 	nextRetryAt             atomic.Int64
 	maxBufferBeforeFallback int
 
-	// promotion
 	levelProbeInterval time.Duration
 	lastProbeAt        atomic.Int64
+	lastFlushFailedAt  atomic.Int64
+	stopped            atomic.Bool
 
 	stopCh   chan struct{}
 	notifyCh chan struct{}
@@ -43,26 +55,57 @@ type Ingestor[T any] struct {
 func (i *Ingestor[T]) Start() {
 	i.stopCh = make(chan struct{})
 	i.notifyCh = make(chan struct{}, 1)
+	i.stopped.Store(false)
 
 	now := time.Now()
-	i.lastFlush.Store(now.UnixNano())
+	i.lastFlushAt.Store(now.UnixNano())
 	i.lastProbeAt.Store(now.UnixNano())
 
 	go i.loop()
 }
 
 func (i *Ingestor[T]) Stop() {
+	i.stopped.Store(true)
 	close(i.stopCh)
 	close(i.notifyCh)
 }
 
 func (i *Ingestor[T]) Submit(rows ...T) {
 	i.rowsBuf.Append(rows...)
-
 	select {
 	case i.notifyCh <- struct{}{}:
 	default:
 	}
+}
+
+func (i *Ingestor[T]) State() IngestStatus {
+	now := time.Now()
+	rows := i.rowsBuf.Len()
+
+	if i.stopped.Load() {
+		return INGEST_STATUS_STOPPED
+	}
+
+	if failedAt := i.lastFlushFailedAt.Load(); failedAt > 0 && failedAt > i.lastFlushAt.Load() {
+		return INGEST_STATUS_ERROR
+	}
+
+	if now.UnixNano() < i.nextRetryAt.Load() {
+		if i.currentLevel == 0 {
+			return INGEST_STATUS_RETRYING_MAIN
+		}
+		return INGEST_STATUS_RETRYING_LEVEL
+	}
+
+	if i.currentLevel > 0 {
+		return INGEST_STATUS_LEVEL_FALLBACK
+	}
+
+	if rows > i.maxFlushRows*3 {
+		return INGEST_STATUS_PENDING
+	}
+
+	return INGEST_STATUS_OK
 }
 
 func (i *Ingestor[T]) loop() {
@@ -81,20 +124,20 @@ func (i *Ingestor[T]) loop() {
 	}
 }
 
+// process decides if we need to flush based on count or timer
 func (i *Ingestor[T]) process() {
-	now := time.Now()
-
-	if i.rowsBuf.Len() == 0 {
+	lenBuf := i.rowsBuf.Len()
+	if lenBuf == 0 {
 		return
 	}
 
-	if i.rowsBuf.Len() >= i.maxFlushRows ||
-		now.Sub(time.Unix(0, i.lastFlush.Load())) >= i.flushDelay {
-
+	now := time.Now()
+	if lenBuf >= i.maxFlushRows || now.Sub(time.Unix(0, i.lastFlushAt.Load())) >= i.flushDelay {
 		i.flushWithPolicy(now)
 	}
 }
 
+// flushWithPolicy handles writing rows to levels with retry/fallback
 func (i *Ingestor[T]) flushWithPolicy(now time.Time) {
 	rows := i.rowsBuf.PeekBatch(i.maxFlushRows)
 	if len(rows) == 0 {
@@ -104,6 +147,7 @@ func (i *Ingestor[T]) flushWithPolicy(now time.Time) {
 	i.maybePromote(now)
 
 	for lvl := i.currentLevel; lvl < len(i.levels); lvl++ {
+		// respect retry delay for current level
 		if lvl == i.currentLevel && now.UnixNano() < i.nextRetryAt.Load() {
 			return
 		}
@@ -112,20 +156,19 @@ func (i *Ingestor[T]) flushWithPolicy(now time.Time) {
 		if err == nil {
 			i.currentLevel = lvl
 			i.rowsBuf.CommitAndRelease(len(rows))
-			i.lastFlush.Store(now.UnixNano())
+			i.lastFlushAt.Store(now.UnixNano())
 			i.nextRetryAt.Store(0)
 			return
 		}
 
 		i.logger.Warn(errors.Wrapf(err, "ingestion level %s failed", i.levels[lvl].Name()))
 
-		// manage retry policy only on current level
+		// manage fallback only for current level
 		if lvl == i.currentLevel {
 			i.nextRetryAt.Store(now.Add(i.retryDelay).UnixNano())
 
-			if i.rowsBuf.Len() >= i.maxBufferBeforeFallback &&
-				lvl+1 < len(i.levels) {
-
+			// fallback to next level if buffer too big
+			if i.rowsBuf.Len() >= i.maxBufferBeforeFallback && lvl+1 < len(i.levels) {
 				i.logger.Warn(errors.WrapMsg("falling back to next ingestion level"))
 				i.currentLevel++
 				return
@@ -135,9 +178,11 @@ func (i *Ingestor[T]) flushWithPolicy(now time.Time) {
 		}
 	}
 
+	i.lastFlushFailedAt.Store(now.UnixNano())
 	i.logger.Error(errors.WrapMsg("all ingestion levels failed"))
 }
 
+// maybePromote attempts to move back to higher levels if enough time has passed
 func (i *Ingestor[T]) maybePromote(now time.Time) {
 	if i.currentLevel == 0 {
 		return
