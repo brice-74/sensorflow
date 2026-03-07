@@ -22,6 +22,8 @@ type SensorGateway struct {
 	asyncPool         ports.AsyncSubmitter
 }
 
+var _ ports.SensorGatewayOrchestrator = (*SensorGateway)(nil)
+
 func NewSensorGateway(
 	dbRepo ports.SensorGatewayRepository,
 	dbInstanceRepo ports.SensorInstanceRepository,

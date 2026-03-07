@@ -5,12 +5,18 @@ import (
 	"io"
 
 	"github.com/brice-74/sensorflow/internal/adapters/grpc/proto"
+	"github.com/brice-74/sensorflow/internal/core/domain"
+	"github.com/brice-74/sensorflow/internal/orchestrators"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
 type SensorMeasurementsService struct {
 	proto.UnimplementedSensorServiceServer
+
+	ingestAccelGyroStd        *orchestrators.Ingestor[*domain.AccelGyroMeasurement]
+	ingestAccelGyroIndustrial *orchestrators.Ingestor[*domain.AccelGyroMeasurement]
+	ingestAccelGyroRealtime   *orchestrators.Ingestor[*domain.AccelGyroMeasurement]
 }
 
 func (svc *SensorMeasurementsService) StreamCustomMeasurements(srv proto.SensorService_StreamCustomMeasurementsServer) error {
@@ -32,34 +38,11 @@ func (svc *SensorMeasurementsService) UnaryCustomMeasurements(ctx context.Contex
 	return nil, nil
 }
 
-/*
-	 func computeIngestStatus(
-		accepted uint64,
-		rejected uint64,
-		throttled bool,
-
-	) proto.IngestStatus {
-		if throttled {
-			if accepted > 0 {
-				return proto.IngestStatus_INGEST_STATUS_THROTTLED
-			}
-			return proto.IngestStatus_INGEST_STATUS_REJECTED
-		}
-		if accepted == 0 {
-			if rejected > 0 {
-				return proto.IngestStatus_INGEST_STATUS_REJECTED
-			}
-			return proto.IngestStatus_INGEST_STATUS_UNSPECIFIED
-		}
-		if rejected > 0 {
-			return proto.IngestStatus_INGEST_STATUS_PARTIAL
-		}
-		return proto.IngestStatus_INGEST_STATUS_OK
-	}
-*/
 func (svc *SensorMeasurementsService) StreamAccelGyroMeasurements(srv proto.SensorService_StreamAccelGyroMeasurementsServer) error {
 	return status.Error(codes.Unimplemented, "method StreamAccelGyroMeasurements not implemented")
 }
+
 func (svc *SensorMeasurementsService) UnaryAccelGyroMeasurements(ctx context.Context, req *proto.AccelGyroMeasurementsRequest) (*proto.IngestAck, error) {
+
 	return nil, status.Error(codes.Unimplemented, "method UnaryAccelGyroMeasurements not implemented")
 }

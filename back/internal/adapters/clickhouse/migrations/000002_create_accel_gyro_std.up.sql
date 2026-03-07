@@ -1,7 +1,6 @@
 CREATE TABLE IF NOT EXISTS sensorflow_generic.accel_gyro_std
 (
   tenant_id UUID,
-  device_id UUID,
   sensor_id UUID,
 
   measure_time DateTime64(6),
@@ -21,7 +20,7 @@ CREATE TABLE IF NOT EXISTS sensorflow_generic.accel_gyro_std
 )
 ENGINE = MergeTree
 PARTITION BY toYYYYMMDD(measure_time)
-ORDER BY (tenant_id, device_id, sensor_id, measure_time)
+ORDER BY (tenant_id, sensor_id, measure_time)
 TTL
   measure_time + INTERVAL 7 DAY DELETE,
   measure_time + INTERVAL 90 DAY TO VOLUME 'accel_gyro_std_cold'

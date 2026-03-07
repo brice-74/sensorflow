@@ -66,7 +66,6 @@ func accelGyroNewBatch(
 	batch, err := conn.PrepareBatch(ctx, `
 		INSERT INTO `+tablename+` (
 			tenant_id,
-			device_id,
 			sensor_id,
 			measure_time,
 			ingest_time,
@@ -96,7 +95,6 @@ func (b *AccelGyroBatch) Append(rows ...domain.AccelGyroMeasurement) error {
 	for _, m := range rows {
 		err := b.Batch.Append(
 			m.TenantID,
-			m.DeviceID,
 			m.SensorID,
 			m.MeasureTime,
 			m.IngestTime,

@@ -8,7 +8,6 @@ import (
 
 type AccelGyroMeasurement struct {
 	TenantID uuid.UUID `ch:"tenant_id"`
-	DeviceID uuid.UUID `ch:"device_id"`
 	SensorID uuid.UUID `ch:"sensor_id"`
 
 	MeasureTime time.Time `ch:"measure_time"`

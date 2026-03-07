@@ -12,14 +12,14 @@ import (
 type IngestStatus uint8
 
 const (
-	INGEST_STATUS_UNSPECIFIED    IngestStatus = iota
-	INGEST_STATUS_OK                          // Tout fonctionne normalement
-	INGEST_STATUS_PENDING                     // Buffer important (> maxFlushRows*2)
-	INGEST_STATUS_RETRYING_MAIN               // Retry sur le niveau principal
-	INGEST_STATUS_RETRYING_LEVEL              // Retry sur un niveau fallback
-	INGEST_STATUS_LEVEL_FALLBACK              // Niveau fallback utilisé, ingestion OK
-	INGEST_STATUS_ERROR                       // Tous les niveaux ont échoué
-	INGEST_STATUS_STOPPED                     // Ingestor arrêté
+	INGEST_STATUS_UNSPECIFIED IngestStatus = iota
+	INGEST_STATUS_OK
+	INGEST_STATUS_PENDING
+	INGEST_STATUS_RETRYING_MAIN
+	INGEST_STATUS_RETRYING_LEVEL
+	INGEST_STATUS_LEVEL_FALLBACK
+	INGEST_STATUS_ERROR
+	INGEST_STATUS_STOPPED
 )
 
 type IngestionLevel[T any] interface {
@@ -32,12 +32,12 @@ type Ingestor[T any] struct {
 	rowsBuf xsync.BatchSlice[T]
 
 	levels       []IngestionLevel[T]
-	currentLevel int // current active ingestion level
+	currentLevel int
 
-	tick         time.Duration
-	maxFlushRows int
-	flushDelay   time.Duration
-	lastFlushAt  atomic.Int64
+	tick           time.Duration
+	flushBatchSize int
+	flushDelay     time.Duration
+	lastFlushAt    atomic.Int64
 
 	retryDelay              time.Duration
 	nextRetryAt             atomic.Int64
@@ -101,8 +101,11 @@ func (i *Ingestor[T]) State() IngestStatus {
 		return INGEST_STATUS_LEVEL_FALLBACK
 	}
 
-	if rows > i.maxFlushRows*3 {
-		return INGEST_STATUS_PENDING
+	if i.maxBufferBeforeFallback > 0 {
+		pressure := float64(rows) / float64(i.maxBufferBeforeFallback)
+		if pressure >= 0.5 {
+			return INGEST_STATUS_PENDING
+		}
 	}
 
 	return INGEST_STATUS_OK
@@ -132,23 +135,25 @@ func (i *Ingestor[T]) process() {
 	}
 
 	now := time.Now()
-	if lenBuf >= i.maxFlushRows || now.Sub(time.Unix(0, i.lastFlushAt.Load())) >= i.flushDelay {
+	if lenBuf >= i.flushBatchSize || now.Sub(time.Unix(0, i.lastFlushAt.Load())) >= i.flushDelay {
 		i.flushWithPolicy(now)
 	}
 }
 
 // flushWithPolicy handles writing rows to levels with retry/fallback
 func (i *Ingestor[T]) flushWithPolicy(now time.Time) {
-	rows := i.rowsBuf.PeekBatch(i.maxFlushRows)
+	rows := i.rowsBuf.PeekBatch(i.flushBatchSize)
 	if len(rows) == 0 {
 		return
 	}
 
 	i.maybePromote(now)
 
+	nowNano := now.UnixNano()
+
 	for lvl := i.currentLevel; lvl < len(i.levels); lvl++ {
 		// respect retry delay for current level
-		if lvl == i.currentLevel && now.UnixNano() < i.nextRetryAt.Load() {
+		if lvl == i.currentLevel && nowNano < i.nextRetryAt.Load() {
 			return
 		}
 
@@ -156,7 +161,7 @@ func (i *Ingestor[T]) flushWithPolicy(now time.Time) {
 		if err == nil {
 			i.currentLevel = lvl
 			i.rowsBuf.CommitAndRelease(len(rows))
-			i.lastFlushAt.Store(now.UnixNano())
+			i.lastFlushAt.Store(nowNano)
 			i.nextRetryAt.Store(0)
 			return
 		}
@@ -178,7 +183,7 @@ func (i *Ingestor[T]) flushWithPolicy(now time.Time) {
 		}
 	}
 
-	i.lastFlushFailedAt.Store(now.UnixNano())
+	i.lastFlushFailedAt.Store(nowNano)
 	i.logger.Error(errors.WrapMsg("all ingestion levels failed"))
 }
 

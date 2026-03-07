@@ -46,6 +46,11 @@ type Repo[T any] interface {
 	SetOneByStrID(ctx context.Context, id string, entity *T) error
 }
 
+type SensorPlanBinding interface {
+	Repo[domain.SensorPlanBinding]
+	ports.SensorPlanBindingRepository
+}
+
 type SensorGateway interface {
 	Repo[domain.SensorGateway]
 	ports.SensorGatewayRepository

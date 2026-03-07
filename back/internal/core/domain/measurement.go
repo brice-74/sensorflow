@@ -7,6 +7,13 @@ import (
 	"github.com/google/uuid"
 )
 
+// NOTE:
+// All structs in this file (MeasurementLogicalProfile, MeasurementField,
+// MeasurementDatabase, MeasurementTable, MeasurementProfileBinding) are used
+// for custom ingestion flows, where fields and tables may vary per sensor.
+// The only exception is SensorPlanBinding, which maps a sensor to a generic
+// ingestion plan and is used for fixed, developer-managed tables.
+
 type DataType uint8
 
 const (
@@ -125,7 +132,6 @@ type MeasurementLogicalProfile struct {
 	TenantID uuid.UUID
 	Name     string
 	Version  uint16
-	IsActive bool
 
 	PreviousVersionID *uuid.UUID
 	Fields            []*MeasurementField
@@ -144,7 +150,8 @@ type MeasurementField struct {
 
 type MeasurementDatabase struct {
 	common.UUID
-	Name string
+	TenantID *uuid.UUID
+	Name     string
 }
 
 type MeasurementTable struct {
@@ -153,7 +160,6 @@ type MeasurementTable struct {
 	DatabaseID uuid.UUID
 	Name       string
 
-	Plan                 string  // ex: "custom", "shared_generic"
 	HotTTL               *string // ex: "7d"
 	ColdTTL              *string // ex: "90d"
 	PartitioningStrategy string  // ex: "month", "week", "day"
@@ -161,11 +167,26 @@ type MeasurementTable struct {
 }
 
 type MeasurementProfileBinding struct {
-	SensorInstanceID      uuid.UUID
-	LogicalProfileID      *uuid.UUID
-	MeasurementTableID    uuid.UUID
-	MeasurementDatabaseID uuid.UUID
+	SensorInstanceID   uuid.UUID
+	LogicalProfileID   uuid.UUID
+	MeasurementTableID uuid.UUID
 
 	common.Timestamps
 	common.SoftDelete
+}
+
+type SensorPlan string
+
+const (
+	SensorPlanAccelGyroStd        SensorPlan = "accel_gyro_std"
+	SensorPlanAccelGyroIndustrial SensorPlan = "accel_gyro_industrial"
+	SensorPlanAccelGyroRealtime   SensorPlan = "accel_gyro_realtime"
+)
+
+type SensorPlanBinding struct {
+	SensorInstanceID uuid.UUID
+	Plan             SensorPlan
+
+	common.SoftDelete
+	common.Timestamps
 }
