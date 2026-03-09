@@ -29,3 +29,16 @@ func (s *sensorPlanBinding) GetActiveByInstanceID(ctx context.Context, instanceI
 	key := cache.FormatActivePlanKey(instanceID.String())
 	return s.GetOneByStrID(ctx, key)
 }
+
+func (s *sensorPlanBinding) ListActiveByInstanceIDs(ctx context.Context, instanceIDs []uuid.UUID) ([]*domain.SensorPlanBinding, error) {
+	keys := make([]string, len(instanceIDs))
+	for i, id := range instanceIDs {
+		keys[i] = cache.FormatActivePlanKey(id.String())
+	}
+	return s.GetManyByStrIDs(ctx, keys)
+}
+
+func (s *sensorPlanBinding) SetOne(ctx context.Context, spb *domain.SensorPlanBinding) error {
+	key := cache.FormatActivePlanKey(spb.SensorInstanceID.String())
+	return s.SetOneByStrID(ctx, key, spb)
+}

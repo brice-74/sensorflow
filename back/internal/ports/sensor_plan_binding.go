@@ -9,4 +9,10 @@ import (
 
 type SensorPlanBindingRepository interface {
 	GetActiveByInstanceID(ctx context.Context, instanceID uuid.UUID) (*domain.SensorPlanBinding, error)
+	ListActiveByInstanceIDs(ctx context.Context, instanceIDs []uuid.UUID) ([]*domain.SensorPlanBinding, error)
+}
+
+type SensorPlanBindingOrchestrator interface {
+	GetActiveByInstanceID(ctx context.Context, instanceID uuid.UUID) (*domain.SensorPlanBinding, error)
+	ListActiveByInstanceIDs(ctx context.Context, instanceIDs []uuid.UUID) ([]*domain.SensorPlanBinding, error)
 }

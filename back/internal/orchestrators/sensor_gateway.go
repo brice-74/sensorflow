@@ -77,13 +77,10 @@ func (o *SensorGateway) getFromRedisWithInstances(ctx context.Context, id uuid.U
 	strID := id.String()
 
 	var (
-		gateway               *domain.SensorGateway
-		instanceIDs           []string
-		instances             []*domain.SensorInstance
-		redisErrors           []error
-		gotGatewayFromRedis   bool
-		gotIDsFromRedis       bool
-		gotInstancesFromRedis bool
+		gateway     *domain.SensorGateway
+		instanceIDs []string
+		instances   []*domain.SensorInstance
+		redisErrors []error
 	)
 
 	defer func() {
@@ -102,31 +99,37 @@ func (o *SensorGateway) getFromRedisWithInstances(ctx context.Context, id uuid.U
 		redisErrors = append(redisErrors, redisCli.HandleError(err))
 	}
 
-	gateway, gotGatewayFromRedis = tryGetRedisCmd(gatewayCmd, &redisErrors)
-	if !gotGatewayFromRedis {
+	gateway, err := gatewayCmd.Result()
+	if err != nil {
+		if !errors.Is(err, errors.ErrNotFound) {
+			redisErrors = append(redisErrors, err)
+		}
 		return nil, false
 	}
 
-	instanceIDs, gotIDsFromRedis = tryGetRedisCmd(idsCmd, &redisErrors)
-	if gotIDsFromRedis {
-		instances, gotInstancesFromRedis = tryGet(
-			func() ([]*domain.SensorInstance, error) {
-				if len(instanceIDs) == 0 {
-					return nil, nil
-				}
-				return o.redisInstanceRepo.GetManyByStrIDs(ctx, instanceIDs)
-			},
-			&redisErrors,
-		)
+	instanceIDs, err = idsCmd.Result()
+	if err != nil {
+		if !errors.Is(err, errors.ErrNotFound) {
+			redisErrors = append(redisErrors, err)
+		}
 	}
 
-	if gotInstancesFromRedis {
+	if len(instanceIDs) > 0 {
+		var err error
+		instances, err = o.redisInstanceRepo.GetManyByStrIDs(ctx, instanceIDs)
+		if err != nil {
+			if !errors.Is(err, errors.ErrNotFound) {
+				redisErrors = append(redisErrors, err)
+			}
+		}
+	}
+
+	if len(instances) > 0 {
 		gateway.SensorInstances = instances
 	} else {
 		insts, err := o.dbInstanceRepo.ListByGatewayID(ctx, id)
 		if err != nil {
 			o.logger.Warn(errors.WrapErr(err))
-			gateway.SensorInstances = nil
 		} else {
 			gateway.SensorInstances = insts
 		}

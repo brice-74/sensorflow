@@ -12,5 +12,5 @@ type SensorGatewayRepository interface {
 }
 
 type SensorGatewayOrchestrator interface {
-	GetOneWithInstances(ctx context.Context, ID uuid.UUID) (*domain.SensorGateway, error)
+	GetOneWithInstances(ctx context.Context, id uuid.UUID) (*domain.SensorGateway, error)
 }

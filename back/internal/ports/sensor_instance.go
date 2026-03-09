@@ -9,5 +9,5 @@ import (
 
 type SensorInstanceRepository interface {
 	ListByGatewayID(ctx context.Context, gatewayID uuid.UUID) ([]*domain.SensorInstance, error)
-	GetOneByID(ctx context.Context, ID uuid.UUID) (*domain.SensorInstance, error)
+	GetOneByID(ctx context.Context, id uuid.UUID) (*domain.SensorInstance, error)
 }

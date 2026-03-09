@@ -49,6 +49,7 @@ type Repo[T any] interface {
 type SensorPlanBinding interface {
 	Repo[domain.SensorPlanBinding]
 	ports.SensorPlanBindingRepository
+	SetOne(ctx context.Context, spb *domain.SensorPlanBinding) error
 }
 
 type SensorGateway interface {
