@@ -47,9 +47,8 @@ message IngestAck {
 
 enum RejectionCode {
   UNKNOWN = 0;
-  INVALID_VALUE = 1;
-  TIMESTAMP_MISSING = 2;
-  SENSOR_NOT_FOUND = 3;
+  INVALID_SENSOR_ID = 1;
+  UNKNOWN_SENSOR_OR_INVALID_PLAN = 2;
 }
 
 message RejectedDetail {

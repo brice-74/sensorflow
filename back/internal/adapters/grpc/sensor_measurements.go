@@ -3,6 +3,7 @@ package grpc
 import (
 	"context"
 	"io"
+	"time"
 
 	"github.com/brice-74/sensorflow/internal/adapters/grpc/proto"
 	"github.com/brice-74/sensorflow/internal/core/domain"
@@ -22,6 +23,37 @@ type SensorMeasurementsService struct {
 	ingestAccelGyroStd        *orchestrators.Ingestor[*domain.AccelGyroMeasurement]
 	ingestAccelGyroIndustrial *orchestrators.Ingestor[*domain.AccelGyroMeasurement]
 	ingestAccelGyroRealtime   *orchestrators.Ingestor[*domain.AccelGyroMeasurement]
+
+	ingestAccelGyroStdState        orchestrators.IngestStatus
+	ingestAccelGyroIndustrialState orchestrators.IngestStatus
+	ingestAccelGyroRealtimeState   orchestrators.IngestStatus
+
+	checkIngestorsStatesInterval time.Duration
+	stop                         chan struct{}
+}
+
+func (svc *SensorMeasurementsService) CheckIngestorsStates(ctx context.Context) (stop func()) {
+	ticker := time.NewTicker(svc.checkIngestorsStatesInterval)
+
+	go func() {
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ticker.C:
+				svc.ingestAccelGyroStdState = svc.ingestAccelGyroStd.State()
+				svc.ingestAccelGyroIndustrialState = svc.ingestAccelGyroIndustrial.State()
+				svc.ingestAccelGyroRealtimeState = svc.ingestAccelGyroRealtime.State()
+			case <-ctx.Done():
+				return
+			case <-svc.stop:
+				return
+			}
+		}
+	}()
+
+	return func() {
+		close(svc.stop)
+	}
 }
 
 func (svc *SensorMeasurementsService) StreamCustomMeasurements(srv proto.SensorService_StreamCustomMeasurementsServer) error {
@@ -55,20 +87,76 @@ func (svc *SensorMeasurementsService) StreamAccelGyroMeasurements(srv proto.Sens
 		switch plan.Plan {
 		case domain.SensorPlanAccelGyroIndustrial, domain.SensorPlanAccelGyroStd, domain.SensorPlanAccelGyroRealtime:
 			planByInstance[plan.SensorInstanceID] = plan
-		default:
 		}
 	}
 
+	if len(planByInstance) == 0 {
+		return status.Error(codes.FailedPrecondition, "no active sensor plans found for gateway's sensor instances")
+	}
+
+	var opts = applyDefaultsIngestAccelGyroOptions(nil)
+	lastFlush := time.Now()
+	count := 0
+	agg := NewAckAggregator()
+
 	for {
-		_, err := srv.Recv()
+		req, err := srv.Recv()
 		if err == io.EOF {
-			_ = srv.Send(nil)
+			if err := srv.Send(agg.ToProto(opts.IngestOptions.AckMode)); err != nil {
+				return status.Errorf(codes.Internal, "final stream send error: %v", err)
+			}
 			return nil
 		}
 		if err != nil {
 			return status.Errorf(codes.Internal, "stream recv error: %v", err)
 		}
+		if req.Options != nil {
+			opts = applyDefaultsIngestAccelGyroOptions(req.Options)
+		}
 
+		for _, sensor := range req.Sensors {
+			l := len(sensor.Measurements)
+
+			sensorID, err := uuid.Parse(sensor.SensorId)
+			if err != nil {
+				agg.AddRejected(sensor.SensorId, proto.RejectionCode_INVALID_SENSOR_ID)
+				continue
+			}
+
+			plan, planFound := planByInstance[sensorID]
+			if !planFound {
+				agg.AddRejected(sensor.SensorId, proto.RejectionCode_UNKNOWN_SENSOR_OR_INVALID_PLAN)
+				continue
+			}
+
+			count += l
+			agg.AddAccepted(uint64(l))
+
+			measurements := AccelGyroDTO(sensorID, gtw.TenantID, sensor.Measurements...)
+
+			switch plan.Plan {
+			case domain.SensorPlanAccelGyroIndustrial:
+				svc.ingestAccelGyroIndustrial.Submit(measurements...)
+			case domain.SensorPlanAccelGyroStd:
+				svc.ingestAccelGyroStd.Submit(measurements...)
+			case domain.SensorPlanAccelGyroRealtime:
+				svc.ingestAccelGyroRealtime.Submit(measurements...)
+			}
+		}
+
+		now := time.Now()
+		if uint32(count) >= *opts.IngestOptions.AckEveryN ||
+			now.Sub(lastFlush) > time.Duration(*opts.IngestOptions.AckMaxIntervalMs)*time.Millisecond {
+
+			if err := srv.Send(agg.ToProto(opts.IngestOptions.AckMode)); err != nil {
+				return status.Errorf(codes.Internal, "stream send error: %v", err)
+			}
+
+			// Reset next flush
+			count = 0
+			lastFlush = now
+			agg = NewAckAggregator()
+		}
 	}
 }
 

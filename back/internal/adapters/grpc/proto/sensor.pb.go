@@ -133,25 +133,22 @@ func (IngestStatus) EnumDescriptor() ([]byte, []int) {
 type RejectionCode int32
 
 const (
-	RejectionCode_UNKNOWN           RejectionCode = 0
-	RejectionCode_INVALID_VALUE     RejectionCode = 1
-	RejectionCode_TIMESTAMP_MISSING RejectionCode = 2
-	RejectionCode_SENSOR_NOT_FOUND  RejectionCode = 3
+	RejectionCode_UNKNOWN                        RejectionCode = 0
+	RejectionCode_INVALID_SENSOR_ID              RejectionCode = 1
+	RejectionCode_UNKNOWN_SENSOR_OR_INVALID_PLAN RejectionCode = 2
 )
 
 // Enum value maps for RejectionCode.
 var (
 	RejectionCode_name = map[int32]string{
 		0: "UNKNOWN",
-		1: "INVALID_VALUE",
-		2: "TIMESTAMP_MISSING",
-		3: "SENSOR_NOT_FOUND",
+		1: "INVALID_SENSOR_ID",
+		2: "UNKNOWN_SENSOR_OR_INVALID_PLAN",
 	}
 	RejectionCode_value = map[string]int32{
-		"UNKNOWN":           0,
-		"INVALID_VALUE":     1,
-		"TIMESTAMP_MISSING": 2,
-		"SENSOR_NOT_FOUND":  3,
+		"UNKNOWN":                        0,
+		"INVALID_SENSOR_ID":              1,
+		"UNKNOWN_SENSOR_OR_INVALID_PLAN": 2,
 	}
 )
 
@@ -1075,12 +1072,11 @@ const file_back_internal_adapters_grpc_proto_sensor_proto_rawDesc = "" +
 	"\x10INGEST_STATUS_OK\x10\x01\x12\x19\n" +
 	"\x15INGEST_STATUS_PARTIAL\x10\x02\x12\x1b\n" +
 	"\x17INGEST_STATUS_THROTTLED\x10\x03\x12\x1a\n" +
-	"\x16INGEST_STATUS_REJECTED\x10\x04*\\\n" +
+	"\x16INGEST_STATUS_REJECTED\x10\x04*W\n" +
 	"\rRejectionCode\x12\v\n" +
-	"\aUNKNOWN\x10\x00\x12\x11\n" +
-	"\rINVALID_VALUE\x10\x01\x12\x15\n" +
-	"\x11TIMESTAMP_MISSING\x10\x02\x12\x14\n" +
-	"\x10SENSOR_NOT_FOUND\x10\x03*:\n" +
+	"\aUNKNOWN\x10\x00\x12\x15\n" +
+	"\x11INVALID_SENSOR_ID\x10\x01\x12\"\n" +
+	"\x1eUNKNOWN_SENSOR_OR_INVALID_PLAN\x10\x02*:\n" +
 	"\x0fTemperatureUnit\x12\v\n" +
 	"\aCELSIUS\x10\x00\x12\x0e\n" +
 	"\n" +
