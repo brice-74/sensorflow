@@ -7,8 +7,8 @@ const (
 	G
 )
 
-func MS2ToG(ms2 float64) float64 { return ms2 / 9.80665 }
-func GToMS2(g float64) float64   { return g * 9.80665 }
+func MS2ToG(ms2 float64) float64 { return ms2 / GToMS2Factor }
+func GToMS2(g float64) float64   { return g * GToMS2Factor }
 
 func AccelToMS2(value float64, unit AccelUnit) float64 {
 	switch unit {

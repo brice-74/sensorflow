@@ -28,7 +28,7 @@ type AckMode int32
 const (
 	AckMode_ACK_MODE_UNSPECIFIED AckMode = 0
 	AckMode_ACK_MODE_FULL        AckMode = 1 // stats + erreurs (par défaut)
-	AckMode_ACK_MODE_STATS_ONLY  AckMode = 2 // accepted/rejected uniquement
+	AckMode_ACK_MODE_STATS_ONLY  AckMode = 2 // accepted/rejected only
 	AckMode_ACK_MODE_NONE        AckMode = 3 // fire-and-forget
 )
 
@@ -75,59 +75,120 @@ func (AckMode) EnumDescriptor() ([]byte, []int) {
 	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{0}
 }
 
-type IngestStatus int32
+type LogicalIngestStatus int32
 
 const (
-	IngestStatus_INGEST_STATUS_UNSPECIFIED IngestStatus = 0
-	IngestStatus_INGEST_STATUS_OK          IngestStatus = 1
-	IngestStatus_INGEST_STATUS_PARTIAL     IngestStatus = 2
-	IngestStatus_INGEST_STATUS_THROTTLED   IngestStatus = 3
-	IngestStatus_INGEST_STATUS_REJECTED    IngestStatus = 4
+	LogicalIngestStatus_LOGICAL_INGEST_STATUS_UNSPECIFIED LogicalIngestStatus = 0
+	LogicalIngestStatus_LOGICAL_INGEST_STATUS_OK          LogicalIngestStatus = 1
+	LogicalIngestStatus_LOGICAL_INGEST_STATUS_PARTIAL     LogicalIngestStatus = 2
+	LogicalIngestStatus_LOGICAL_INGEST_STATUS_REJECTED    LogicalIngestStatus = 3
 )
 
-// Enum value maps for IngestStatus.
+// Enum value maps for LogicalIngestStatus.
 var (
-	IngestStatus_name = map[int32]string{
-		0: "INGEST_STATUS_UNSPECIFIED",
-		1: "INGEST_STATUS_OK",
-		2: "INGEST_STATUS_PARTIAL",
-		3: "INGEST_STATUS_THROTTLED",
-		4: "INGEST_STATUS_REJECTED",
+	LogicalIngestStatus_name = map[int32]string{
+		0: "LOGICAL_INGEST_STATUS_UNSPECIFIED",
+		1: "LOGICAL_INGEST_STATUS_OK",
+		2: "LOGICAL_INGEST_STATUS_PARTIAL",
+		3: "LOGICAL_INGEST_STATUS_REJECTED",
 	}
-	IngestStatus_value = map[string]int32{
-		"INGEST_STATUS_UNSPECIFIED": 0,
-		"INGEST_STATUS_OK":          1,
-		"INGEST_STATUS_PARTIAL":     2,
-		"INGEST_STATUS_THROTTLED":   3,
-		"INGEST_STATUS_REJECTED":    4,
+	LogicalIngestStatus_value = map[string]int32{
+		"LOGICAL_INGEST_STATUS_UNSPECIFIED": 0,
+		"LOGICAL_INGEST_STATUS_OK":          1,
+		"LOGICAL_INGEST_STATUS_PARTIAL":     2,
+		"LOGICAL_INGEST_STATUS_REJECTED":    3,
 	}
 )
 
-func (x IngestStatus) Enum() *IngestStatus {
-	p := new(IngestStatus)
+func (x LogicalIngestStatus) Enum() *LogicalIngestStatus {
+	p := new(LogicalIngestStatus)
 	*p = x
 	return p
 }
 
-func (x IngestStatus) String() string {
+func (x LogicalIngestStatus) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (IngestStatus) Descriptor() protoreflect.EnumDescriptor {
+func (LogicalIngestStatus) Descriptor() protoreflect.EnumDescriptor {
 	return file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[1].Descriptor()
 }
 
-func (IngestStatus) Type() protoreflect.EnumType {
+func (LogicalIngestStatus) Type() protoreflect.EnumType {
 	return &file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[1]
 }
 
-func (x IngestStatus) Number() protoreflect.EnumNumber {
+func (x LogicalIngestStatus) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use IngestStatus.Descriptor instead.
-func (IngestStatus) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use LogicalIngestStatus.Descriptor instead.
+func (LogicalIngestStatus) EnumDescriptor() ([]byte, []int) {
 	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{1}
+}
+
+type TechnicalIngestStatus int32
+
+const (
+	TechnicalIngestStatus_TECHNICAL_INGEST_STATUS_UNSPECIFIED    TechnicalIngestStatus = 0
+	TechnicalIngestStatus_TECHNICAL_INGEST_STATUS_OK             TechnicalIngestStatus = 1
+	TechnicalIngestStatus_TECHNICAL_INGEST_STATUS_PENDING        TechnicalIngestStatus = 2
+	TechnicalIngestStatus_TECHNICAL_INGEST_STATUS_RETRYING_MAIN  TechnicalIngestStatus = 3
+	TechnicalIngestStatus_TECHNICAL_INGEST_STATUS_RETRYING_LEVEL TechnicalIngestStatus = 4
+	TechnicalIngestStatus_TECHNICAL_INGEST_STATUS_LEVEL_FALLBACK TechnicalIngestStatus = 5
+	TechnicalIngestStatus_TECHNICAL_INGEST_STATUS_ERROR          TechnicalIngestStatus = 6
+	TechnicalIngestStatus_TECHNICAL_INGEST_STATUS_STOPPED        TechnicalIngestStatus = 7
+)
+
+// Enum value maps for TechnicalIngestStatus.
+var (
+	TechnicalIngestStatus_name = map[int32]string{
+		0: "TECHNICAL_INGEST_STATUS_UNSPECIFIED",
+		1: "TECHNICAL_INGEST_STATUS_OK",
+		2: "TECHNICAL_INGEST_STATUS_PENDING",
+		3: "TECHNICAL_INGEST_STATUS_RETRYING_MAIN",
+		4: "TECHNICAL_INGEST_STATUS_RETRYING_LEVEL",
+		5: "TECHNICAL_INGEST_STATUS_LEVEL_FALLBACK",
+		6: "TECHNICAL_INGEST_STATUS_ERROR",
+		7: "TECHNICAL_INGEST_STATUS_STOPPED",
+	}
+	TechnicalIngestStatus_value = map[string]int32{
+		"TECHNICAL_INGEST_STATUS_UNSPECIFIED":    0,
+		"TECHNICAL_INGEST_STATUS_OK":             1,
+		"TECHNICAL_INGEST_STATUS_PENDING":        2,
+		"TECHNICAL_INGEST_STATUS_RETRYING_MAIN":  3,
+		"TECHNICAL_INGEST_STATUS_RETRYING_LEVEL": 4,
+		"TECHNICAL_INGEST_STATUS_LEVEL_FALLBACK": 5,
+		"TECHNICAL_INGEST_STATUS_ERROR":          6,
+		"TECHNICAL_INGEST_STATUS_STOPPED":        7,
+	}
+)
+
+func (x TechnicalIngestStatus) Enum() *TechnicalIngestStatus {
+	p := new(TechnicalIngestStatus)
+	*p = x
+	return p
+}
+
+func (x TechnicalIngestStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (TechnicalIngestStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[2].Descriptor()
+}
+
+func (TechnicalIngestStatus) Type() protoreflect.EnumType {
+	return &file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[2]
+}
+
+func (x TechnicalIngestStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use TechnicalIngestStatus.Descriptor instead.
+func (TechnicalIngestStatus) EnumDescriptor() ([]byte, []int) {
+	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{2}
 }
 
 type RejectionCode int32
@@ -135,7 +196,7 @@ type RejectionCode int32
 const (
 	RejectionCode_UNKNOWN                        RejectionCode = 0
 	RejectionCode_INVALID_SENSOR_ID              RejectionCode = 1
-	RejectionCode_UNKNOWN_SENSOR_OR_INVALID_PLAN RejectionCode = 2
+	RejectionCode_UNKNOWN_SENSOR_OR_UNKNOWN_PLAN RejectionCode = 2
 )
 
 // Enum value maps for RejectionCode.
@@ -143,12 +204,12 @@ var (
 	RejectionCode_name = map[int32]string{
 		0: "UNKNOWN",
 		1: "INVALID_SENSOR_ID",
-		2: "UNKNOWN_SENSOR_OR_INVALID_PLAN",
+		2: "UNKNOWN_SENSOR_OR_UNKNOWN_PLAN",
 	}
 	RejectionCode_value = map[string]int32{
 		"UNKNOWN":                        0,
 		"INVALID_SENSOR_ID":              1,
-		"UNKNOWN_SENSOR_OR_INVALID_PLAN": 2,
+		"UNKNOWN_SENSOR_OR_UNKNOWN_PLAN": 2,
 	}
 )
 
@@ -163,11 +224,11 @@ func (x RejectionCode) String() string {
 }
 
 func (RejectionCode) Descriptor() protoreflect.EnumDescriptor {
-	return file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[2].Descriptor()
+	return file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[3].Descriptor()
 }
 
 func (RejectionCode) Type() protoreflect.EnumType {
-	return &file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[2]
+	return &file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[3]
 }
 
 func (x RejectionCode) Number() protoreflect.EnumNumber {
@@ -176,7 +237,7 @@ func (x RejectionCode) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use RejectionCode.Descriptor instead.
 func (RejectionCode) EnumDescriptor() ([]byte, []int) {
-	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{2}
+	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{3}
 }
 
 type TemperatureUnit int32
@@ -212,11 +273,11 @@ func (x TemperatureUnit) String() string {
 }
 
 func (TemperatureUnit) Descriptor() protoreflect.EnumDescriptor {
-	return file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[3].Descriptor()
+	return file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[4].Descriptor()
 }
 
 func (TemperatureUnit) Type() protoreflect.EnumType {
-	return &file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[3]
+	return &file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[4]
 }
 
 func (x TemperatureUnit) Number() protoreflect.EnumNumber {
@@ -225,7 +286,7 @@ func (x TemperatureUnit) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use TemperatureUnit.Descriptor instead.
 func (TemperatureUnit) EnumDescriptor() ([]byte, []int) {
-	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{3}
+	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{4}
 }
 
 type AccelUnit int32
@@ -258,11 +319,11 @@ func (x AccelUnit) String() string {
 }
 
 func (AccelUnit) Descriptor() protoreflect.EnumDescriptor {
-	return file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[4].Descriptor()
+	return file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[5].Descriptor()
 }
 
 func (AccelUnit) Type() protoreflect.EnumType {
-	return &file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[4]
+	return &file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[5]
 }
 
 func (x AccelUnit) Number() protoreflect.EnumNumber {
@@ -271,7 +332,7 @@ func (x AccelUnit) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AccelUnit.Descriptor instead.
 func (AccelUnit) EnumDescriptor() ([]byte, []int) {
-	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{4}
+	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{5}
 }
 
 type GyroUnit int32
@@ -304,11 +365,11 @@ func (x GyroUnit) String() string {
 }
 
 func (GyroUnit) Descriptor() protoreflect.EnumDescriptor {
-	return file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[5].Descriptor()
+	return file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[6].Descriptor()
 }
 
 func (GyroUnit) Type() protoreflect.EnumType {
-	return &file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[5]
+	return &file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes[6]
 }
 
 func (x GyroUnit) Number() protoreflect.EnumNumber {
@@ -317,7 +378,7 @@ func (x GyroUnit) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use GyroUnit.Descriptor instead.
 func (GyroUnit) EnumDescriptor() ([]byte, []int) {
-	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{5}
+	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP(), []int{6}
 }
 
 type IngestOptions struct {
@@ -392,9 +453,10 @@ type IngestAck struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	Accepted        uint64                 `protobuf:"varint,1,opt,name=accepted,proto3" json:"accepted,omitempty"`
 	Rejected        uint64                 `protobuf:"varint,2,opt,name=rejected,proto3" json:"rejected,omitempty"`
-	Status          IngestStatus           `protobuf:"varint,3,opt,name=status,proto3,enum=sensor.IngestStatus" json:"status,omitempty"`
-	Message         *string                `protobuf:"bytes,4,opt,name=message,proto3,oneof" json:"message,omitempty"`
-	RejectedDetails []*RejectedDetail      `protobuf:"bytes,5,rep,name=rejected_details,json=rejectedDetails,proto3" json:"rejected_details,omitempty"`
+	LogicalStatus   LogicalIngestStatus    `protobuf:"varint,3,opt,name=logical_status,json=logicalStatus,proto3,enum=sensor.LogicalIngestStatus" json:"logical_status,omitempty"`
+	TechnicalStatus TechnicalIngestStatus  `protobuf:"varint,4,opt,name=technical_status,json=technicalStatus,proto3,enum=sensor.TechnicalIngestStatus" json:"technical_status,omitempty"`
+	Message         *string                `protobuf:"bytes,5,opt,name=message,proto3,oneof" json:"message,omitempty"`
+	RejectedDetails []*RejectedDetail      `protobuf:"bytes,6,rep,name=rejected_details,json=rejectedDetails,proto3" json:"rejected_details,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -443,11 +505,18 @@ func (x *IngestAck) GetRejected() uint64 {
 	return 0
 }
 
-func (x *IngestAck) GetStatus() IngestStatus {
+func (x *IngestAck) GetLogicalStatus() LogicalIngestStatus {
 	if x != nil {
-		return x.Status
+		return x.LogicalStatus
 	}
-	return IngestStatus_INGEST_STATUS_UNSPECIFIED
+	return LogicalIngestStatus_LOGICAL_INGEST_STATUS_UNSPECIFIED
+}
+
+func (x *IngestAck) GetTechnicalStatus() TechnicalIngestStatus {
+	if x != nil {
+		return x.TechnicalStatus
+	}
+	return TechnicalIngestStatus_TECHNICAL_INGEST_STATUS_UNSPECIFIED
 }
 
 func (x *IngestAck) GetMessage() string {
@@ -996,13 +1065,14 @@ const file_back_internal_adapters_grpc_proto_sensor_proto_rawDesc = "" +
 	"\x13ack_max_interval_ms\x18\x04 \x01(\rH\x02R\x10ackMaxIntervalMs\x88\x01\x01B\x17\n" +
 	"\x15_max_rejected_detailsB\x0e\n" +
 	"\f_ack_every_nB\x16\n" +
-	"\x14_ack_max_interval_ms\"\xdf\x01\n" +
+	"\x14_ack_max_interval_ms\"\xbf\x02\n" +
 	"\tIngestAck\x12\x1a\n" +
 	"\baccepted\x18\x01 \x01(\x04R\baccepted\x12\x1a\n" +
-	"\brejected\x18\x02 \x01(\x04R\brejected\x12,\n" +
-	"\x06status\x18\x03 \x01(\x0e2\x14.sensor.IngestStatusR\x06status\x12\x1d\n" +
-	"\amessage\x18\x04 \x01(\tH\x00R\amessage\x88\x01\x01\x12A\n" +
-	"\x10rejected_details\x18\x05 \x03(\v2\x16.sensor.RejectedDetailR\x0frejectedDetailsB\n" +
+	"\brejected\x18\x02 \x01(\x04R\brejected\x12B\n" +
+	"\x0elogical_status\x18\x03 \x01(\x0e2\x1b.sensor.LogicalIngestStatusR\rlogicalStatus\x12H\n" +
+	"\x10technical_status\x18\x04 \x01(\x0e2\x1d.sensor.TechnicalIngestStatusR\x0ftechnicalStatus\x12\x1d\n" +
+	"\amessage\x18\x05 \x01(\tH\x00R\amessage\x88\x01\x01\x12A\n" +
+	"\x10rejected_details\x18\x06 \x03(\v2\x16.sensor.RejectedDetailR\x0frejectedDetailsB\n" +
 	"\n" +
 	"\b_message\"\x86\x01\n" +
 	"\x0eRejectedDetail\x12\x1b\n" +
@@ -1066,17 +1136,25 @@ const file_back_internal_adapters_grpc_proto_sensor_proto_rawDesc = "" +
 	"\x14ACK_MODE_UNSPECIFIED\x10\x00\x12\x11\n" +
 	"\rACK_MODE_FULL\x10\x01\x12\x17\n" +
 	"\x13ACK_MODE_STATS_ONLY\x10\x02\x12\x11\n" +
-	"\rACK_MODE_NONE\x10\x03*\x97\x01\n" +
-	"\fIngestStatus\x12\x1d\n" +
-	"\x19INGEST_STATUS_UNSPECIFIED\x10\x00\x12\x14\n" +
-	"\x10INGEST_STATUS_OK\x10\x01\x12\x19\n" +
-	"\x15INGEST_STATUS_PARTIAL\x10\x02\x12\x1b\n" +
-	"\x17INGEST_STATUS_THROTTLED\x10\x03\x12\x1a\n" +
-	"\x16INGEST_STATUS_REJECTED\x10\x04*W\n" +
+	"\rACK_MODE_NONE\x10\x03*\xa1\x01\n" +
+	"\x13LogicalIngestStatus\x12%\n" +
+	"!LOGICAL_INGEST_STATUS_UNSPECIFIED\x10\x00\x12\x1c\n" +
+	"\x18LOGICAL_INGEST_STATUS_OK\x10\x01\x12!\n" +
+	"\x1dLOGICAL_INGEST_STATUS_PARTIAL\x10\x02\x12\"\n" +
+	"\x1eLOGICAL_INGEST_STATUS_REJECTED\x10\x03*\xd0\x02\n" +
+	"\x15TechnicalIngestStatus\x12'\n" +
+	"#TECHNICAL_INGEST_STATUS_UNSPECIFIED\x10\x00\x12\x1e\n" +
+	"\x1aTECHNICAL_INGEST_STATUS_OK\x10\x01\x12#\n" +
+	"\x1fTECHNICAL_INGEST_STATUS_PENDING\x10\x02\x12)\n" +
+	"%TECHNICAL_INGEST_STATUS_RETRYING_MAIN\x10\x03\x12*\n" +
+	"&TECHNICAL_INGEST_STATUS_RETRYING_LEVEL\x10\x04\x12*\n" +
+	"&TECHNICAL_INGEST_STATUS_LEVEL_FALLBACK\x10\x05\x12!\n" +
+	"\x1dTECHNICAL_INGEST_STATUS_ERROR\x10\x06\x12#\n" +
+	"\x1fTECHNICAL_INGEST_STATUS_STOPPED\x10\a*W\n" +
 	"\rRejectionCode\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x15\n" +
 	"\x11INVALID_SENSOR_ID\x10\x01\x12\"\n" +
-	"\x1eUNKNOWN_SENSOR_OR_INVALID_PLAN\x10\x02*:\n" +
+	"\x1eUNKNOWN_SENSOR_OR_UNKNOWN_PLAN\x10\x02*:\n" +
 	"\x0fTemperatureUnit\x12\v\n" +
 	"\aCELSIUS\x10\x00\x12\x0e\n" +
 	"\n" +
@@ -1107,61 +1185,63 @@ func file_back_internal_adapters_grpc_proto_sensor_proto_rawDescGZIP() []byte {
 	return file_back_internal_adapters_grpc_proto_sensor_proto_rawDescData
 }
 
-var file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes = make([]protoimpl.EnumInfo, 6)
+var file_back_internal_adapters_grpc_proto_sensor_proto_enumTypes = make([]protoimpl.EnumInfo, 7)
 var file_back_internal_adapters_grpc_proto_sensor_proto_msgTypes = make([]protoimpl.MessageInfo, 11)
 var file_back_internal_adapters_grpc_proto_sensor_proto_goTypes = []any{
 	(AckMode)(0),                           // 0: sensor.AckMode
-	(IngestStatus)(0),                      // 1: sensor.IngestStatus
-	(RejectionCode)(0),                     // 2: sensor.RejectionCode
-	(TemperatureUnit)(0),                   // 3: sensor.TemperatureUnit
-	(AccelUnit)(0),                         // 4: sensor.AccelUnit
-	(GyroUnit)(0),                          // 5: sensor.GyroUnit
-	(*IngestOptions)(nil),                  // 6: sensor.IngestOptions
-	(*IngestAck)(nil),                      // 7: sensor.IngestAck
-	(*RejectedDetail)(nil),                 // 8: sensor.RejectedDetail
-	(*CustomMeasurementsRequest)(nil),      // 9: sensor.CustomMeasurementsRequest
-	(*CustomMeasurementsForSensor)(nil),    // 10: sensor.CustomMeasurementsForSensor
-	(*CustomMeasurement)(nil),              // 11: sensor.CustomMeasurement
-	(*IngestAccelGyroOptions)(nil),         // 12: sensor.IngestAccelGyroOptions
-	(*AccelGyroMeasurementsRequest)(nil),   // 13: sensor.AccelGyroMeasurementsRequest
-	(*AccelGyroMeasurementsForSensor)(nil), // 14: sensor.AccelGyroMeasurementsForSensor
-	(*AccelGyroMeasurement)(nil),           // 15: sensor.AccelGyroMeasurement
-	nil,                                    // 16: sensor.CustomMeasurement.ValuesEntry
-	(*timestamppb.Timestamp)(nil),          // 17: google.protobuf.Timestamp
-	(*anypb.Any)(nil),                      // 18: google.protobuf.Any
+	(LogicalIngestStatus)(0),               // 1: sensor.LogicalIngestStatus
+	(TechnicalIngestStatus)(0),             // 2: sensor.TechnicalIngestStatus
+	(RejectionCode)(0),                     // 3: sensor.RejectionCode
+	(TemperatureUnit)(0),                   // 4: sensor.TemperatureUnit
+	(AccelUnit)(0),                         // 5: sensor.AccelUnit
+	(GyroUnit)(0),                          // 6: sensor.GyroUnit
+	(*IngestOptions)(nil),                  // 7: sensor.IngestOptions
+	(*IngestAck)(nil),                      // 8: sensor.IngestAck
+	(*RejectedDetail)(nil),                 // 9: sensor.RejectedDetail
+	(*CustomMeasurementsRequest)(nil),      // 10: sensor.CustomMeasurementsRequest
+	(*CustomMeasurementsForSensor)(nil),    // 11: sensor.CustomMeasurementsForSensor
+	(*CustomMeasurement)(nil),              // 12: sensor.CustomMeasurement
+	(*IngestAccelGyroOptions)(nil),         // 13: sensor.IngestAccelGyroOptions
+	(*AccelGyroMeasurementsRequest)(nil),   // 14: sensor.AccelGyroMeasurementsRequest
+	(*AccelGyroMeasurementsForSensor)(nil), // 15: sensor.AccelGyroMeasurementsForSensor
+	(*AccelGyroMeasurement)(nil),           // 16: sensor.AccelGyroMeasurement
+	nil,                                    // 17: sensor.CustomMeasurement.ValuesEntry
+	(*timestamppb.Timestamp)(nil),          // 18: google.protobuf.Timestamp
+	(*anypb.Any)(nil),                      // 19: google.protobuf.Any
 }
 var file_back_internal_adapters_grpc_proto_sensor_proto_depIdxs = []int32{
 	0,  // 0: sensor.IngestOptions.ack_mode:type_name -> sensor.AckMode
-	1,  // 1: sensor.IngestAck.status:type_name -> sensor.IngestStatus
-	8,  // 2: sensor.IngestAck.rejected_details:type_name -> sensor.RejectedDetail
-	2,  // 3: sensor.RejectedDetail.code:type_name -> sensor.RejectionCode
-	10, // 4: sensor.CustomMeasurementsRequest.sensors:type_name -> sensor.CustomMeasurementsForSensor
-	6,  // 5: sensor.CustomMeasurementsRequest.options:type_name -> sensor.IngestOptions
-	11, // 6: sensor.CustomMeasurementsForSensor.measurements:type_name -> sensor.CustomMeasurement
-	17, // 7: sensor.CustomMeasurement.measured_at:type_name -> google.protobuf.Timestamp
-	16, // 8: sensor.CustomMeasurement.values:type_name -> sensor.CustomMeasurement.ValuesEntry
-	6,  // 9: sensor.IngestAccelGyroOptions.ingest_options:type_name -> sensor.IngestOptions
-	4,  // 10: sensor.IngestAccelGyroOptions.accel_unit:type_name -> sensor.AccelUnit
-	5,  // 11: sensor.IngestAccelGyroOptions.gyro_unit:type_name -> sensor.GyroUnit
-	3,  // 12: sensor.IngestAccelGyroOptions.temperature_unit:type_name -> sensor.TemperatureUnit
-	14, // 13: sensor.AccelGyroMeasurementsRequest.sensors:type_name -> sensor.AccelGyroMeasurementsForSensor
-	12, // 14: sensor.AccelGyroMeasurementsRequest.options:type_name -> sensor.IngestAccelGyroOptions
-	15, // 15: sensor.AccelGyroMeasurementsForSensor.measurements:type_name -> sensor.AccelGyroMeasurement
-	17, // 16: sensor.AccelGyroMeasurement.measured_at:type_name -> google.protobuf.Timestamp
-	18, // 17: sensor.CustomMeasurement.ValuesEntry.value:type_name -> google.protobuf.Any
-	9,  // 18: sensor.SensorService.StreamCustomMeasurements:input_type -> sensor.CustomMeasurementsRequest
-	9,  // 19: sensor.SensorService.UnaryCustomMeasurements:input_type -> sensor.CustomMeasurementsRequest
-	13, // 20: sensor.SensorService.StreamAccelGyroMeasurements:input_type -> sensor.AccelGyroMeasurementsRequest
-	13, // 21: sensor.SensorService.UnaryAccelGyroMeasurements:input_type -> sensor.AccelGyroMeasurementsRequest
-	7,  // 22: sensor.SensorService.StreamCustomMeasurements:output_type -> sensor.IngestAck
-	7,  // 23: sensor.SensorService.UnaryCustomMeasurements:output_type -> sensor.IngestAck
-	7,  // 24: sensor.SensorService.StreamAccelGyroMeasurements:output_type -> sensor.IngestAck
-	7,  // 25: sensor.SensorService.UnaryAccelGyroMeasurements:output_type -> sensor.IngestAck
-	22, // [22:26] is the sub-list for method output_type
-	18, // [18:22] is the sub-list for method input_type
-	18, // [18:18] is the sub-list for extension type_name
-	18, // [18:18] is the sub-list for extension extendee
-	0,  // [0:18] is the sub-list for field type_name
+	1,  // 1: sensor.IngestAck.logical_status:type_name -> sensor.LogicalIngestStatus
+	2,  // 2: sensor.IngestAck.technical_status:type_name -> sensor.TechnicalIngestStatus
+	9,  // 3: sensor.IngestAck.rejected_details:type_name -> sensor.RejectedDetail
+	3,  // 4: sensor.RejectedDetail.code:type_name -> sensor.RejectionCode
+	11, // 5: sensor.CustomMeasurementsRequest.sensors:type_name -> sensor.CustomMeasurementsForSensor
+	7,  // 6: sensor.CustomMeasurementsRequest.options:type_name -> sensor.IngestOptions
+	12, // 7: sensor.CustomMeasurementsForSensor.measurements:type_name -> sensor.CustomMeasurement
+	18, // 8: sensor.CustomMeasurement.measured_at:type_name -> google.protobuf.Timestamp
+	17, // 9: sensor.CustomMeasurement.values:type_name -> sensor.CustomMeasurement.ValuesEntry
+	7,  // 10: sensor.IngestAccelGyroOptions.ingest_options:type_name -> sensor.IngestOptions
+	5,  // 11: sensor.IngestAccelGyroOptions.accel_unit:type_name -> sensor.AccelUnit
+	6,  // 12: sensor.IngestAccelGyroOptions.gyro_unit:type_name -> sensor.GyroUnit
+	4,  // 13: sensor.IngestAccelGyroOptions.temperature_unit:type_name -> sensor.TemperatureUnit
+	15, // 14: sensor.AccelGyroMeasurementsRequest.sensors:type_name -> sensor.AccelGyroMeasurementsForSensor
+	13, // 15: sensor.AccelGyroMeasurementsRequest.options:type_name -> sensor.IngestAccelGyroOptions
+	16, // 16: sensor.AccelGyroMeasurementsForSensor.measurements:type_name -> sensor.AccelGyroMeasurement
+	18, // 17: sensor.AccelGyroMeasurement.measured_at:type_name -> google.protobuf.Timestamp
+	19, // 18: sensor.CustomMeasurement.ValuesEntry.value:type_name -> google.protobuf.Any
+	10, // 19: sensor.SensorService.StreamCustomMeasurements:input_type -> sensor.CustomMeasurementsRequest
+	10, // 20: sensor.SensorService.UnaryCustomMeasurements:input_type -> sensor.CustomMeasurementsRequest
+	14, // 21: sensor.SensorService.StreamAccelGyroMeasurements:input_type -> sensor.AccelGyroMeasurementsRequest
+	14, // 22: sensor.SensorService.UnaryAccelGyroMeasurements:input_type -> sensor.AccelGyroMeasurementsRequest
+	8,  // 23: sensor.SensorService.StreamCustomMeasurements:output_type -> sensor.IngestAck
+	8,  // 24: sensor.SensorService.UnaryCustomMeasurements:output_type -> sensor.IngestAck
+	8,  // 25: sensor.SensorService.StreamAccelGyroMeasurements:output_type -> sensor.IngestAck
+	8,  // 26: sensor.SensorService.UnaryAccelGyroMeasurements:output_type -> sensor.IngestAck
+	23, // [23:27] is the sub-list for method output_type
+	19, // [19:23] is the sub-list for method input_type
+	19, // [19:19] is the sub-list for extension type_name
+	19, // [19:19] is the sub-list for extension extendee
+	0,  // [0:19] is the sub-list for field type_name
 }
 
 func init() { file_back_internal_adapters_grpc_proto_sensor_proto_init() }
@@ -1180,7 +1260,7 @@ func file_back_internal_adapters_grpc_proto_sensor_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_back_internal_adapters_grpc_proto_sensor_proto_rawDesc), len(file_back_internal_adapters_grpc_proto_sensor_proto_rawDesc)),
-			NumEnums:      6,
+			NumEnums:      7,
 			NumMessages:   11,
 			NumExtensions: 0,
 			NumServices:   1,

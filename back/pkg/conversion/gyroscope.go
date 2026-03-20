@@ -1,7 +1,5 @@
 package conversion
 
-import "math"
-
 type GyroUnit int
 
 const (
@@ -9,8 +7,8 @@ const (
 	RAD_S
 )
 
-func DegSToRadS(deg float64) float64 { return deg * math.Pi / 180 }
-func RadSToDegS(rad float64) float64 { return rad * 180 / math.Pi }
+func DegSToRadS(deg float64) float64 { return deg * DegToRadFactor }
+func RadSToDegS(rad float64) float64 { return rad * RadToDegFactor }
 
 func GyroToDegS(value float64, unit GyroUnit) float64 {
 	switch unit {

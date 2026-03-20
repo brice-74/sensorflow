@@ -4,79 +4,105 @@ import (
 	"github.com/brice-74/sensorflow/internal/adapters/grpc/proto"
 )
 
-type AckAggregator struct {
-	Accepted      uint64
-	Rejected      uint64
-	RejectDetails RejectedAggregator
+type key struct {
+	sensorID string
+	code     proto.RejectionCode
+	reason   string
 }
 
-func NewAckAggregator() *AckAggregator {
-	return &AckAggregator{
-		RejectDetails: make(RejectedAggregator),
-	}
+type RejectedAggregator map[key]uint64
+
+func NewRejectedAggregator() RejectedAggregator {
+	return make(RejectedAggregator)
 }
 
-func (agg *AckAggregator) AddAccepted(n uint64) {
-	agg.Accepted += n
+func (ra RejectedAggregator) AddN(sensorID string, code proto.RejectionCode, reason string, n uint64) {
+	k := key{sensorID, code, reason}
+	ra[k] += n
 }
 
-func (agg *AckAggregator) AddRejected(sensorID string, code proto.RejectionCode, reason ...string) {
-	agg.Rejected++
-	agg.RejectDetails.Add(sensorID, code, reason...)
-}
-
-func (agg *AckAggregator) ToProto(mode proto.AckMode) *proto.IngestAck {
-	ack := &proto.IngestAck{
-		Accepted: agg.Accepted,
-		Rejected: agg.Rejected,
-	}
-
-	if mode == proto.AckMode_ACK_MODE_FULL {
-		ack.RejectedDetails = agg.RejectDetails.ToProto()
-	}
-
-	return ack
-}
-
-type RejectedAggregator map[string]map[proto.RejectionCode]*RejectedCount
-
-type RejectedCount struct {
-	Count  uint64
-	Reason string
-}
-
-func (ra RejectedAggregator) Add(sensorID string, code proto.RejectionCode, reason ...string) {
-	if ra[sensorID] == nil {
-		ra[sensorID] = make(map[proto.RejectionCode]*RejectedCount)
-	}
-
-	entry, exists := ra[sensorID][code]
-	if !exists {
-		msg := code.String()
-		if len(reason) > 0 && reason[0] != "" {
-			msg = reason[0]
-		}
-		entry = &RejectedCount{
-			Count:  0,
-			Reason: msg,
-		}
-		ra[sensorID][code] = entry
-	}
-
-	entry.Count++
+func (ra RejectedAggregator) Add(sensorID string, code proto.RejectionCode, reason string) {
+	ra.AddN(sensorID, code, reason, 1)
 }
 
 func (ra RejectedAggregator) ToProto() []*proto.RejectedDetail {
-	details := make([]*proto.RejectedDetail, 0)
-	for sensorID, codes := range ra {
-		for code, entry := range codes {
-			details = append(details, &proto.RejectedDetail{
-				SensorId: sensorID,
-				Code:     code,
-				Reason:   entry.Reason,
-				Count:    entry.Count,
-			})
-		}
+	result := make([]*proto.RejectedDetail, 0, len(ra))
+	for k, count := range ra {
+		result = append(result, &proto.RejectedDetail{
+			SensorId: k.sensorID,
+			Code:     k.code,
+			Reason:   k.reason,
+			Count:    count,
+		})
 	}
-	return details
+	return result
+}
+
+type AckAggregator struct {
+	accepted uint64
+	rejected uint64
+
+	details RejectedAggregator
+
+	logicalStatus   proto.LogicalIngestStatus
+	technicalStatus proto.TechnicalIngestStatus
+	message         *string
+}
+
+func NewAckAggregator(fullDetails bool) *AckAggregator {
+	var details RejectedAggregator
+	if fullDetails {
+		details = NewRejectedAggregator()
+	}
+	return &AckAggregator{
+		details: details,
+	}
+}
+
+func (agg *AckAggregator) AddAccepted(n uint64) *AckAggregator {
+	agg.accepted += n
+	return agg
+}
+
+func (agg *AckAggregator) AddRejected(sensorID string, code proto.RejectionCode, reason string) *AckAggregator {
+	return agg.AddRejectedN(sensorID, code, reason, 1)
+}
+
+func (agg *AckAggregator) AddRejectedN(sensorID string, code proto.RejectionCode, reason string, n uint64) *AckAggregator {
+	agg.rejected += n
+	if agg.details != nil {
+		agg.details.AddN(sensorID, code, reason, n)
+	}
+	return agg
+}
+
+func (agg *AckAggregator) SetLogicalStatus(status proto.LogicalIngestStatus) *AckAggregator {
+	agg.logicalStatus = status
+	return agg
+}
+
+func (agg *AckAggregator) SetTechnicalStatus(status proto.TechnicalIngestStatus) *AckAggregator {
+	agg.technicalStatus = status
+	return agg
+}
+
+func (agg *AckAggregator) SetMessage(msg string) *AckAggregator {
+	agg.message = &msg
+	return agg
+}
+
+func (agg *AckAggregator) ToProto() *proto.IngestAck {
+	ack := &proto.IngestAck{
+		Accepted:        agg.accepted,
+		Rejected:        agg.rejected,
+		LogicalStatus:   agg.logicalStatus,
+		TechnicalStatus: agg.technicalStatus,
+		Message:         agg.message,
+	}
+
+	if agg.details != nil {
+		ack.RejectedDetails = agg.details.ToProto()
+	}
+
+	return ack
 }

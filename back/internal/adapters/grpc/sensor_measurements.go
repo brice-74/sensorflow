@@ -15,18 +15,28 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+type IngestorConsumerNoGeneric interface {
+	ID() uuid.UUID
+	State() orchestrators.IngestStatus
+}
+type IngestorConsumerState interface {
+	State() orchestrators.IngestStatus
+}
+
+type IngestorConsumer[T any] interface {
+	ports.IngestorConsumer[T, orchestrators.IngestStatus]
+}
+
 type SensorMeasurementsService struct {
 	proto.UnimplementedSensorServiceServer
 
 	sensorPlanBinding ports.SensorPlanBindingOrchestrator
 
-	ingestAccelGyroStd        *orchestrators.Ingestor[*domain.AccelGyroMeasurement]
-	ingestAccelGyroIndustrial *orchestrators.Ingestor[*domain.AccelGyroMeasurement]
-	ingestAccelGyroRealtime   *orchestrators.Ingestor[*domain.AccelGyroMeasurement]
+	ingestAccelGyroStd        IngestorConsumer[*domain.AccelGyroMeasurement]
+	ingestAccelGyroIndustrial IngestorConsumer[*domain.AccelGyroMeasurement]
+	ingestAccelGyroRealtime   IngestorConsumer[*domain.AccelGyroMeasurement]
 
-	ingestAccelGyroStdState        orchestrators.IngestStatus
-	ingestAccelGyroIndustrialState orchestrators.IngestStatus
-	ingestAccelGyroRealtimeState   orchestrators.IngestStatus
+	ingestStates map[uuid.UUID]orchestrators.IngestStatus
 
 	checkIngestorsStatesInterval time.Duration
 	stop                         chan struct{}
@@ -35,14 +45,20 @@ type SensorMeasurementsService struct {
 func (svc *SensorMeasurementsService) CheckIngestorsStates(ctx context.Context) (stop func()) {
 	ticker := time.NewTicker(svc.checkIngestorsStatesInterval)
 
+	ingestors := []IngestorConsumerNoGeneric{
+		svc.ingestAccelGyroStd,
+		svc.ingestAccelGyroIndustrial,
+		svc.ingestAccelGyroRealtime,
+	}
+
 	go func() {
 		defer ticker.Stop()
 		for {
 			select {
 			case <-ticker.C:
-				svc.ingestAccelGyroStdState = svc.ingestAccelGyroStd.State()
-				svc.ingestAccelGyroIndustrialState = svc.ingestAccelGyroIndustrial.State()
-				svc.ingestAccelGyroRealtimeState = svc.ingestAccelGyroRealtime.State()
+				for _, v := range ingestors {
+					svc.ingestStates[v.ID()] = v.State()
+				}
 			case <-ctx.Done():
 				return
 			case <-svc.stop:
@@ -97,12 +113,12 @@ func (svc *SensorMeasurementsService) StreamAccelGyroMeasurements(srv proto.Sens
 	var opts = applyDefaultsIngestAccelGyroOptions(nil)
 	lastFlush := time.Now()
 	count := 0
-	agg := NewAckAggregator()
+	agg := NewAckAggregator(opts.IngestOptions.AckMode == proto.AckMode_ACK_MODE_FULL)
 
 	for {
 		req, err := srv.Recv()
 		if err == io.EOF {
-			if err := srv.Send(agg.ToProto(opts.IngestOptions.AckMode)); err != nil {
+			if err := srv.Send(agg.ToProto()); err != nil {
 				return status.Errorf(codes.Internal, "final stream send error: %v", err)
 			}
 			return nil
@@ -119,13 +135,13 @@ func (svc *SensorMeasurementsService) StreamAccelGyroMeasurements(srv proto.Sens
 
 			sensorID, err := uuid.Parse(sensor.SensorId)
 			if err != nil {
-				agg.AddRejected(sensor.SensorId, proto.RejectionCode_INVALID_SENSOR_ID)
+				agg.AddRejectedN(sensor.SensorId, proto.RejectionCode_INVALID_SENSOR_ID, "invalid sensor ID format", uint64(l))
 				continue
 			}
 
 			plan, planFound := planByInstance[sensorID]
 			if !planFound {
-				agg.AddRejected(sensor.SensorId, proto.RejectionCode_UNKNOWN_SENSOR_OR_INVALID_PLAN)
+				agg.AddRejectedN(sensor.SensorId, proto.RejectionCode_UNKNOWN_SENSOR_OR_UNKNOWN_PLAN, "unknown sensor or unknown plan", uint64(l))
 				continue
 			}
 
@@ -133,6 +149,7 @@ func (svc *SensorMeasurementsService) StreamAccelGyroMeasurements(srv proto.Sens
 			agg.AddAccepted(uint64(l))
 
 			measurements := AccelGyroDTO(sensorID, gtw.TenantID, sensor.Measurements...)
+			NormalizeAccelGyro(opts, measurements)
 
 			switch plan.Plan {
 			case domain.SensorPlanAccelGyroIndustrial:
@@ -148,14 +165,14 @@ func (svc *SensorMeasurementsService) StreamAccelGyroMeasurements(srv proto.Sens
 		if uint32(count) >= *opts.IngestOptions.AckEveryN ||
 			now.Sub(lastFlush) > time.Duration(*opts.IngestOptions.AckMaxIntervalMs)*time.Millisecond {
 
-			if err := srv.Send(agg.ToProto(opts.IngestOptions.AckMode)); err != nil {
+			if err := srv.Send(agg.ToProto()); err != nil {
 				return status.Errorf(codes.Internal, "stream send error: %v", err)
 			}
 
 			// Reset next flush
 			count = 0
 			lastFlush = now
-			agg = NewAckAggregator()
+			agg = NewAckAggregator(opts.IngestOptions.AckMode == proto.AckMode_ACK_MODE_FULL)
 		}
 	}
 }

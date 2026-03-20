@@ -10,10 +10,10 @@ const (
 
 func CelsiusToFahrenheit(c float64) float64 { return c*9/5 + 32 }
 func FahrenheitToCelsius(f float64) float64 { return (f - 32) * 5 / 9 }
-func KelvinToCelsius(k float64) float64     { return k - 273.15 }
-func CelsiusToKelvin(c float64) float64     { return c + 273.15 }
-func FahrenheitToKelvin(f float64) float64  { return (f-32)*5/9 + 273.15 }
-func KelvinToFahrenheit(k float64) float64  { return (k-273.15)*9/5 + 32 }
+func KelvinToCelsius(k float64) float64     { return k - KelvinOffset }
+func CelsiusToKelvin(c float64) float64     { return c + KelvinOffset }
+func FahrenheitToKelvin(f float64) float64  { return (f-32)*5/9 + KelvinOffset }
+func KelvinToFahrenheit(k float64) float64  { return (k-KelvinOffset)*9/5 + 32 }
 
 func TemperatureToCelsius(value float64, unit TemperatureUnit) float64 {
 	switch unit {

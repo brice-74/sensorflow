@@ -5,8 +5,10 @@ import (
 	"time"
 
 	"github.com/brice-74/sensorflow/internal/log"
+	"github.com/brice-74/sensorflow/internal/ports"
 	"github.com/brice-74/sensorflow/pkg/errors"
 	"github.com/brice-74/sensorflow/pkg/xsync"
+	"github.com/google/uuid"
 )
 
 type IngestStatus uint8
@@ -28,6 +30,7 @@ type IngestionLevel[T any] interface {
 }
 
 type Ingestor[T any] struct {
+	id      uuid.UUID
 	logger  log.Logger
 	rowsBuf xsync.BatchSlice[T]
 
@@ -50,6 +53,12 @@ type Ingestor[T any] struct {
 
 	stopCh   chan struct{}
 	notifyCh chan struct{}
+}
+
+var _ ports.Ingestor[any, IngestStatus] = (*Ingestor[any])(nil)
+
+func (i *Ingestor[T]) ID() uuid.UUID {
+	return i.id
 }
 
 func (i *Ingestor[T]) Start() {
