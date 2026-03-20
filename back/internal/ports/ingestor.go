@@ -4,8 +4,9 @@ import "github.com/google/uuid"
 
 type IngestorConsumer[T any, Enum comparable] interface {
 	ID() uuid.UUID
+	Name() string
 	State() Enum
-	Submit(rows ...T)
+	Submit(rows []T)
 }
 
 type Ingestor[T any, Enum comparable] interface {

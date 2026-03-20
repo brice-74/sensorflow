@@ -113,7 +113,7 @@ func (svc *SensorMeasurementsService) StreamAccelGyroMeasurements(srv proto.Sens
 	var opts = applyDefaultsIngestAccelGyroOptions(nil)
 	lastFlush := time.Now()
 	count := 0
-	agg := NewAckAggregator(opts.IngestOptions.AckMode == proto.AckMode_ACK_MODE_FULL)
+	agg := NewAckAggregator(opts.IngestOptions.AckMode)
 
 	for {
 		req, err := srv.Recv()
@@ -148,16 +148,16 @@ func (svc *SensorMeasurementsService) StreamAccelGyroMeasurements(srv proto.Sens
 			count += l
 			agg.AddAccepted(uint64(l))
 
-			measurements := AccelGyroDTO(sensorID, gtw.TenantID, sensor.Measurements...)
+			measurements := AccelGyroDTO(sensorID, gtw.TenantID, sensor.Measurements)
 			NormalizeAccelGyro(opts, measurements)
 
 			switch plan.Plan {
 			case domain.SensorPlanAccelGyroIndustrial:
-				svc.ingestAccelGyroIndustrial.Submit(measurements...)
+				svc.ingestAccelGyroIndustrial.Submit(measurements)
 			case domain.SensorPlanAccelGyroStd:
-				svc.ingestAccelGyroStd.Submit(measurements...)
+				svc.ingestAccelGyroStd.Submit(measurements)
 			case domain.SensorPlanAccelGyroRealtime:
-				svc.ingestAccelGyroRealtime.Submit(measurements...)
+				svc.ingestAccelGyroRealtime.Submit(measurements)
 			}
 		}
 
@@ -172,7 +172,7 @@ func (svc *SensorMeasurementsService) StreamAccelGyroMeasurements(srv proto.Sens
 			// Reset next flush
 			count = 0
 			lastFlush = now
-			agg = NewAckAggregator(opts.IngestOptions.AckMode == proto.AckMode_ACK_MODE_FULL)
+			agg = NewAckAggregator(opts.IngestOptions.AckMode)
 		}
 	}
 }

@@ -39,26 +39,26 @@ func (ra RejectedAggregator) ToProto() []*proto.RejectedDetail {
 }
 
 type AckAggregator struct {
-	accepted uint64
-	rejected uint64
-
-	details RejectedAggregator
-
+	accepted        uint64
+	rejected        uint64
+	details         RejectedAggregator
 	logicalStatus   proto.LogicalIngestStatus
 	technicalStatus proto.TechnicalIngestStatus
 	message         *string
+
+	mode proto.AckMode
 }
 
-func NewAckAggregator(fullDetails bool) *AckAggregator {
+func NewAckAggregator(mode proto.AckMode) *AckAggregator {
 	var details RejectedAggregator
-	if fullDetails {
+	if mode == proto.AckMode_ACK_MODE_FULL {
 		details = NewRejectedAggregator()
 	}
 	return &AckAggregator{
 		details: details,
+		mode:    mode,
 	}
 }
-
 func (agg *AckAggregator) AddAccepted(n uint64) *AckAggregator {
 	agg.accepted += n
 	return agg
@@ -92,6 +92,10 @@ func (agg *AckAggregator) SetMessage(msg string) *AckAggregator {
 }
 
 func (agg *AckAggregator) ToProto() *proto.IngestAck {
+	if agg.mode == proto.AckMode_ACK_MODE_NONE {
+		return nil
+	}
+
 	ack := &proto.IngestAck{
 		Accepted:        agg.accepted,
 		Rejected:        agg.rejected,
@@ -100,9 +104,26 @@ func (agg *AckAggregator) ToProto() *proto.IngestAck {
 		Message:         agg.message,
 	}
 
-	if agg.details != nil {
+	if agg.logicalStatus == proto.LogicalIngestStatus_LOGICAL_INGEST_STATUS_UNSPECIFIED {
+		agg.computeLogicalStatus()
+	}
+
+	if agg.mode == proto.AckMode_ACK_MODE_FULL && agg.details != nil {
 		ack.RejectedDetails = agg.details.ToProto()
 	}
 
 	return ack
+}
+
+func (agg *AckAggregator) computeLogicalStatus() {
+	switch {
+	case agg.accepted > 0 && agg.rejected == 0:
+		agg.logicalStatus = proto.LogicalIngestStatus_LOGICAL_INGEST_STATUS_OK
+	case agg.accepted > 0 && agg.rejected > 0:
+		agg.logicalStatus = proto.LogicalIngestStatus_LOGICAL_INGEST_STATUS_PARTIAL
+	case agg.accepted == 0 && agg.rejected > 0:
+		agg.logicalStatus = proto.LogicalIngestStatus_LOGICAL_INGEST_STATUS_REJECTED
+	default:
+		agg.logicalStatus = proto.LogicalIngestStatus_LOGICAL_INGEST_STATUS_UNSPECIFIED
+	}
 }

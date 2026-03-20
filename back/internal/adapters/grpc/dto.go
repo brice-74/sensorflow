@@ -6,7 +6,7 @@ import (
 	"github.com/google/uuid"
 )
 
-func AccelGyroDTO(sensorID uuid.UUID, tenantID uuid.UUID, m ...*proto.AccelGyroMeasurement) []*domain.AccelGyroMeasurement {
+func AccelGyroDTO(sensorID uuid.UUID, tenantID uuid.UUID, m []*proto.AccelGyroMeasurement) []*domain.AccelGyroMeasurement {
 	result := make([]*domain.AccelGyroMeasurement, len(m))
 	for i, v := range m {
 		result[i] = &domain.AccelGyroMeasurement{

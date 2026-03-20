@@ -31,6 +31,7 @@ type IngestionLevel[T any] interface {
 
 type Ingestor[T any] struct {
 	id      uuid.UUID
+	name    string
 	logger  log.Logger
 	rowsBuf xsync.BatchSlice[T]
 
@@ -61,6 +62,10 @@ func (i *Ingestor[T]) ID() uuid.UUID {
 	return i.id
 }
 
+func (i *Ingestor[T]) Name() string {
+	return i.name
+}
+
 func (i *Ingestor[T]) Start() {
 	i.stopCh = make(chan struct{})
 	i.notifyCh = make(chan struct{}, 1)
@@ -79,7 +84,7 @@ func (i *Ingestor[T]) Stop() {
 	close(i.notifyCh)
 }
 
-func (i *Ingestor[T]) Submit(rows ...T) {
+func (i *Ingestor[T]) Submit(rows []T) {
 	i.rowsBuf.Append(rows...)
 	select {
 	case i.notifyCh <- struct{}{}:
