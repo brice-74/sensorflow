@@ -22,6 +22,8 @@ type Batch[T any] interface {
 	Flush() error
 	Send() error
 	Rows() int
+	IsSent() bool
+	Close() error
 }
 
 type ConnRegistry interface {
@@ -30,6 +32,10 @@ type ConnRegistry interface {
 
 type repo struct {
 	client *HealthyClient
+}
+
+func (r *repo) Client() *HealthyClient {
+	return r.client
 }
 
 type dynamicRepo struct {

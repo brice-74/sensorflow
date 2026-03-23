@@ -8,7 +8,6 @@ import (
 type Config struct {
 	config.Instance
 	config.Env
-	config.InfluxDB
 	config.Sentry
 	config.GRPC
 	config.Postgres
@@ -19,7 +18,6 @@ type Config struct {
 func (c *Config) Define(loader *configpkg.Loader) {
 	c.Instance.Define(loader)
 	c.Env.Define(loader)
-	c.InfluxDB.Define(loader)
 	c.Sentry.Define(loader)
 	c.GRPC.Define(loader)
 	c.Postgres.Define(loader)

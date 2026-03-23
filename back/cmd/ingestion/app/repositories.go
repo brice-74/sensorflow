@@ -3,6 +3,7 @@ package app
 import (
 	"time"
 
+	"github.com/brice-74/sensorflow/internal/adapters/clickhouse"
 	"github.com/brice-74/sensorflow/internal/adapters/postgres"
 	"github.com/brice-74/sensorflow/internal/adapters/redis"
 	"github.com/brice-74/sensorflow/internal/ports"
@@ -34,6 +35,18 @@ func NewRedisRepositories(client *redis.HealthyClient) *RedisRepositories {
 	repositories := RedisRepositories{
 		SensorGateway:  redis.NewSensorGateway(client, 10*time.Minute),
 		SensorInstance: redis.NewSensorInstance(client, 7*time.Minute),
+	}
+
+	return &repositories
+}
+
+type ClickhouseRepositories struct {
+	AccelGyroStd *clickhouse.AccelGyroStdRepo
+}
+
+func NewClickhouseRepositories(client *clickhouse.HealthyClient) *ClickhouseRepositories {
+	repositories := ClickhouseRepositories{
+		AccelGyroStd: clickhouse.NewAccelGyroStdRepo(client),
 	}
 
 	return &repositories

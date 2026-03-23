@@ -1,6 +1,7 @@
-package orchestrators
+package ingestor
 
 import (
+	"context"
 	"sync/atomic"
 	"time"
 
@@ -26,7 +27,7 @@ const (
 
 type IngestionLevel[T any] interface {
 	Name() string
-	Write(rows []T) error
+	Write(ctx context.Context, rows []T) error
 }
 
 type Ingestor[T any] struct {
@@ -57,6 +58,27 @@ type Ingestor[T any] struct {
 }
 
 var _ ports.Ingestor[any, IngestStatus] = (*Ingestor[any])(nil)
+
+func New[T any](cfg Config[T]) (*Ingestor[T], error) {
+	cfg.withDefaults()
+
+	if err := cfg.validate(); err != nil {
+		return nil, err
+	}
+
+	return &Ingestor[T]{
+		id:                      uuid.New(),
+		name:                    cfg.Name,
+		logger:                  cfg.Logger.With(log.Tags{"ingestor": cfg.Name}),
+		levels:                  cfg.Levels,
+		tick:                    cfg.Tick,
+		flushBatchSize:          cfg.FlushBatchSize,
+		flushDelay:              cfg.FlushDelay,
+		retryDelay:              cfg.RetryDelay,
+		maxBufferBeforeFallback: cfg.MaxBufferBeforeFallback,
+		levelProbeInterval:      cfg.LevelProbeInterval,
+	}, nil
+}
 
 func (i *Ingestor[T]) ID() uuid.UUID {
 	return i.id
@@ -171,7 +193,7 @@ func (i *Ingestor[T]) flushWithPolicy(now time.Time) {
 			return
 		}
 
-		err := i.levels[lvl].Write(rows)
+		err := i.levels[lvl].Write(context.Background(), rows)
 		if err == nil {
 			i.currentLevel = lvl
 			i.rowsBuf.CommitAndRelease(len(rows))

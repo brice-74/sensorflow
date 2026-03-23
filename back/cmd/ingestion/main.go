@@ -11,7 +11,6 @@ import (
 	redisadapter "github.com/brice-74/sensorflow/internal/adapters/redis"
 	"github.com/brice-74/sensorflow/internal/config"
 	"github.com/brice-74/sensorflow/internal/log"
-	"github.com/brice-74/sensorflow/kit"
 	"github.com/dgraph-io/ristretto/v2"
 )
 
@@ -42,8 +41,6 @@ func main() {
 	defer redisClient.Close()
 
 	ristrettoCache := openLocalCache(logger)
-
-	workerPool := kit.NewWorkerPoolFromConfig(&cfg.WorkerPool, log.PanicHandler(logger))
 
 	pgRepos := app.NewPostgresRepositories(sqlxDB)
 	redisRepos := app.NewRedisRepositories(redisClient)

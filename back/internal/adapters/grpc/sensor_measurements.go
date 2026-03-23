@@ -8,7 +8,7 @@ import (
 	"github.com/brice-74/sensorflow/internal/adapters/grpc/proto"
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/ctxvalues"
-	"github.com/brice-74/sensorflow/internal/orchestrators"
+	"github.com/brice-74/sensorflow/internal/orchestrators/ingestor"
 	"github.com/brice-74/sensorflow/internal/ports"
 	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
@@ -17,14 +17,14 @@ import (
 
 type IngestorConsumerNoGeneric interface {
 	ID() uuid.UUID
-	State() orchestrators.IngestStatus
+	State() ingestor.IngestStatus
 }
 type IngestorConsumerState interface {
-	State() orchestrators.IngestStatus
+	State() ingestor.IngestStatus
 }
 
 type IngestorConsumer[T any] interface {
-	ports.IngestorConsumer[T, orchestrators.IngestStatus]
+	ports.IngestorConsumer[T, ingestor.IngestStatus]
 }
 
 type SensorMeasurementsService struct {
@@ -36,10 +36,28 @@ type SensorMeasurementsService struct {
 	ingestAccelGyroIndustrial IngestorConsumer[*domain.AccelGyroMeasurement]
 	ingestAccelGyroRealtime   IngestorConsumer[*domain.AccelGyroMeasurement]
 
-	ingestStates map[uuid.UUID]orchestrators.IngestStatus
+	ingestStates map[uuid.UUID]ingestor.IngestStatus
 
 	checkIngestorsStatesInterval time.Duration
 	stop                         chan struct{}
+}
+
+func NewSensorMeasurementsService(
+	sensorPlanBinding ports.SensorPlanBindingOrchestrator,
+	ingestAccelGyroStd IngestorConsumer[*domain.AccelGyroMeasurement],
+	ingestAccelGyroIndustrial IngestorConsumer[*domain.AccelGyroMeasurement],
+	ingestAccelGyroRealtime IngestorConsumer[*domain.AccelGyroMeasurement],
+	checkIngestorsStatesInterval time.Duration,
+) *SensorMeasurementsService {
+	return &SensorMeasurementsService{
+		sensorPlanBinding:            sensorPlanBinding,
+		ingestAccelGyroStd:           ingestAccelGyroStd,
+		ingestAccelGyroIndustrial:    ingestAccelGyroIndustrial,
+		ingestAccelGyroRealtime:      ingestAccelGyroRealtime,
+		ingestStates:                 make(map[uuid.UUID]ingestor.IngestStatus, 3),
+		checkIngestorsStatesInterval: checkIngestorsStatesInterval,
+		stop:                         make(chan struct{}),
+	}
 }
 
 func (svc *SensorMeasurementsService) CheckIngestorsStates(ctx context.Context) (stop func()) {

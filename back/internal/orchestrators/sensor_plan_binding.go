@@ -55,3 +55,8 @@ func (o *SensorPlanBinding) GetActiveByInstanceID(ctx context.Context, instanceI
 
 	return spb, nil
 }
+
+func (o *SensorPlanBinding) ListActiveByInstanceIDs(ctx context.Context, instanceIDs []uuid.UUID) ([]*domain.SensorPlanBinding, error) {
+
+	return nil, nil
+}
