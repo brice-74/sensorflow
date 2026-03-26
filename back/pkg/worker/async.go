@@ -7,11 +7,11 @@ type PoolAsync[Res any] interface {
 }
 
 type ResultPoolAsync[Res any] struct {
-	pool     PoolCore
+	pool     PoolCore[Task]
 	resultCh chan Res
 }
 
-func NewResultPoolAsync[Res any](pool PoolCore, size int) *ResultPoolAsync[Res] {
+func NewResultPoolAsync[Res any](pool PoolCore[Task], size int) *ResultPoolAsync[Res] {
 	return &ResultPoolAsync[Res]{
 		pool:     pool,
 		resultCh: make(chan Res, size),

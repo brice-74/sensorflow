@@ -1,13 +1,15 @@
 <yandex>
   <storage_configuration>
     <disks>
-      <cold><path>/var/lib/clickhouse/cold_data/</path></cold>
+      <accel_gyro_std_cold><path>/var/lib/clickhouse/cold_data/accel_gyro_std_cold/</path></accel_gyro_std_cold>
+      <accel_gyro_industrial_cold><path>/var/lib/clickhouse/cold_data/accel_gyro_industrial_cold/</path></accel_gyro_industrial_cold>
     </disks>
     <policies>
       <hot_cold>
         <volumes>
           <hot><disk>default</disk></hot>
-          <cold><disk>cold</disk></cold>
+          <accel_gyro_std_cold><disk>accel_gyro_std_cold</disk></accel_gyro_std_cold>
+          <accel_gyro_industrial_cold><disk>accel_gyro_industrial_cold</disk></accel_gyro_industrial_cold>
         </volumes>
       </hot_cold>
     </policies>

@@ -86,13 +86,13 @@ migrate/pg/new:
 	@$(call de_migrate_create,${pg_migrate_path},${name})
 
 migrate/pg/up:
-	@$(call de_migrate_exec,${PG_DATABASE_URL},up,${step})
+	@$(call de_migrate_exec,${pg_migrate_path},PG_DATABASE_URL,up,${step})
 
 migrate/pg/down:
-	@$(call de_migrate_exec,${PG_DATABASE_URL},down,${step})
+	@$(call de_migrate_exec,${pg_migrate_path},PG_DATABASE_URL,down,${step})
 
 migrate/pg/goto:
-	@$(call de_migrate_exec,${PG_DATABASE_URL},goto,${version})
+	@$(call de_migrate_exec,${pg_migrate_path},PG_DATABASE_URL,goto,${version})
 
 clickhouse_migrate_path := ./internal/adapters/clickhouse/migrations
 
@@ -100,20 +100,20 @@ migrate/clickhouse/new:
 	@$(call de_migrate_create,${clickhouse_migrate_path},${name})
 
 migrate/clickhouse/up:
-	@$(call de_migrate_exec,${CLICKHOUSE_DATABASE_URL},up,${step})
+	@$(call de_migrate_exec,${clickhouse_migrate_path},CLICKHOUSE_DATABASE_URL,up,${step})
 
 migrate/clickhouse/down:
-	@$(call de_migrate_exec,${CLICKHOUSE_DATABASE_URL},down,${step})
+	@$(call de_migrate_exec,${clickhouse_migrate_path},CLICKHOUSE_DATABASE_URL,down,${step})
 
 migrate/clickhouse/goto:
-	@$(call de_migrate_exec,${CLICKHOUSE_DATABASE_URL},goto,${version})
+	@$(call de_migrate_exec,${clickhouse_migrate_path},CLICKHOUSE_DATABASE_URL,goto,${version})
 
 define de_migrate_create
 	@$(de_cli) migrate create -seq -ext=.sql -dir=$(1) $(2)
 endef
 
 define de_migrate_exec
-	@$(de_cli) sh -c 'migrate -path=${migrate_path} -database "$(1)" $(2) $(2)'
+	@$(de_cli) sh -c 'migrate -path=$(1) -database "$$$(2)" $(3) $(4)'
 endef
 
 #-----------------------------------------------------------------#

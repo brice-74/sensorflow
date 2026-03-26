@@ -61,6 +61,7 @@ services:
       GO_BIN_PATH: /usr/local/bin/cli
       GO_BUILD_FLAGS: -buildvcs=false -gcflags="all=-N -l"
       PG_DATABASE_URL: 'postgres://root:S3ns0rF%210w%232025@postgres/sensorflow?sslmode=disable'
+      CLICKHOUSE_DATABASE_URL: 'clickhouse://default:@clickhouse:9000/default'
     volumes:
       - ../back:/src
     env_file:
@@ -156,11 +157,13 @@ services:
       - clickhouse_cold:/var/lib/clickhouse/cold_data
       - clickhouse_logs:/var/log/clickhouse-server
       - ./clickhouse/docker.xml:/etc/clickhouse-server/config.d/docker.xml:ro
+      - ./clickhouse/init-cold-data.sh:/etc/clickhouse/init-cold-data.sh:ro
     environment:
       - CLICKHOUSE_DB=default
       - CLICKHOUSE_USER=default
       - CLICKHOUSE_PASSWORD=
       - CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT=1
+    entrypoint: ["/bin/bash", "/etc/clickhouse/init-cold-data.sh"]
     ulimits:
       nofile:
         soft: 262144

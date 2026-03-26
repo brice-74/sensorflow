@@ -9,6 +9,7 @@ import (
 	"github.com/brice-74/sensorflow/internal/log"
 	"github.com/brice-74/sensorflow/internal/ports"
 	"github.com/brice-74/sensorflow/pkg/errors"
+	"github.com/brice-74/sensorflow/pkg/worker"
 	"github.com/google/uuid"
 )
 
@@ -19,7 +20,7 @@ type SensorGateway struct {
 	redisInstanceRepo redisadapter.SensorInstance
 	localCache        cache.Local[*domain.SensorGateway]
 	logger            log.Logger
-	asyncPool         ports.AsyncSubmitter
+	asyncPool         ports.AsyncSubmitter[ports.Task]
 }
 
 var _ ports.SensorGatewayOrchestrator = (*SensorGateway)(nil)
@@ -31,7 +32,7 @@ func NewSensorGateway(
 	redisInstanceRepo redisadapter.SensorInstance,
 	localCache cache.Local[*domain.SensorGateway],
 	logger log.Logger,
-	asyncPool ports.AsyncSubmitter,
+	asyncPool ports.AsyncSubmitter[ports.Task],
 ) *SensorGateway {
 	return &SensorGateway{
 		dbRepo:            dbRepo,
@@ -159,7 +160,7 @@ func (o *SensorGateway) getFromDB(ctx context.Context, id uuid.UUID) (*domain.Se
 
 // asyncSetRedis pushes gateway + instances to Redis asynchronously
 func (o *SensorGateway) asyncSetRedis(gw *domain.SensorGateway) {
-	if err := o.asyncPool.Submit(func() {
+	if err := o.asyncPool.Submit(worker.VoidTask(func() {
 		var redisErrors []error
 		defer func() {
 			if len(redisErrors) > 0 {
@@ -193,7 +194,7 @@ func (o *SensorGateway) asyncSetRedis(gw *domain.SensorGateway) {
 			}
 		}
 
-	}); err != nil {
+	})); err != nil {
 		o.logger.Warn(errors.WrapErr(err))
 	}
 }

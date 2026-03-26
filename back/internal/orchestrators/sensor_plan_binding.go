@@ -9,6 +9,7 @@ import (
 	"github.com/brice-74/sensorflow/internal/log"
 	"github.com/brice-74/sensorflow/internal/ports"
 	"github.com/brice-74/sensorflow/pkg/errors"
+	"github.com/brice-74/sensorflow/pkg/worker"
 	"github.com/google/uuid"
 )
 
@@ -17,7 +18,7 @@ type SensorPlanBinding struct {
 	redisRepo  redisadapter.SensorPlanBinding
 	localCache cache.Local[*domain.SensorPlanBinding]
 	logger     log.Logger
-	asyncPool  ports.AsyncSubmitter
+	asyncPool  ports.AsyncSubmitter[ports.Task]
 }
 
 var _ ports.SensorPlanBindingOrchestrator = (*SensorPlanBinding)(nil)
@@ -44,11 +45,11 @@ func (o *SensorPlanBinding) GetActiveByInstanceID(ctx context.Context, instanceI
 	o.localCache.Set(cacheKey, spb)
 
 	if redisCli := o.redisRepo.Client(); redisCli.IsAlive() {
-		if err := o.asyncPool.Submit(func() {
+		if err := o.asyncPool.Submit(worker.VoidTask(func() {
 			if err := o.redisRepo.SetOne(ctx, spb); err != nil {
 				o.logger.Warn(errors.WrapErr(err))
 			}
-		}); err != nil {
+		})); err != nil {
 			o.logger.Warn(errors.WrapErr(err))
 		}
 	}

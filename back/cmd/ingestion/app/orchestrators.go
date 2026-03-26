@@ -28,7 +28,7 @@ func NewOrchestrators(
 	clickhouseRepos *ClickhouseRepositories,
 	localCacheHub *ristretto.Cache[string, any],
 	logger log.Logger,
-	asyncPool ports.AsyncSubmitter,
+	asyncPool ports.AsyncSubmitter[ports.Task],
 ) (*Orchestrators, error) {
 	SensorGatewayLocalCache := ristrettoadapter.NewLocalCache[*domain.SensorGateway](localCacheHub, 1*time.Minute)
 

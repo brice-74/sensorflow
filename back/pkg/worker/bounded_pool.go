@@ -8,8 +8,8 @@ import (
 	"time"
 )
 
-type PoolCore interface {
-	Submit(task Task) error
+type PoolCore[T Task] interface {
+	Submit(task T) error
 }
 
 // PanicHandler is an optional callback for recovered panics in tasks.
@@ -23,8 +23,8 @@ var (
 
 // BoundedPool is a lightweight, adaptive worker pool for executing tasks asynchronously
 // in order of submission (FIFO) and dynamically adjusts the number of workers.
-type BoundedPool struct {
-	queue         chan Task     // Channel holding pending tasks
+type BoundedPool[T Task] struct {
+	queue         chan T        // Channel holding pending tasks
 	minWorkers    int           // Minimum number of workers (can be 0)
 	maxWorkers    int           // Maximum workers (<=0 means unlimited)
 	idleTimeout   time.Duration // Time after which idle workers exit
@@ -38,10 +38,10 @@ type BoundedPool struct {
 	isClosed atomic.Bool
 }
 
-var _ PoolCore = (*BoundedPool)(nil)
+var _ PoolCore[Task] = (*BoundedPool[Task])(nil)
 
-func NewBoundedPool(opts ...BoundedPoolOption) *BoundedPool {
-	p := &BoundedPool{
+func NewBoundedPool[T Task](opts ...BoundedPoolOption[T]) *BoundedPool[T] {
+	p := &BoundedPool[T]{
 		minWorkers:  1,
 		maxWorkers:  10,
 		idleTimeout: 5 * time.Second,
@@ -52,7 +52,7 @@ func NewBoundedPool(opts ...BoundedPoolOption) *BoundedPool {
 		opt(p)
 	}
 
-	p.queue = make(chan Task, p.queueSize)
+	p.queue = make(chan T, p.queueSize)
 	p.ctx, p.cancel = context.WithCancel(context.Background())
 
 	for i := 0; i < p.minWorkers; i++ {
@@ -63,7 +63,7 @@ func NewBoundedPool(opts ...BoundedPoolOption) *BoundedPool {
 }
 
 // Submit enqueues a task to the pool. Returns ErrQueueClosed or ErrQueueFull.
-func (p *BoundedPool) Submit(task Task) error {
+func (p *BoundedPool[T]) Submit(task T) error {
 	if p.isClosed.Load() {
 		return ErrQueueClosed
 	}
@@ -78,7 +78,7 @@ func (p *BoundedPool) Submit(task Task) error {
 }
 
 // spawnWorker starts a new worker goroutine consuming tasks from the queue.
-func (p *BoundedPool) spawnWorker() {
+func (p *BoundedPool[T]) spawnWorker() {
 	p.activeWorkers.Add(1)
 	p.wg.Add(1)
 
@@ -122,7 +122,7 @@ func (p *BoundedPool) spawnWorker() {
 }
 
 // tryScale spawns a new worker if there are pending tasks and we haven't reached maxWorkers.
-func (p *BoundedPool) tryScale() {
+func (p *BoundedPool[T]) tryScale() {
 	qLen := len(p.queue)
 	active := int(p.activeWorkers.Load())
 
@@ -133,7 +133,7 @@ func (p *BoundedPool) tryScale() {
 
 // Shutdown gracefully stops the pool, waiting for all current and queued tasks to complete.
 // Timeout can be provided via context.
-func (p *BoundedPool) Shutdown(ctx context.Context) error {
+func (p *BoundedPool[T]) Shutdown(ctx context.Context) error {
 	if !p.isClosed.Swap(true) {
 		close(p.queue)
 	}
@@ -154,7 +154,7 @@ func (p *BoundedPool) Shutdown(ctx context.Context) error {
 
 // ForceShutdown stops the pool immediately and drains pending tasks still queued.
 // Tasks that are currently executing are not forcibly .
-func (p *BoundedPool) ForceShutdown() {
+func (p *BoundedPool[T]) ForceShutdown() {
 	if !p.isClosed.Swap(true) {
 		close(p.queue)
 		p.cancel()
@@ -166,33 +166,33 @@ func (p *BoundedPool) ForceShutdown() {
 }
 
 // ActiveWorkers returns the current number of active workers.
-func (p *BoundedPool) ActiveWorkers() int64 {
+func (p *BoundedPool[T]) ActiveWorkers() int64 {
 	return p.activeWorkers.Load()
 }
 
 // QueueLength returns the current number of tasks waiting in the queue.
-func (p *BoundedPool) QueueLength() int {
+func (p *BoundedPool[T]) QueueLength() int {
 	return len(p.queue)
 }
 
-type BoundedPoolOption func(*BoundedPool)
+type BoundedPoolOption[T Task] func(*BoundedPool[T])
 
-func WithMinWorkers(min int) BoundedPoolOption {
-	return func(p *BoundedPool) { p.minWorkers = min }
+func WithMinWorkers[T Task](min int) BoundedPoolOption[T] {
+	return func(p *BoundedPool[T]) { p.minWorkers = min }
 }
 
-func WithMaxWorkers(max int) BoundedPoolOption {
-	return func(p *BoundedPool) { p.maxWorkers = max }
+func WithMaxWorkers[T Task](max int) BoundedPoolOption[T] {
+	return func(p *BoundedPool[T]) { p.maxWorkers = max }
 }
 
-func WithIdleTimeout(d time.Duration) BoundedPoolOption {
-	return func(p *BoundedPool) { p.idleTimeout = d }
+func WithIdleTimeout[T Task](d time.Duration) BoundedPoolOption[T] {
+	return func(p *BoundedPool[T]) { p.idleTimeout = d }
 }
 
-func WithQueueSize(size int) BoundedPoolOption {
-	return func(p *BoundedPool) { p.queueSize = size }
+func WithQueueSize[T Task](size int) BoundedPoolOption[T] {
+	return func(p *BoundedPool[T]) { p.queueSize = size }
 }
 
-func WithPanicHandler(handler PanicHandler) BoundedPoolOption {
-	return func(p *BoundedPool) { p.panicHandler = handler }
+func WithPanicHandler[T Task](handler PanicHandler) BoundedPoolOption[T] {
+	return func(p *BoundedPool[T]) { p.panicHandler = handler }
 }

@@ -7,10 +7,13 @@ import (
 	"time"
 
 	"github.com/brice-74/sensorflow/cmd/ingestion/app"
+	"github.com/brice-74/sensorflow/internal/adapters/clickhouse"
 	"github.com/brice-74/sensorflow/internal/adapters/postgres"
 	redisadapter "github.com/brice-74/sensorflow/internal/adapters/redis"
 	"github.com/brice-74/sensorflow/internal/config"
 	"github.com/brice-74/sensorflow/internal/log"
+	"github.com/brice-74/sensorflow/internal/ports"
+	"github.com/brice-74/sensorflow/pkg/worker"
 	"github.com/dgraph-io/ristretto/v2"
 )
 
@@ -42,9 +45,19 @@ func main() {
 
 	ristrettoCache := openLocalCache(logger)
 
+	clickhouseClient := clickhouse.NewHealthyClient(&config.Clickhouse{})
+	defer clickhouseClient.Client.Close()
+
+	workerPool := worker.NewBoundedPool[ports.Task]()
+
+	clickhouseRepos := app.NewClickhouseRepositories(clickhouseClient)
 	pgRepos := app.NewPostgresRepositories(sqlxDB)
 	redisRepos := app.NewRedisRepositories(redisClient)
-	orchestrators := app.NewOrchestrators(redisRepos, pgRepos, ristrettoCache, logger, workerPool)
+	orchestrators, err := app.NewOrchestrators(redisRepos, pgRepos, clickhouseRepos, ristrettoCache, logger, workerPool)
+	if err != nil {
+		logger.Fatal(err)
+		os.Exit(1)
+	}
 
 	if err := app.ServeGRPC(cfg.GRPC, app.GRPCDeps{
 		Logger:                    logger,

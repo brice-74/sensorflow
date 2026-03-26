@@ -24,4 +24,5 @@ ORDER BY (tenant_id, sensor_id, measure_time)
 TTL
   measure_time + INTERVAL 14 DAY DELETE,
   measure_time + INTERVAL 180 DAY TO VOLUME 'accel_gyro_industrial_cold'
-SETTINGS index_granularity = 8192;
+SETTINGS index_granularity = 8192,
+  storage_policy = 'hot_cold';

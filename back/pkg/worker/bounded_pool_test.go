@@ -25,7 +25,7 @@ func waitUntil(t *testing.T, cond func() bool, timeout time.Duration) {
 
 func TestSubmitAndExecution(t *testing.T) {
 	var count atomic.Int64
-	p := worker.NewBoundedPool(worker.WithMinWorkers(1), worker.WithMaxWorkers(4))
+	p := worker.NewBoundedPool(worker.WithMinWorkers[worker.Task](1), worker.WithMaxWorkers[worker.Task](4))
 	defer p.ForceShutdown()
 
 	for i := 0; i < 10; i++ {
@@ -41,7 +41,7 @@ func TestSubmitAndExecution(t *testing.T) {
 }
 
 func TestScalingBehavior(t *testing.T) {
-	p := worker.NewBoundedPool(worker.WithMinWorkers(1), worker.WithMaxWorkers(5))
+	p := worker.NewBoundedPool(worker.WithMinWorkers[worker.Task](1), worker.WithMaxWorkers[worker.Task](5))
 	defer p.ForceShutdown()
 
 	var wg sync.WaitGroup
@@ -60,7 +60,7 @@ func TestScalingBehavior(t *testing.T) {
 
 func TestPanicHandler(t *testing.T) {
 	var recovered atomic.Bool
-	p := worker.NewBoundedPool(worker.WithPanicHandler(func(r any) {
+	p := worker.NewBoundedPool(worker.WithPanicHandler[worker.Task](func(r any) {
 		recovered.Store(true)
 	}))
 	defer p.ForceShutdown()
@@ -72,7 +72,7 @@ func TestPanicHandler(t *testing.T) {
 
 func TestShutdownGraceful(t *testing.T) {
 	var count atomic.Int64
-	p := worker.NewBoundedPool(worker.WithMinWorkers(1), worker.WithMaxWorkers(1))
+	p := worker.NewBoundedPool(worker.WithMinWorkers[worker.Task](1), worker.WithMaxWorkers[worker.Task](1))
 	for i := 0; i < 5; i++ {
 		_ = p.Submit(worker.VoidTask(func() {
 			time.Sleep(50 * time.Millisecond)
@@ -94,7 +94,7 @@ func TestShutdownGraceful(t *testing.T) {
 }
 
 func TestShutdownTimeout(t *testing.T) {
-	p := worker.NewBoundedPool(worker.WithMinWorkers(1), worker.WithMaxWorkers(1))
+	p := worker.NewBoundedPool(worker.WithMinWorkers[worker.Task](1), worker.WithMaxWorkers[worker.Task](1))
 	for i := 0; i < 2; i++ {
 		_ = p.Submit(worker.VoidTask(func() { time.Sleep(300 * time.Millisecond) }))
 	}
@@ -110,7 +110,7 @@ func TestShutdownTimeout(t *testing.T) {
 
 func TestForceShutdownDrainsQueue(t *testing.T) {
 	var count atomic.Int64
-	p := worker.NewBoundedPool(worker.WithMinWorkers(1), worker.WithMaxWorkers(1))
+	p := worker.NewBoundedPool(worker.WithMinWorkers[worker.Task](1), worker.WithMaxWorkers[worker.Task](1))
 
 	var started sync.WaitGroup
 	started.Add(1)
@@ -139,7 +139,7 @@ func TestForceShutdownDrainsQueue(t *testing.T) {
 }
 
 func TestSubmitAfterShutdown(t *testing.T) {
-	p := worker.NewBoundedPool()
+	p := worker.NewBoundedPool[worker.Task]()
 	_ = p.Submit(worker.VoidTask(func() {}))
 	_ = p.Shutdown(context.Background())
 
@@ -150,7 +150,7 @@ func TestSubmitAfterShutdown(t *testing.T) {
 }
 
 func TestIdleWorkerExit(t *testing.T) {
-	p := worker.NewBoundedPool(worker.WithMinWorkers(0), worker.WithMaxWorkers(2), worker.WithIdleTimeout(100*time.Millisecond))
+	p := worker.NewBoundedPool(worker.WithMinWorkers[worker.Task](0), worker.WithMaxWorkers[worker.Task](2), worker.WithIdleTimeout[worker.Task](100*time.Millisecond))
 	defer p.ForceShutdown()
 	_ = p.Submit(worker.VoidTask(func() {}))
 	waitUntil(t, func() bool { return p.ActiveWorkers() > 0 }, 500*time.Millisecond)

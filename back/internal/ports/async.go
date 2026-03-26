@@ -1,7 +1,9 @@
 package ports
 
-type Task = func()
+type Task interface {
+	Do()
+}
 
-type AsyncSubmitter interface {
-	Submit(Task) error
+type AsyncSubmitter[T Task] interface {
+	Submit(T) error
 }

@@ -5,12 +5,12 @@ type PoolSync[Res any] interface {
 }
 
 type ResultPoolSync[Res any] struct {
-	pool PoolCore
+	pool PoolCore[Task]
 }
 
 var _ PoolSync[any] = (*ResultPoolSync[any])(nil)
 
-func NewResultPoolSync[Res any](pool PoolCore) *ResultPoolSync[Res] {
+func NewResultPoolSync[Res any](pool PoolCore[Task]) *ResultPoolSync[Res] {
 	return &ResultPoolSync[Res]{pool: pool}
 }
 
@@ -19,15 +19,15 @@ func (r *ResultPoolSync[Res]) Submit(fn func() (Res, error)) (Res, error) {
 	var res Res
 	var err error
 
-	sub := func() {
+	sub := VoidTask(func() {
 		res, err = fn()
 		select {
 		case ch <- struct{}{}:
 		default:
 		}
-	}
+	})
 
-	if submitErr := r.pool.Submit(VoidTask(sub)); submitErr != nil {
+	if submitErr := r.pool.Submit(sub); submitErr != nil {
 		return res, submitErr
 	}
 
