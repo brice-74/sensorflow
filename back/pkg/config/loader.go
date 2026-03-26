@@ -60,7 +60,8 @@ func (l *Loader) prefixed(str string, prefixIndex int) string {
 	sep := "_"
 	prefix := ""
 
-	if prefixIndex >= 0 && prefixIndex <= 1 {
+	switch prefixIndex {
+	case 0, 1:
 		prefix = l.prefixes[prefixIndex]
 	}
 

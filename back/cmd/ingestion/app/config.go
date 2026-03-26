@@ -5,6 +5,13 @@ import (
 	configpkg "github.com/brice-74/sensorflow/pkg/config"
 )
 
+type OrchestrtorsAsyncTasksConfig struct{ config.WorkerPool }
+
+func (c *OrchestrtorsAsyncTasksConfig) Define(loader *configpkg.Loader) {
+	l := loader.AddPrefix("orchestrators_asynctasks", "ORCHESTRATORS_ASYNCTASKS")
+	c.WorkerPool.Define(l)
+}
+
 type Config struct {
 	config.Instance
 	config.Env
@@ -12,7 +19,8 @@ type Config struct {
 	config.GRPC
 	config.Postgres
 	config.Redis
-	config.WorkerPool
+	config.Clickhouse
+	OrchestrtorsAsyncTasksConfig
 }
 
 func (c *Config) Define(loader *configpkg.Loader) {
@@ -22,7 +30,8 @@ func (c *Config) Define(loader *configpkg.Loader) {
 	c.GRPC.Define(loader)
 	c.Postgres.Define(loader)
 	c.Redis.Define(loader)
-	c.WorkerPool.Define(loader)
+	c.Clickhouse.Define(loader)
+	c.OrchestrtorsAsyncTasksConfig.Define(loader)
 }
 
 func ParseConfig() (*Config, error) {

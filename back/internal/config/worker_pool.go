@@ -7,7 +7,6 @@ import (
 )
 
 type WorkerPool struct {
-	Enabled     bool
 	MinWorkers  int
 	MaxWorkers  int
 	QueueSize   int
@@ -15,13 +14,6 @@ type WorkerPool struct {
 }
 
 func (c *WorkerPool) Define(loader *config.Loader) {
-	loader.Bool(&c.Enabled,
-		"workerpool_enabled",
-		"WORKERPOOL_ENABLED",
-		true,
-		"Enable or disable the async worker pool",
-	)
-
 	loader.Int(&c.MinWorkers,
 		"workerpool_min_workers",
 		"WORKERPOOL_MIN_WORKERS",

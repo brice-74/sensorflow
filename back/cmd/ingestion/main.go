@@ -45,15 +45,15 @@ func main() {
 
 	ristrettoCache := openLocalCache(logger)
 
-	clickhouseClient := clickhouse.NewHealthyClient(&config.Clickhouse{})
+	clickhouseClient := clickhouse.NewHealthyClient(&cfg.Clickhouse)
 	defer clickhouseClient.Client.Close()
 
-	workerPool := worker.NewBoundedPool[ports.Task]()
+	asyncTasksPool := orchestrtorsAsyncTasks(cfg.OrchestrtorsAsyncTasksConfig, logger)
 
 	clickhouseRepos := app.NewClickhouseRepositories(clickhouseClient)
 	pgRepos := app.NewPostgresRepositories(sqlxDB)
 	redisRepos := app.NewRedisRepositories(redisClient)
-	orchestrators, err := app.NewOrchestrators(redisRepos, pgRepos, clickhouseRepos, ristrettoCache, logger, workerPool)
+	orchestrators, err := app.NewOrchestrators(redisRepos, pgRepos, clickhouseRepos, ristrettoCache, logger, asyncTasksPool)
 	if err != nil {
 		logger.Fatal(err)
 		os.Exit(1)
@@ -93,4 +93,14 @@ func openLocalCache(logger log.Logger) *ristretto.Cache[string, any] {
 		os.Exit(1)
 	}
 	return ristrettoCache
+}
+
+func orchestrtorsAsyncTasks(cfg app.OrchestrtorsAsyncTasksConfig, logger log.Logger) *worker.BoundedPool[ports.Task] {
+	return worker.NewBoundedPool(
+		worker.WithMinWorkers[ports.Task](cfg.WorkerPool.MinWorkers),
+		worker.WithMaxWorkers[ports.Task](cfg.WorkerPool.MaxWorkers),
+		worker.WithIdleTimeout[ports.Task](cfg.WorkerPool.IdleTimeout),
+		worker.WithQueueSize[ports.Task](cfg.WorkerPool.QueueSize),
+		worker.WithPanicHandler[ports.Task](log.PanicHandler(logger)),
+	)
 }
