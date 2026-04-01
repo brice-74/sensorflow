@@ -11,6 +11,7 @@ const (
 	SensorInstanceKey    EntityKey = "sensor_instance"
 
 	WithSensorInstancesKey LogicalKey = "with_sensor_instances"
+	AuthContextKey         LogicalKey = "auth_context"
 )
 
 // FormatKey returns the classic key of an entity
@@ -59,4 +60,10 @@ func FormatHydratedKeys(entity EntityKey, ids []string, logicalKey LogicalKey) [
 // Example : sensor_instance:{sensor_id}:active_plan
 func FormatActivePlanKey(sensorID string) string {
 	return string(SensorInstanceKey) + ":" + sensorID + ":active_plan"
+}
+
+// FormatSensorGatewayAuthKey returns the Redis key for the authentication context of a sensor gateway
+// Example : sensor_gateway:{gateway_id}:auth_context
+func FormatSensorGatewayAuthKey(gatewayID string) string {
+	return FormatHydratedKey(SensorGatewayKey, gatewayID, AuthContextKey)
 }

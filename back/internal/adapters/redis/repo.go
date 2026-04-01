@@ -15,6 +15,7 @@ import (
 type repo[T any] struct {
 	*HealthyClient
 	Key        cache.EntityKey
+	KeyFunc    func(id string) string
 	DefaultTTL time.Duration
 }
 
@@ -22,6 +23,24 @@ var _ Repo[any] = (*repo[any])(nil)
 
 func (r *repo[_]) Client() Client {
 	return r.HealthyClient
+}
+
+func (r *repo[T]) key(id string) string {
+	if r.KeyFunc != nil {
+		return r.KeyFunc(id)
+	}
+	return cache.FormatKey(r.Key, id)
+}
+
+func (r *repo[T]) keys(ids ...string) []string {
+	if r.KeyFunc != nil {
+		result := make([]string, len(ids))
+		for i, id := range ids {
+			result[i] = r.KeyFunc(id)
+		}
+		return result
+	}
+	return cache.FormatKeys(r.Key, ids)
 }
 
 //
@@ -53,9 +72,9 @@ func (r *repo[_]) CmdableFromCtx(ctx context.Context) redis.Cmdable {
 // --- Unexported helpers ---
 //
 
-func (r *repo[T]) cmdSetMany(ctx context.Context, cmdable redis.Cmdable, entities map[string]*T, ttl time.Duration) (*StatusCmd, *MultiBoolCmd) {
+func (r *repo[T]) cmdSetMany(ctx context.Context, cmdable redis.Cmdable, entities map[string]*T, ttl time.Duration) (*StatusCmd, *MultiBoolCmd, error) {
 	if len(entities) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	pairs := make([]any, 0, len(entities)*2)
@@ -64,10 +83,10 @@ func (r *repo[T]) cmdSetMany(ctx context.Context, cmdable redis.Cmdable, entitie
 	for id, entity := range entities {
 		data, err := gobutil.Encode(entity)
 		if err != nil {
-			return nil, nil
+			return nil, nil, err
 		}
 
-		key := cache.FormatKey(r.Key, id)
+		key := r.key(id)
 		keys = append(keys, key)
 		pairs = append(pairs, key, data)
 	}
@@ -85,7 +104,7 @@ func (r *repo[T]) cmdSetMany(ctx context.Context, cmdable redis.Cmdable, entitie
 		}
 	}
 
-	return statusCmd, boolCmds
+	return statusCmd, boolCmds, nil
 }
 
 func (r *repo[T]) cmdSetIDsByParentID(ctx context.Context, cmdable redis.Cmdable, parentID string, ids []string, relKey cache.EntityKey, ttl time.Duration) (*IntCmd, *BoolCmd) {
@@ -110,11 +129,15 @@ func (r *repo[T]) cmdSetIDsByParentID(ctx context.Context, cmdable redis.Cmdable
 	return intcmd, boolcmd
 }
 
-func (r *repo[T]) cmdSetOne(ctx context.Context, cmdable redis.Cmdable, id string, entity *T, ttl time.Duration) *StatusCmd {
-	return &StatusCmd{
-		Cmd:      cmdable.Set(ctx, cache.FormatKey(r.Key, id), entity, ttl),
-		markDown: r.MarkDown,
+func (r *repo[T]) cmdSetOne(ctx context.Context, cmdable redis.Cmdable, id string, entity *T, ttl time.Duration) (*StatusCmd, error) {
+	data, err := gobutil.Encode(entity)
+	if err != nil {
+		return nil, err
 	}
+	return &StatusCmd{
+		Cmd:      cmdable.Set(ctx, r.key(id), data, ttl),
+		markDown: r.MarkDown,
+	}, nil
 }
 
 func (r *repo[T]) cmdListIDsByParentID(ctx context.Context, cmdable redis.Cmdable, id string, relKey cache.EntityKey) *StringSliceCmd {
@@ -125,11 +148,11 @@ func (r *repo[T]) cmdListIDsByParentID(ctx context.Context, cmdable redis.Cmdabl
 }
 
 func (r *repo[T]) cmdGetOneByID(ctx context.Context, cmdable redis.Cmdable, id string) *StringCmdGob[T] {
-	return &StringCmdGob[T]{Cmd: cmdable.Get(ctx, cache.FormatKey(r.Key, id)), markDown: r.MarkDown}
+	return &StringCmdGob[T]{Cmd: cmdable.Get(ctx, r.key(id)), markDown: r.MarkDown}
 }
 
 func (r *repo[T]) cmdGetByIDs(ctx context.Context, cmdable redis.Cmdable, ids []string) *SliceCmdGob[T] {
-	return &SliceCmdGob[T]{Cmd: cmdable.MGet(ctx, cache.FormatKeys(cache.SensorInstanceKey, ids)...), markDown: r.MarkDown}
+	return &SliceCmdGob[T]{Cmd: cmdable.MGet(ctx, r.keys(ids...)...), markDown: r.MarkDown}
 }
 
 //
@@ -144,19 +167,19 @@ func (r *repo[T]) CmdSetStrIDsByParentIDTTL(ctx context.Context, ids []string, p
 	return r.cmdSetIDsByParentID(ctx, r.Cmdable(ctx), parentID, ids, relKey, ttl)
 }
 
-func (r *repo[T]) CmdSetManyByStrID(ctx context.Context, entities map[string]*T) (*StatusCmd, *MultiBoolCmd) {
+func (r *repo[T]) CmdSetManyByStrID(ctx context.Context, entities map[string]*T) (*StatusCmd, *MultiBoolCmd, error) {
 	return r.cmdSetMany(ctx, r.Cmdable(ctx), entities, r.DefaultTTL)
 }
 
-func (r *repo[T]) CmdSetManyByStrIDTTL(ctx context.Context, entities map[string]*T, ttl time.Duration) (*StatusCmd, *MultiBoolCmd) {
+func (r *repo[T]) CmdSetManyByStrIDTTL(ctx context.Context, entities map[string]*T, ttl time.Duration) (*StatusCmd, *MultiBoolCmd, error) {
 	return r.cmdSetMany(ctx, r.Cmdable(ctx), entities, ttl)
 }
 
-func (r *repo[T]) CmdSetOneByStrID(ctx context.Context, id string, entity *T) *StatusCmd {
+func (r *repo[T]) CmdSetOneByStrID(ctx context.Context, id string, entity *T) (*StatusCmd, error) {
 	return r.cmdSetOne(ctx, r.Cmdable(ctx), id, entity, r.DefaultTTL)
 }
 
-func (r *repo[T]) CmdSetOneByStrIDTTL(ctx context.Context, id string, entity *T, ttl time.Duration) *StatusCmd {
+func (r *repo[T]) CmdSetOneByStrIDTTL(ctx context.Context, id string, entity *T, ttl time.Duration) (*StatusCmd, error) {
 	return r.cmdSetOne(ctx, r.Cmdable(ctx), id, entity, ttl)
 }
 
@@ -188,7 +211,10 @@ func (r *repo[T]) SetStrIDsByParentID(ctx context.Context, parentID string, ids 
 }
 
 func (r *repo[T]) SetManyByStrID(ctx context.Context, entities map[string]*T) error {
-	insertCmd, ttlCmds := r.cmdSetMany(ctx, r.UnaryCmdableFromCtx(ctx), entities, r.DefaultTTL)
+	insertCmd, ttlCmds, err := r.cmdSetMany(ctx, r.UnaryCmdableFromCtx(ctx), entities, r.DefaultTTL)
+	if err != nil {
+		return err
+	}
 	if _, err := insertCmd.Result(); err != nil {
 		return err
 	}
@@ -199,7 +225,11 @@ func (r *repo[T]) SetManyByStrID(ctx context.Context, entities map[string]*T) er
 }
 
 func (r *repo[T]) SetOneByStrID(ctx context.Context, id string, entity *T) error {
-	_, err := r.cmdSetOne(ctx, r.UnaryCmdableFromCtx(ctx), id, entity, r.DefaultTTL).Result()
+	cmd, err := r.cmdSetOne(ctx, r.UnaryCmdableFromCtx(ctx), id, entity, r.DefaultTTL)
+	if err != nil {
+		return err
+	}
+	_, err = cmd.Result()
 	return err
 }
 

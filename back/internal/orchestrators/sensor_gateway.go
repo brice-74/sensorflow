@@ -171,8 +171,16 @@ func (o *SensorGateway) asyncSetRedis(gw *domain.SensorGateway) {
 		redisCli := o.redisRepo.Client()
 		pipe, ctxPipe := redisCli.NewPipeline(context.Background())
 
-		setGtwCmd := o.redisRepo.CmdSetOne(ctxPipe, gw)
-		setInstsCmd, setInstsTtlCmds := o.redisInstanceRepo.CmdSetMany(ctxPipe, gw.SensorInstances)
+		setGtwCmd, err := o.redisRepo.CmdSetOne(ctxPipe, gw)
+		if err != nil {
+			redisErrors = append(redisErrors, redisCli.HandleError(err))
+			return
+		}
+		setInstsCmd, setInstsTtlCmds, err := o.redisInstanceRepo.CmdSetMany(ctxPipe, gw.SensorInstances)
+		if err != nil {
+			redisErrors = append(redisErrors, redisCli.HandleError(err))
+			return
+		}
 
 		if _, err := pipe.Exec(ctxPipe); err != nil {
 			redisErrors = append(redisErrors, redisCli.HandleError(err))

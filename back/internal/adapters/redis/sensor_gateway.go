@@ -25,7 +25,7 @@ func NewSensorGateway(client *HealthyClient, defaultTTL time.Duration) *sensorGa
 	}
 }
 
-func (r *sensorGateway) CmdSetOne(ctx context.Context, entity *domain.SensorGateway) *StatusCmd {
+func (r *sensorGateway) CmdSetOne(ctx context.Context, entity *domain.SensorGateway) (*StatusCmd, error) {
 	return r.repo.CmdSetOneByStrID(ctx, entity.ID.String(), entity)
 }
 

@@ -6,6 +6,7 @@ import (
 
 	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
+	"github.com/brice-74/sensorflow/internal/ctxvalues"
 	"github.com/brice-74/sensorflow/internal/ports"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
@@ -33,10 +34,10 @@ type Repo[T any] interface {
 	CmdListStrIDsByParentID(ctx context.Context, parentID string, relKey cache.EntityKey) *StringSliceCmd
 	CmdSetStrIDsByParentID(ctx context.Context, ids []string, parentID string, relKey cache.EntityKey) (*IntCmd, *BoolCmd)
 	CmdSetStrIDsByParentIDTTL(ctx context.Context, ids []string, parentID string, relKey cache.EntityKey, ttl time.Duration) (*IntCmd, *BoolCmd)
-	CmdSetManyByStrID(ctx context.Context, entities map[string]*T) (*StatusCmd, *MultiBoolCmd)
-	CmdSetManyByStrIDTTL(ctx context.Context, entities map[string]*T, ttl time.Duration) (*StatusCmd, *MultiBoolCmd)
-	CmdSetOneByStrID(ctx context.Context, id string, entity *T) *StatusCmd
-	CmdSetOneByStrIDTTL(ctx context.Context, id string, entity *T, ttl time.Duration) *StatusCmd
+	CmdSetManyByStrID(ctx context.Context, entities map[string]*T) (*StatusCmd, *MultiBoolCmd, error)
+	CmdSetManyByStrIDTTL(ctx context.Context, entities map[string]*T, ttl time.Duration) (*StatusCmd, *MultiBoolCmd, error)
+	CmdSetOneByStrID(ctx context.Context, id string, entity *T) (*StatusCmd, error)
+	CmdSetOneByStrIDTTL(ctx context.Context, id string, entity *T, ttl time.Duration) (*StatusCmd, error)
 	// --- Unary calls ---
 	GetManyByStrIDs(ctx context.Context, ids []string) ([]*T, error)
 	GetOneByStrID(ctx context.Context, id string) (*T, error)
@@ -46,22 +47,22 @@ type Repo[T any] interface {
 	SetOneByStrID(ctx context.Context, id string, entity *T) error
 }
 
-type SensorPlanBinding interface {
-	Repo[domain.SensorPlanBinding]
-	ports.SensorPlanBindingRepository
-	SetOne(ctx context.Context, spb *domain.SensorPlanBinding) error
-}
-
 type SensorGateway interface {
 	Repo[domain.SensorGateway]
 	ports.SensorGatewayRepository
-	CmdSetOne(ctx context.Context, entity *domain.SensorGateway) *StatusCmd
+	CmdSetOne(ctx context.Context, entity *domain.SensorGateway) (*StatusCmd, error)
 }
 
 type SensorInstance interface {
 	Repo[domain.SensorInstance]
 	ports.SensorInstanceRepository
-	CmdSetMany(ctx context.Context, insts []*domain.SensorInstance) (*StatusCmd, *MultiBoolCmd)
+	CmdSetMany(ctx context.Context, insts []*domain.SensorInstance) (*StatusCmd, *MultiBoolCmd, error)
 	CmdListIDsByGatewayID(ctx context.Context, gtwID string) *StringSliceCmd
 	SetIDsByGatewayID(ctx context.Context, gtwID uuid.UUID, insts []*domain.SensorInstance) error
+}
+
+type SensorGatewayAuth interface {
+	Repo[ctxvalues.SensorGatewayContext]
+	ports.SensorGatewayAuthRepository
+	SetOne(ctx context.Context, gw *ctxvalues.SensorGatewayContext) error
 }

@@ -26,7 +26,7 @@ func NewSensorInstance(client *HealthyClient, defaultTTL time.Duration) *sensorI
 	}
 }
 
-func (r *sensorInstance) CmdSetMany(ctx context.Context, insts []*domain.SensorInstance) (*StatusCmd, *MultiBoolCmd) {
+func (r *sensorInstance) CmdSetMany(ctx context.Context, insts []*domain.SensorInstance) (*StatusCmd, *MultiBoolCmd, error) {
 	return r.repo.CmdSetManyByStrID(ctx, common.SliceToMapByID(insts))
 }
 
