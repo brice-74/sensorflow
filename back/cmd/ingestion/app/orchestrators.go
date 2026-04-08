@@ -5,6 +5,7 @@ import (
 
 	ristrettoadapter "github.com/brice-74/sensorflow/internal/adapters/ristretto"
 	"github.com/brice-74/sensorflow/internal/core/domain"
+	"github.com/brice-74/sensorflow/internal/ctxvalues"
 	"github.com/brice-74/sensorflow/internal/log"
 	"github.com/brice-74/sensorflow/internal/orchestrators"
 	"github.com/brice-74/sensorflow/internal/orchestrators/ingestor"
@@ -13,7 +14,7 @@ import (
 )
 
 type Orchestrators struct {
-	SensorGateway ports.SensorGatewayOrchestrator
+	SensorGatewayAuth ports.SensorGatewayAuthOrchestrator
 
 	IngestAccelGyroStd ports.Ingestor[*domain.AccelGyroMeasurement, ingestor.IngestStatus]
 	/*
@@ -30,7 +31,7 @@ func NewOrchestrators(
 	logger log.Logger,
 	asyncPool ports.AsyncSubmitter[ports.Task],
 ) (*Orchestrators, error) {
-	SensorGatewayLocalCache := ristrettoadapter.NewLocalCache[*domain.SensorGateway](localCacheHub, 1*time.Minute)
+	sensorGatewayAuthLocalCache := ristrettoadapter.NewLocalCache[*ctxvalues.SensorGatewayAuthContext](localCacheHub, 1*time.Minute)
 
 	ingestAccelGyroStd, err := ingestor.New(ingestor.Config[*domain.AccelGyroMeasurement]{
 		Name:   "ingest-accel-gyro-std",
@@ -44,12 +45,10 @@ func NewOrchestrators(
 	}
 
 	orcts := Orchestrators{
-		SensorGateway: orchestrators.NewSensorGateway(
-			pgRepos.SensorGateway,
-			pgRepos.SensorInstance,
-			redisRepos.SensorGateway,
-			redisRepos.SensorInstance,
-			SensorGatewayLocalCache,
+		SensorGatewayAuth: orchestrators.NewSensorGatewayAuth(
+			pgRepos.SensorGatewayAuth,
+			redisRepos.SensorGatewayAuth,
+			sensorGatewayAuthLocalCache,
 			logger,
 			asyncPool,
 		),

@@ -17,14 +17,30 @@ import (
 )
 
 type SensorGatewayAuth struct {
-	dbInstanceRepo ports.SensorGatewayAuthRepository
-	redisRepo      redisadapter.SensorGatewayAuth
-	localCache     cache.Local[*ctxvalues.SensorGatewayAuthContext]
-	logger         log.Logger
-	asyncPool      ports.AsyncSubmitter[ports.Task]
+	dbRepo     ports.SensorGatewayAuthRepository
+	redisRepo  redisadapter.SensorGatewayAuth
+	localCache cache.Local[*ctxvalues.SensorGatewayAuthContext]
+	logger     log.Logger
+	asyncPool  ports.AsyncSubmitter[ports.Task]
 }
 
 var _ ports.SensorGatewayAuthOrchestrator = (*SensorGatewayAuth)(nil)
+
+func NewSensorGatewayAuth(
+	dbRepo ports.SensorGatewayAuthRepository,
+	redisRepo redisadapter.SensorGatewayAuth,
+	localCache cache.Local[*ctxvalues.SensorGatewayAuthContext],
+	logger log.Logger,
+	asyncPool ports.AsyncSubmitter[ports.Task],
+) *SensorGatewayAuth {
+	return &SensorGatewayAuth{
+		dbRepo:     dbRepo,
+		redisRepo:  redisRepo,
+		localCache: localCache,
+		logger:     logger,
+		asyncPool:  asyncPool,
+	}
+}
 
 func (o *SensorGatewayAuth) GetOneByID(ctx context.Context, gatewayID uuid.UUID) (*ctxvalues.SensorGatewayAuthContext, error) {
 	cacheKey := cache.FormatSensorGatewayAuthKey(gatewayID.String())
@@ -44,14 +60,14 @@ func (o *SensorGatewayAuth) GetOneByID(ctx context.Context, gatewayID uuid.UUID)
 		}
 	}
 
-	refs, err := o.dbInstanceRepo.GetAuthPlanRowsByGatewayID(ctx, gatewayID)
+	refs, err := o.dbRepo.GetAuthPlanRowsByGatewayID(ctx, gatewayID)
 	if err != nil {
 		return nil, errors.WrapErr(err)
 	}
 
 	gw := buildSensorGatewayAuthContext(gatewayID, refs)
 	if gw == nil {
-		return nil, errors.WrapMsgf("Nil SensorGatewayAuthContext for gateway ID: %s", gatewayID)
+		return nil, errors.WrapMsg("Nil SensorGatewayAuthContext")
 	}
 
 	o.localCache.Set(cacheKey, gw)

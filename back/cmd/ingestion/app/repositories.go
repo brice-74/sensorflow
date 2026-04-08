@@ -11,30 +11,34 @@ import (
 )
 
 type PostgresRepositories struct {
-	SensorGateway  ports.SensorGatewayRepository
-	SensorInstance ports.SensorInstanceRepository
+	SensorGatewayAuth ports.SensorGatewayAuthRepository
+	SensorGateway     ports.SensorGatewayRepository
+	SensorInstance    ports.SensorInstanceRepository
 }
 
 func NewPostgresRepositories(sqlxDB *sqlx.DB) *PostgresRepositories {
 	sqlxRepo := postgres.NewSqlxRepo(sqlxDB)
 
 	repositories := PostgresRepositories{
-		SensorGateway:  postgres.NewSensorGateway(sqlxRepo),
-		SensorInstance: postgres.NewSensorInstance(sqlxRepo),
+		SensorGatewayAuth: postgres.NewSensorGatewayAuthRepository(sqlxRepo),
+		SensorGateway:     postgres.NewSensorGateway(sqlxRepo),
+		SensorInstance:    postgres.NewSensorInstance(sqlxRepo),
 	}
 
 	return &repositories
 }
 
 type RedisRepositories struct {
-	SensorGateway  redis.SensorGateway
-	SensorInstance redis.SensorInstance
+	SensorGatewayAuth redis.SensorGatewayAuth
+	SensorGateway     redis.SensorGateway
+	SensorInstance    redis.SensorInstance
 }
 
 func NewRedisRepositories(client *redis.HealthyClient) *RedisRepositories {
 	repositories := RedisRepositories{
-		SensorGateway:  redis.NewSensorGateway(client, 10*time.Minute),
-		SensorInstance: redis.NewSensorInstance(client, 7*time.Minute),
+		SensorGatewayAuth: redis.NewSensorGatewayAuth(client, 10*time.Minute),
+		SensorGateway:     redis.NewSensorGateway(client, 10*time.Minute),
+		SensorInstance:    redis.NewSensorInstance(client, 7*time.Minute),
 	}
 
 	return &repositories

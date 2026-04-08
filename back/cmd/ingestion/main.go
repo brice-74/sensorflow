@@ -60,8 +60,8 @@ func main() {
 	}
 
 	if err := app.ServeGRPC(cfg.GRPC, app.GRPCDeps{
-		Logger:                    logger,
-		SensorGatewayOrchestrator: orchestrators.SensorGateway,
+		Logger:                        logger,
+		SensorGatewayAuthOrchestrator: orchestrators.SensorGatewayAuth,
 	}); err != nil {
 		logger.Error(err, log.Tags{"server": "closed"})
 	}
