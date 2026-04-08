@@ -7,7 +7,6 @@ import (
 	"github.com/brice-74/sensorflow/internal/cache"
 	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/ctxvalues"
-	"github.com/brice-74/sensorflow/internal/ports"
 	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
@@ -49,20 +48,18 @@ type Repo[T any] interface {
 
 type SensorGateway interface {
 	Repo[domain.SensorGateway]
-	ports.SensorGatewayRepository
 	CmdSetOne(ctx context.Context, entity *domain.SensorGateway) (*StatusCmd, error)
 }
 
 type SensorInstance interface {
 	Repo[domain.SensorInstance]
-	ports.SensorInstanceRepository
 	CmdSetMany(ctx context.Context, insts []*domain.SensorInstance) (*StatusCmd, *MultiBoolCmd, error)
 	CmdListIDsByGatewayID(ctx context.Context, gtwID string) *StringSliceCmd
 	SetIDsByGatewayID(ctx context.Context, gtwID uuid.UUID, insts []*domain.SensorInstance) error
 }
 
 type SensorGatewayAuth interface {
-	Repo[ctxvalues.SensorGatewayContext]
-	ports.SensorGatewayAuthRepository
-	SetOne(ctx context.Context, gw *ctxvalues.SensorGatewayContext) error
+	Repo[ctxvalues.SensorGatewayAuthContext]
+	GetOneByID(ctx context.Context, id uuid.UUID) (*ctxvalues.SensorGatewayAuthContext, error)
+	SetOne(ctx context.Context, gw *ctxvalues.SensorGatewayAuthContext) error
 }

@@ -1,19 +1,6 @@
 package orchestrators
 
-import (
-	"context"
-
-	redisadapter "github.com/brice-74/sensorflow/internal/adapters/redis"
-	"github.com/brice-74/sensorflow/internal/cache"
-	"github.com/brice-74/sensorflow/internal/core/domain"
-	"github.com/brice-74/sensorflow/internal/log"
-	"github.com/brice-74/sensorflow/internal/ports"
-	"github.com/brice-74/sensorflow/pkg/errors"
-	"github.com/brice-74/sensorflow/pkg/worker"
-	"github.com/google/uuid"
-)
-
-type SensorGateway struct {
+/* type SensorGateway struct {
 	dbRepo            ports.SensorGatewayRepository
 	dbInstanceRepo    ports.SensorInstanceRepository
 	redisRepo         redisadapter.SensorGateway
@@ -206,3 +193,4 @@ func (o *SensorGateway) asyncSetRedis(gw *domain.SensorGateway) {
 		o.logger.Warn(errors.WrapErr(err))
 	}
 }
+*/

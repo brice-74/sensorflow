@@ -3,7 +3,6 @@ package middleware
 import (
 	"context"
 
-	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/ctxvalues"
 	"github.com/brice-74/sensorflow/internal/log"
 	"github.com/brice-74/sensorflow/internal/ports"
@@ -28,14 +27,14 @@ func (w *wrappedStream) Context() context.Context {
 }
 
 type MTLSClientAuth struct {
-	log              log.Logger
-	svcSensorGateway ports.SensorGatewayOrchestrator
+	log            log.Logger
+	svcGatewayAuth ports.SensorGatewayAuthOrchestrator
 }
 
-func NewMTLSClientAuth(logger log.Logger, svcSensorGateway ports.SensorGatewayOrchestrator) *MTLSClientAuth {
+func NewMTLSClientAuth(logger log.Logger, svcGatewayAuth ports.SensorGatewayAuthOrchestrator) *MTLSClientAuth {
 	return &MTLSClientAuth{
-		log:              logger,
-		svcSensorGateway: svcSensorGateway,
+		log:            logger,
+		svcGatewayAuth: svcGatewayAuth,
 	}
 }
 
@@ -85,23 +84,23 @@ func (m *MTLSClientAuth) handleContext(ctx context.Context) (context.Context, er
 	}
 	ctx = ctxvalues.WithClientDN(ctx, client)
 
-	gateway, err := m.loadSensorGateway(ctx, client.CN)
+	gw, err := m.loadSensorGatewayCtx(ctx, client.CN)
 	if err != nil {
 		return nil, err
 	}
-	ctx = ctxvalues.WithSensorGateway(ctx, gateway)
+	ctx = ctxvalues.WithAuthSensorGateway(ctx, gw)
 
 	return ctx, nil
 }
 
-func (m *MTLSClientAuth) loadSensorGateway(ctx context.Context, cn string) (*domain.SensorGateway, error) {
+func (m *MTLSClientAuth) loadSensorGatewayCtx(ctx context.Context, cn string) (*ctxvalues.SensorGatewayAuthContext, error) {
 	id, err := uuid.Parse(cn)
 	if err != nil {
 		m.log.Error(errors.Wrap(err, "invalid uuid"), log.Contexts{"dn": {"cn": cn}})
 		return nil, status.Error(codes.Unauthenticated, "invalid sensor gateway ID")
 	}
 
-	sg, err := m.svcSensorGateway.GetOneWithInstances(ctx, id)
+	sg, err := m.svcGatewayAuth.GetOneByID(ctx, id)
 	if err != nil {
 		var e *errors.Error
 		if errors.As(err, &e) {
@@ -114,7 +113,7 @@ func (m *MTLSClientAuth) loadSensorGateway(ctx context.Context, cn string) (*dom
 				return nil, status.Error(codes.Unauthenticated, "invalid sensor gateway ID")
 			}
 		}
-		m.log.Error(errors.Wrap(err, "failed to get sensor gateway"), log.Contexts{"sensor_gateway": {"id": id}})
+		m.log.Error(errors.Wrap(err, "failed to get sensor gateway context"), log.Contexts{"sensor_gateway": {"id": id}})
 		return nil, status.Error(codes.Internal, "something wen't wrong")
 	}
 

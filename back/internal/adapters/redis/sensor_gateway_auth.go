@@ -10,14 +10,14 @@ import (
 )
 
 type sensorGatewayAuth struct {
-	repo[ctxvalues.SensorGatewayContext]
+	repo[ctxvalues.SensorGatewayAuthContext]
 }
 
 var _ SensorGatewayAuth = (*sensorGatewayAuth)(nil)
 
 func NewSensorGatewayAuth(client *HealthyClient, defaultTTL time.Duration) *sensorGatewayAuth {
 	return &sensorGatewayAuth{
-		repo: repo[ctxvalues.SensorGatewayContext]{
+		repo: repo[ctxvalues.SensorGatewayAuthContext]{
 			HealthyClient: client,
 			KeyFunc:       cache.FormatSensorGatewayAuthKey,
 			DefaultTTL:    defaultTTL,
@@ -25,10 +25,10 @@ func NewSensorGatewayAuth(client *HealthyClient, defaultTTL time.Duration) *sens
 	}
 }
 
-func (r *sensorGatewayAuth) GetOneByID(ctx context.Context, id uuid.UUID) (*ctxvalues.SensorGatewayContext, error) {
+func (r *sensorGatewayAuth) GetOneByID(ctx context.Context, id uuid.UUID) (*ctxvalues.SensorGatewayAuthContext, error) {
 	return r.repo.GetOneByStrID(ctx, id.String())
 }
 
-func (r *sensorGatewayAuth) SetOne(ctx context.Context, gw *ctxvalues.SensorGatewayContext) error {
+func (r *sensorGatewayAuth) SetOne(ctx context.Context, gw *ctxvalues.SensorGatewayAuthContext) error {
 	return r.repo.SetOneByStrID(ctx, gw.GatewayID.String(), gw)
 }

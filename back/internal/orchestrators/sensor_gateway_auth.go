@@ -6,23 +6,27 @@ import (
 
 	redisadapter "github.com/brice-74/sensorflow/internal/adapters/redis"
 	"github.com/brice-74/sensorflow/internal/cache"
+	"github.com/brice-74/sensorflow/internal/core/domain"
 	"github.com/brice-74/sensorflow/internal/ctxvalues"
 	"github.com/brice-74/sensorflow/internal/log"
 	"github.com/brice-74/sensorflow/internal/ports"
+	"github.com/brice-74/sensorflow/internal/types"
 	"github.com/brice-74/sensorflow/pkg/errors"
 	"github.com/brice-74/sensorflow/pkg/worker"
 	"github.com/google/uuid"
 )
 
-type SensorGatewayAuthOrchestrator struct {
-	dbRepo     ports.SensorGatewayAuthRepository
-	redisRepo  redisadapter.SensorGatewayAuth
-	localCache cache.Local[*ctxvalues.SensorGatewayContext]
-	logger     log.Logger
-	asyncPool  ports.AsyncSubmitter[ports.Task]
+type SensorGatewayAuth struct {
+	dbInstanceRepo ports.SensorGatewayAuthRepository
+	redisRepo      redisadapter.SensorGatewayAuth
+	localCache     cache.Local[*ctxvalues.SensorGatewayAuthContext]
+	logger         log.Logger
+	asyncPool      ports.AsyncSubmitter[ports.Task]
 }
 
-func (o *SensorGatewayAuthOrchestrator) GetOne(ctx context.Context, gatewayID uuid.UUID) (*ctxvalues.SensorGatewayContext, error) {
+var _ ports.SensorGatewayAuthOrchestrator = (*SensorGatewayAuth)(nil)
+
+func (o *SensorGatewayAuth) GetOneByID(ctx context.Context, gatewayID uuid.UUID) (*ctxvalues.SensorGatewayAuthContext, error) {
 	cacheKey := cache.FormatSensorGatewayAuthKey(gatewayID.String())
 
 	if gw, ok := o.localCache.Get(cacheKey); ok {
@@ -40,12 +44,14 @@ func (o *SensorGatewayAuthOrchestrator) GetOne(ctx context.Context, gatewayID uu
 		}
 	}
 
-	gw, err := o.dbRepo.GetOneByID(ctx, gatewayID)
+	refs, err := o.dbInstanceRepo.GetAuthPlanRowsByGatewayID(ctx, gatewayID)
 	if err != nil {
 		return nil, errors.WrapErr(err)
 	}
+
+	gw := buildSensorGatewayAuthContext(gatewayID, refs)
 	if gw == nil {
-		return nil, errors.WrapMsg("Nil SensorGatewayContext")
+		return nil, errors.WrapMsgf("Nil SensorGatewayAuthContext for gateway ID: %s", gatewayID)
 	}
 
 	o.localCache.Set(cacheKey, gw)
@@ -62,4 +68,20 @@ func (o *SensorGatewayAuthOrchestrator) GetOne(ctx context.Context, gatewayID uu
 	}
 
 	return gw, nil
+}
+
+func buildSensorGatewayAuthContext(gatewayID uuid.UUID, sensors []*types.SensorGatewayAuthPlanRow) *ctxvalues.SensorGatewayAuthContext {
+	if len(sensors) == 0 {
+		return nil
+	}
+
+	gwCtx := &ctxvalues.SensorGatewayAuthContext{
+		GatewayID: gatewayID,
+		TenantID:  sensors[0].TenantID,
+		Sensors:   make(map[uuid.UUID]domain.SensorPlanType, len(sensors)),
+	}
+	for _, sensor := range sensors {
+		gwCtx.Sensors[sensor.SensorInstanceID] = sensor.ActivePlan
+	}
+	return gwCtx
 }

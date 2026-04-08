@@ -19,7 +19,7 @@ import (
 )
 
 type GRPCDeps struct {
-	Logger                    log.Fiber
+	Logger                    log.Logger
 	SensorGatewayOrchestrator ports.SensorGatewayOrchestrator
 }
 

@@ -175,17 +175,26 @@ type MeasurementProfileBinding struct {
 	common.SoftDelete
 }
 
-type SensorPlan string
-
-const (
-	SensorPlanAccelGyroStd        SensorPlan = "accel_gyro_std"
-	SensorPlanAccelGyroIndustrial SensorPlan = "accel_gyro_industrial"
-	SensorPlanAccelGyroRealtime   SensorPlan = "accel_gyro_realtime"
-)
-
 type SensorPlanBinding struct {
 	SensorInstanceID uuid.UUID
+	SensorPlanID     uuid.UUID
 	Plan             SensorPlan
+
+	common.SoftDelete
+	common.Timestamps
+}
+
+type SensorPlanType string
+
+const (
+	SensorPlanAccelGyroStd        SensorPlanType = "accel_gyro_std"
+	SensorPlanAccelGyroIndustrial SensorPlanType = "accel_gyro_industrial"
+	SensorPlanAccelGyroRealtime   SensorPlanType = "accel_gyro_realtime"
+)
+
+type SensorPlan struct {
+	common.UUID
+	Plan SensorPlanType
 
 	common.SoftDelete
 	common.Timestamps

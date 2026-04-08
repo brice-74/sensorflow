@@ -30,8 +30,6 @@ type IngestorConsumer[T any] interface {
 type SensorMeasurementsService struct {
 	proto.UnimplementedSensorServiceServer
 
-	sensorPlanBinding ports.SensorPlanBindingOrchestrator
-
 	ingestAccelGyroStd        IngestorConsumer[*domain.AccelGyroMeasurement]
 	ingestAccelGyroIndustrial IngestorConsumer[*domain.AccelGyroMeasurement]
 	ingestAccelGyroRealtime   IngestorConsumer[*domain.AccelGyroMeasurement]
@@ -43,14 +41,12 @@ type SensorMeasurementsService struct {
 }
 
 func NewSensorMeasurementsService(
-	sensorPlanBinding ports.SensorPlanBindingOrchestrator,
 	ingestAccelGyroStd IngestorConsumer[*domain.AccelGyroMeasurement],
 	ingestAccelGyroIndustrial IngestorConsumer[*domain.AccelGyroMeasurement],
 	ingestAccelGyroRealtime IngestorConsumer[*domain.AccelGyroMeasurement],
 	checkIngestorsStatesInterval time.Duration,
 ) *SensorMeasurementsService {
 	return &SensorMeasurementsService{
-		sensorPlanBinding:            sensorPlanBinding,
 		ingestAccelGyroStd:           ingestAccelGyroStd,
 		ingestAccelGyroIndustrial:    ingestAccelGyroIndustrial,
 		ingestAccelGyroRealtime:      ingestAccelGyroRealtime,
@@ -101,30 +97,12 @@ func (svc *SensorMeasurementsService) UnaryCustomMeasurements(ctx context.Contex
 func (svc *SensorMeasurementsService) StreamAccelGyroMeasurements(srv proto.SensorService_StreamAccelGyroMeasurementsServer) error {
 	ctx := srv.Context()
 
-	gtw, gtwFound := ctxvalues.GetSensorGateway(ctx)
+	gtwctx, gtwFound := ctxvalues.GetAuthSensorGateway(ctx)
 	if !gtwFound {
 		return status.Error(codes.Unauthenticated, "sensor gateway not found in context")
 	}
 
-	var instanceIDs = make([]uuid.UUID, 0, len(gtw.SensorInstances))
-	for _, instances := range gtw.SensorInstances {
-		instanceIDs = append(instanceIDs, instances.ID)
-	}
-
-	plans, err := svc.sensorPlanBinding.ListActiveByInstanceIDs(ctx, instanceIDs)
-	if err != nil {
-		return status.Error(codes.Internal, "failed to list active sensor plans")
-	}
-
-	var planByInstance = make(map[uuid.UUID]*domain.SensorPlanBinding, len(plans))
-	for _, plan := range plans {
-		switch plan.Plan {
-		case domain.SensorPlanAccelGyroIndustrial, domain.SensorPlanAccelGyroStd, domain.SensorPlanAccelGyroRealtime:
-			planByInstance[plan.SensorInstanceID] = plan
-		}
-	}
-
-	if len(planByInstance) == 0 {
+	if len(gtwctx.Sensors) == 0 {
 		return status.Error(codes.FailedPrecondition, "no active sensor plans found for gateway's sensor instances")
 	}
 
@@ -157,7 +135,7 @@ func (svc *SensorMeasurementsService) StreamAccelGyroMeasurements(srv proto.Sens
 				continue
 			}
 
-			plan, planFound := planByInstance[sensorID]
+			plan, planFound := gtwctx.Sensors[sensorID]
 			if !planFound {
 				agg.AddRejectedN(sensor.SensorId, proto.RejectionCode_UNKNOWN_SENSOR_OR_UNKNOWN_PLAN, "unknown sensor or unknown plan", uint64(l))
 				continue
@@ -166,10 +144,10 @@ func (svc *SensorMeasurementsService) StreamAccelGyroMeasurements(srv proto.Sens
 			count += l
 			agg.AddAccepted(uint64(l))
 
-			measurements := AccelGyroDTO(sensorID, gtw.TenantID, sensor.Measurements)
+			measurements := AccelGyroDTO(sensorID, gtwctx.TenantID, sensor.Measurements)
 			NormalizeAccelGyro(opts, measurements)
 
-			switch plan.Plan {
+			switch plan {
 			case domain.SensorPlanAccelGyroIndustrial:
 				svc.ingestAccelGyroIndustrial.Submit(measurements)
 			case domain.SensorPlanAccelGyroStd:
