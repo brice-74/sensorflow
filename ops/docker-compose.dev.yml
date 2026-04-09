@@ -40,11 +40,38 @@ services:
     container_name: sensorflow-grpc-reverse-proxy
     volumes:
       - ./grpc-reverse-proxy/nginx.conf:/etc/nginx/nginx.conf:ro
-      - certs_data:/etc/nginx/certs
+      - certs_data:/etc/nginx/certs:ro
     ports:
       - 443:443
     depends_on:
+      - signer
       - ingestion-api
+    networks:
+      - sensorflow-net
+
+  signer:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: sensorflow/goback:dev
+    pull_policy: never
+    container_name: sensorflow-signer
+    working_dir: /src
+    environment:
+      GO_SOURCE_FILE: /src/cmd/signer/main.go
+      GO_BIN_PATH: /usr/local/bin/signer
+      GO_BUILD_FLAGS: -buildvcs=false -gcflags="all=-N -l"
+      API_IDENTIFIER: signer-api
+      ENV: local
+      SIGNER_ADDR: :8080
+      SIGNER_CERT_DIR: /certs
+      SIGNER_CA_COMMON_NAME: SensorflowCA
+      SIGNER_SERVER_COMMON_NAME: nginx.local
+      SIGNER_SERVER_DNS_NAMES: nginx,nginx.local,localhost
+      SIGNER_CLIENT_DAYS: 90
+    volumes:
+      - ../back:/src
+      - certs_data:/certs
     networks:
       - sensorflow-net
 
