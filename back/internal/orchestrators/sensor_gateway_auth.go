@@ -76,7 +76,9 @@ func (o *SensorGatewayAuth) GetOneByID(ctx context.Context, gatewayID uuid.UUID)
 		ctxBg, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 
-		if err := o.redisRepo.SetOne(ctxBg, gw); err != nil {
+		err := o.redisRepo.SetOne(ctxBg, gw)
+		err = o.redisRepo.HandleError(err)
+		if err != nil {
 			o.logger.Warn(errors.WrapErr(err))
 		}
 	})); err != nil {

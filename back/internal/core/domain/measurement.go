@@ -129,12 +129,12 @@ func (t DataType) String() string {
 
 type MeasurementLogicalProfile struct {
 	common.UUID
-	TenantID uuid.UUID
-	Name     string
-	Version  uint16
+	TenantID uuid.UUID `db:"tenant_id"`
+	Name     string    `db:"name"`
+	Version  uint16    `db:"version"`
 
-	PreviousVersionID *uuid.UUID
-	Fields            []*MeasurementField
+	PreviousVersionID *uuid.UUID           `db:"previous_version_id"`
+	Fields            []*MeasurementField `db:"-"`
 
 	common.Timestamps
 	common.SoftDelete
@@ -142,43 +142,43 @@ type MeasurementLogicalProfile struct {
 
 type MeasurementField struct {
 	common.UUID
-	LogicalProfileID uuid.UUID
-	Name             string
-	Type             DataType
-	IsTag            bool
+	LogicalProfileID uuid.UUID `db:"logical_profile_id"`
+	Name             string    `db:"name"`
+	Type             DataType  `db:"type"`
+	IsTag            bool      `db:"is_tag"`
 }
 
 type MeasurementDatabase struct {
 	common.UUID
-	TenantID *uuid.UUID
-	Name     string
+	TenantID *uuid.UUID `db:"tenant_id"`
+	Name     string     `db:"name"`
 }
 
 type MeasurementTable struct {
 	common.UUID
 
-	DatabaseID uuid.UUID
-	Name       string
+	DatabaseID uuid.UUID `db:"database_id"`
+	Name       string    `db:"name"`
 
-	HotTTL               *string // ex: "7d"
-	ColdTTL              *string // ex: "90d"
-	PartitioningStrategy string  // ex: "month", "week", "day"
-	ColdVolumeName       *string
+	HotTTL               *string `db:"hot_ttl"`               // ex: "7d"
+	ColdTTL              *string `db:"cold_ttl"`              // ex: "90d"
+	PartitioningStrategy string  `db:"partitioning_strategy"` // ex: "month", "week", "day"
+	ColdVolumeName       *string `db:"cold_volume_name"`
 }
 
 type MeasurementProfileBinding struct {
-	SensorInstanceID   uuid.UUID
-	LogicalProfileID   uuid.UUID
-	MeasurementTableID uuid.UUID
+	SensorInstanceID   uuid.UUID `db:"sensor_instance_id"`
+	LogicalProfileID   uuid.UUID `db:"logical_profile_id"`
+	MeasurementTableID uuid.UUID `db:"measurement_table_id"`
 
 	common.Timestamps
 	common.SoftDelete
 }
 
 type SensorPlanBinding struct {
-	SensorInstanceID uuid.UUID
-	SensorPlanID     uuid.UUID
-	Plan             SensorPlan
+	SensorInstanceID uuid.UUID   `db:"sensor_instance_id"`
+	SensorPlanID     uuid.UUID   `db:"sensor_plan_id"`
+	Plan             SensorPlan `db:"-"`
 
 	common.SoftDelete
 	common.Timestamps
@@ -194,7 +194,7 @@ const (
 
 type SensorPlan struct {
 	common.UUID
-	Plan SensorPlanType
+	Plan SensorPlanType `db:"plan"`
 
 	common.SoftDelete
 	common.Timestamps

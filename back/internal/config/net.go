@@ -48,8 +48,11 @@ func (c *GRPC) Define(loader *config.Loader) {
 	loader.Duration(&c.IdleTimeout, "grpc_idle_timeout", "GRPC_IDLE_TIMEOUT", 0, "Maximum time a connection can remain idle before being closed")
 	loader.Duration(&c.MaxConnectionAge, "grpc_max_connection_age", "GRPC_MAX_CONNECTION_AGE", 0, "Maximum age of a connection before it is closed")
 	loader.Duration(&c.MaxConnectionAgeGrace, "grpc_max_connection_age_grace", "GRPC_MAX_CONNECTION_AGE_GRACE", 0, "Additive grace period after MaxConnectionAge for finishing in-flight RPCs")
+	loader.Duration(&c.KeepaliveTime, "grpc_keepalive_time", "GRPC_KEEPALIVE_TIME", 0, "Time interval for server keepalive pings")
+	loader.Duration(&c.KeepaliveTimeout, "grpc_keepalive_timeout", "GRPC_KEEPALIVE_TIMEOUT", 0, "Timeout waiting for keepalive ping ack")
 	loader.Int(&c.MaxRecvMsgSize, "grpc_max_recv_msg_size", "GRPC_MAX_RECV_MSG_SIZE", 0, "Maximum size in bytes of a received gRPC message")
 	loader.Int(&c.MaxSendMsgSize, "grpc_max_send_msg_size", "GRPC_MAX_SEND_MSG_SIZE", 0, "Maximum size in bytes of a sent gRPC message")
+	loader.Uint32(&c.MaxConcurrentStreams, "grpc_max_concurrent_streams", "GRPC_MAX_CONCURRENT_STREAMS", 0, "Maximum number of concurrent streams per connection")
 	loader.Duration(&c.MinTimeBetweenPings, "grpc_min_time_between_pings", "GRPC_MIN_TIME_BETWEEN_PINGS", 0, "Minimum duration a client must wait before sending a keepalive ping")
 	loader.Bool(&c.AllowPingWithoutActiveRPCs, "grpc_allow_ping_without_active_rpcs", "GRPC_ALLOW_PING_WITHOUT_ACTIVE_RPCS", false, "Allow keepalive pings even when there are no active streams")
 }

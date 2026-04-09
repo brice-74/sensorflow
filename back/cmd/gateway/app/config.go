@@ -9,7 +9,6 @@ type Config struct {
 	config.Instance
 	config.Env
 	config.HTTP
-	config.InfluxDB
 	config.Sentry
 }
 
@@ -17,7 +16,6 @@ func (c *Config) Define(loader *configpkg.Loader) {
 	c.Instance.Define(loader)
 	c.Env.Define(loader)
 	c.HTTP.Define(loader)
-	c.InfluxDB.Define(loader)
 	c.Sentry.Define(loader)
 }
 

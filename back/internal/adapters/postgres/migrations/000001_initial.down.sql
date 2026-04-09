@@ -1,11 +1,13 @@
-DROP TABLE IF EXISTS sensor_instance CASCADE;
-DROP TABLE IF EXISTS measurement_tag CASCADE;
-DROP TABLE IF EXISTS measurement_field CASCADE;
+DROP TABLE IF EXISTS sensor_plan_binding CASCADE;
+DROP TABLE IF EXISTS sensor_plan CASCADE;
+DROP TABLE IF EXISTS measurement_profile_binding CASCADE;
 DROP TABLE IF EXISTS measurement_table CASCADE;
-DROP TABLE IF EXISTS measurement_profile CASCADE;
+DROP TABLE IF EXISTS measurement_database CASCADE;
+DROP TABLE IF EXISTS measurement_field CASCADE;
+DROP TABLE IF EXISTS measurement_logical_profile CASCADE;
+DROP TABLE IF EXISTS sensor_instance CASCADE;
 DROP TABLE IF EXISTS sensor_gateway CASCADE;
 DROP TABLE IF EXISTS "user" CASCADE;
 DROP TABLE IF EXISTS tenant CASCADE;
 
-DROP TYPE IF EXISTS sensor_status;
-DROP TYPE IF EXISTS influx_data_type;
+DROP TYPE IF EXISTS sensor_plan_type;

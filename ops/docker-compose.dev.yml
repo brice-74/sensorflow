@@ -62,8 +62,10 @@ services:
       GO_BUILD_FLAGS: -buildvcs=false -gcflags="all=-N -l"
       PG_DATABASE_URL: 'postgres://root:S3ns0rF%210w%232025@postgres/sensorflow?sslmode=disable'
       CLICKHOUSE_DATABASE_URL: 'clickhouse://default:@clickhouse:9000/default'
+      CLIENT_CERTS_DIR: /client_certs
     volumes:
       - ../back:/src
+      - client_certs_data:/client_certs
     env_file:
       - ./cli/.env.dev
     networks:

@@ -44,6 +44,8 @@ func NewOrchestrators(
 		return nil, err
 	}
 
+	ingestAccelGyroStd.Start()
+
 	orcts := Orchestrators{
 		SensorGatewayAuth: orchestrators.NewSensorGatewayAuth(
 			pgRepos.SensorGatewayAuth,

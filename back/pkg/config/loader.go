@@ -130,6 +130,15 @@ func (l *Loader) Uint(dst *uint, flagName, envName string, defaultVal uint, desc
 	)
 }
 
+func (l *Loader) Uint32(dst *uint32, flagName, envName string, defaultVal uint32, desc string, prefix ...string) *Option[uint32] {
+	return AddOption(l, dst, flagName, envName, defaultVal, desc,
+		func(s string) (uint32, error) {
+			u64, err := strconv.ParseUint(s, 10, 32)
+			return uint32(u64), err
+		},
+	)
+}
+
 func (l *Loader) Uint16(dst *uint16, flagName, envName string, defaultVal uint16, desc string, prefix ...string) *Option[uint16] {
 	return AddOption(l, dst, flagName, envName, defaultVal, desc,
 		func(s string) (uint16, error) {
