@@ -15,7 +15,7 @@ const (
 
 type Env uint8
 
-func (e Env) String() string {
+func StringFromEnv(e Env) string {
 	switch e {
 	case EnvLocal:
 		return "local"

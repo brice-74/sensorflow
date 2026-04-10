@@ -6,6 +6,7 @@ SHELL := /bin/bash
 gateway_api_container_name := sensorflow-gateway-api
 ingestion_api_container_name := sensorflow-ingestion-api
 cli_container_name := sensorflow-cli
+signer_container_name := sensorflow-signer
 de_cli := docker exec -it $(cli_container_name)
 
 
@@ -29,7 +30,7 @@ reset:
 #                             Reload                              #
 #-----------------------------------------------------------------#
 
-.PHONY: reload/gateway reload/ingestion reload/cli
+.PHONY: reload/gateway reload/ingestion reload/cli reload/signer
 
 reload/gateway:
 	$(call send_usr1_signal,$(gateway_api_container_name),run.dev.sh)
@@ -39,6 +40,9 @@ reload/ingestion:
 
 reload/cli:
 	$(call send_usr1_signal,$(cli_container_name),run.dev.sh)
+
+reload/signer:
+	$(call send_usr1_signal,$(signer_container_name),run.dev.sh)
 
 # generic function to send USR1 signal to containerize process
 # parameters: 

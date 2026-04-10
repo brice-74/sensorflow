@@ -213,4 +213,19 @@ func TestLoader(t *testing.T) {
 		require.Equal(t, "parent_child", prefixes[0])
 		require.Equal(t, "PARENT_CHILD", prefixes[1])
 	})
+
+	t.Run("BaseParseSeesPrefixedChildOptions", func(t *testing.T) {
+		resetEnvAndFlags()
+		os.Setenv("APP_PORT", "4242")
+
+		base := config.NewLoader(config.EnvOnly)
+		child := base.AddPrefix("app", "APP")
+
+		var port int
+		child.Int(&port, "port", "PORT", 80, "server port")
+
+		err := base.Parse()
+		require.NoError(t, err)
+		require.Equal(t, 4242, port)
+	})
 }

@@ -107,7 +107,10 @@ func AddOption[T any](
 		opt.flagPtr = flag.String(flagName, "", desc)
 	}
 
-	l.options = append(l.options, opt)
+	if l.options == nil {
+		panic("config: loader options storage is nil")
+	}
+	*l.options = append(*l.options, opt)
 	return opt
 }
 

@@ -6,7 +6,6 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
-	"errors"
 	"fmt"
 	"math/big"
 	"os"
@@ -15,6 +14,7 @@ import (
 	"time"
 
 	"github.com/brice-74/sensorflow/internal/log"
+	"github.com/brice-74/sensorflow/pkg/errors"
 )
 
 type SignCSRRequest struct {
@@ -41,7 +41,7 @@ type Service struct {
 
 func NewService(cfg Signer, logger log.Logger) (*Service, error) {
 	if err := os.MkdirAll(cfg.CertDir, 0o750); err != nil {
-		return nil, fmt.Errorf("create cert dir: %w", err)
+		return nil, errors.WrapMsgf("create cert dir: %w", err)
 	}
 
 	caKeyPath := filepath.Join(cfg.CertDir, "ca.key")
@@ -72,7 +72,7 @@ func (s *Service) CACertPEM() []byte {
 
 func (s *Service) SignClientCSR(req SignCSRRequest) (*SignCSRResponse, error) {
 	if strings.TrimSpace(req.CSRPem) == "" {
-		return nil, errors.New("csr_pem is required")
+		return nil, errors.WrapMsg("csr_pem is required")
 	}
 
 	csr, err := parseCSR(req.CSRPem)
@@ -80,7 +80,7 @@ func (s *Service) SignClientCSR(req SignCSRRequest) (*SignCSRResponse, error) {
 		return nil, err
 	}
 	if err := csr.CheckSignature(); err != nil {
-		return nil, fmt.Errorf("invalid CSR signature: %w", err)
+		return nil, errors.WrapMsgf("invalid CSR signature: %w", err)
 	}
 
 	ttlDays := s.cfg.ClientDays
@@ -91,7 +91,7 @@ func (s *Service) SignClientCSR(req SignCSRRequest) (*SignCSRResponse, error) {
 	now := time.Now().UTC()
 	serial, err := randomSerial()
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate serial: %w", err)
+		return nil, errors.WrapMsgf("failed to generate serial: %w", err)
 	}
 
 	commonName := strings.TrimSpace(req.CommonName)
@@ -139,27 +139,27 @@ func ensureCA(keyPath, certPath string, cfg Signer, logger log.Logger) (*rsa.Pri
 	if fileExists(keyPath) && fileExists(certPath) {
 		key, err := readPrivateKey(keyPath)
 		if err != nil {
-			return nil, nil, nil, fmt.Errorf("read CA key: %w", err)
+			return nil, nil, nil, errors.WrapMsgf("read CA key: %w", err)
 		}
 		cert, certPEM, err := readCertificate(certPath)
 		if err != nil {
-			return nil, nil, nil, fmt.Errorf("read CA cert: %w", err)
+			return nil, nil, nil, errors.WrapMsgf("read CA cert: %w", err)
 		}
 		if !cert.IsCA {
-			return nil, nil, nil, fmt.Errorf("CA cert at %s is not a CA", certPath)
+			return nil, nil, nil, errors.WrapMsgf("CA cert at %s is not a CA", certPath)
 		}
 		return key, cert, certPEM, nil
 	}
 
 	key, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("generate CA key: %w", err)
+		return nil, nil, nil, errors.WrapMsgf("generate CA key: %w", err)
 	}
 
 	now := time.Now().UTC()
 	serial, err := randomSerial()
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("generate CA serial: %w", err)
+		return nil, nil, nil, errors.WrapMsgf("generate CA serial: %w", err)
 	}
 	tmpl := &x509.Certificate{
 		SerialNumber:          serial,
@@ -173,22 +173,22 @@ func ensureCA(keyPath, certPath string, cfg Signer, logger log.Logger) (*rsa.Pri
 	}
 	certDER, err := x509.CreateCertificate(rand.Reader, tmpl, tmpl, &key.PublicKey, key)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("create CA cert: %w", err)
+		return nil, nil, nil, errors.WrapMsgf("create CA cert: %w", err)
 	}
 
 	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
 	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
 
 	if err := os.WriteFile(keyPath, keyPEM, 0o600); err != nil {
-		return nil, nil, nil, fmt.Errorf("write CA key: %w", err)
+		return nil, nil, nil, errors.WrapMsgf("write CA key: %w", err)
 	}
 	if err := os.WriteFile(certPath, certPEM, 0o644); err != nil {
-		return nil, nil, nil, fmt.Errorf("write CA cert: %w", err)
+		return nil, nil, nil, errors.WrapMsgf("write CA cert: %w", err)
 	}
 
 	cert, err := x509.ParseCertificate(certDER)
 	if err != nil {
-		return nil, nil, nil, fmt.Errorf("parse generated CA cert: %w", err)
+		return nil, nil, nil, errors.WrapMsgf("parse generated CA cert: %w", err)
 	}
 	logger.Info("generated new CA", log.Tags{"cert_path": certPath})
 	return key, cert, certPEM, nil
@@ -198,11 +198,11 @@ func ensureServerCert(keyPath, certPath string, caKey *rsa.PrivateKey, caCert *x
 	if fileExists(keyPath) && fileExists(certPath) {
 		_, err := readPrivateKey(keyPath)
 		if err != nil {
-			return fmt.Errorf("read server key: %w", err)
+			return errors.WrapMsgf("read server key: %w", err)
 		}
 		cert, _, err := readCertificate(certPath)
 		if err != nil {
-			return fmt.Errorf("read server cert: %w", err)
+			return errors.WrapMsgf("read server cert: %w", err)
 		}
 		if time.Now().After(cert.NotAfter) {
 			logger.Info("server cert expired, regenerating", log.Tags{"expired_at": cert.NotAfter.Format(time.RFC3339)})
@@ -213,13 +213,13 @@ func ensureServerCert(keyPath, certPath string, caKey *rsa.PrivateKey, caCert *x
 
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
-		return fmt.Errorf("generate server key: %w", err)
+		return errors.WrapMsgf("generate server key: %w", err)
 	}
 
 	now := time.Now().UTC()
 	serial, err := randomSerial()
 	if err != nil {
-		return fmt.Errorf("generate server serial: %w", err)
+		return errors.WrapMsgf("generate server serial: %w", err)
 	}
 	tmpl := &x509.Certificate{
 		SerialNumber: serial,
@@ -232,17 +232,17 @@ func ensureServerCert(keyPath, certPath string, caKey *rsa.PrivateKey, caCert *x
 	}
 	certDER, err := x509.CreateCertificate(rand.Reader, tmpl, caCert, &key.PublicKey, caKey)
 	if err != nil {
-		return fmt.Errorf("create server cert: %w", err)
+		return errors.WrapMsgf("create server cert: %w", err)
 	}
 
 	keyPEM := pem.EncodeToMemory(&pem.Block{Type: "RSA PRIVATE KEY", Bytes: x509.MarshalPKCS1PrivateKey(key)})
 	certPEM := pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: certDER})
 
 	if err := os.WriteFile(keyPath, keyPEM, 0o600); err != nil {
-		return fmt.Errorf("write server key: %w", err)
+		return errors.WrapMsgf("write server key: %w", err)
 	}
 	if err := os.WriteFile(certPath, certPEM, 0o644); err != nil {
-		return fmt.Errorf("write server cert: %w", err)
+		return errors.WrapMsgf("write server cert: %w", err)
 	}
 
 	logger.Info("generated server cert", log.Tags{"cert_path": certPath})
@@ -252,11 +252,11 @@ func ensureServerCert(keyPath, certPath string, caKey *rsa.PrivateKey, caCert *x
 func parseCSR(csrPEM string) (*x509.CertificateRequest, error) {
 	block, _ := pem.Decode([]byte(csrPEM))
 	if block == nil || block.Type != "CERTIFICATE REQUEST" {
-		return nil, errors.New("csr_pem must be a valid PEM CSR")
+		return nil, errors.WrapMsg("csr_pem must be a valid PEM CSR")
 	}
 	csr, err := x509.ParseCertificateRequest(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("parse CSR: %w", err)
+		return nil, errors.WrapMsgf("parse CSR: %w", err)
 	}
 	return csr, nil
 }
@@ -264,14 +264,14 @@ func parseCSR(csrPEM string) (*x509.CertificateRequest, error) {
 func readPrivateKey(path string) (*rsa.PrivateKey, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
-		return nil, err
+		return nil, errors.WrapMsgf("read private key: %w", err)
 	}
 	block, _ := pem.Decode(b)
 	if block == nil {
-		return nil, errors.New("invalid PEM private key")
+		return nil, errors.WrapMsg("invalid PEM private key")
 	}
 	if block.Type != "RSA PRIVATE KEY" {
-		return nil, fmt.Errorf("unsupported private key type %s", block.Type)
+		return nil, errors.WrapMsgf("unsupported private key type %s", block.Type)
 	}
 	return x509.ParsePKCS1PrivateKey(block.Bytes)
 }
@@ -279,15 +279,15 @@ func readPrivateKey(path string) (*rsa.PrivateKey, error) {
 func readCertificate(path string) (*x509.Certificate, []byte, error) {
 	b, err := os.ReadFile(path)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WrapMsgf("read certificate: %w", err)
 	}
 	block, _ := pem.Decode(b)
 	if block == nil || block.Type != "CERTIFICATE" {
-		return nil, nil, errors.New("invalid PEM certificate")
+		return nil, nil, errors.WrapMsg("invalid PEM certificate")
 	}
 	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, errors.WrapMsgf("parse certificate: %w", err)
 	}
 	return cert, b, nil
 }
