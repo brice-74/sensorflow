@@ -17,7 +17,7 @@ func (c *Postgres) Define(loader *config.Loader) {
 		Required()
 	loader.String(&c.Port, "postgres_port", "POSTGRES_PORT", "", "Postgres port").
 		Required().
-		Validate(validatePort)
+		Validate(IsPortString)
 	loader.String(&c.Database, "postgres_database", "POSTGRES_DATABASE", "", "Postgres database name").
 		Required()
 	loader.String(&c.User, "postgres_user", "POSTGRES_USER", "", "Postgres user").

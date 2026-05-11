@@ -1,8 +1,6 @@
 package config
 
 import (
-	"fmt"
-	"strconv"
 	"time"
 
 	"github.com/brice-74/sensorflow/pkg/config"
@@ -20,7 +18,7 @@ type HTTP struct {
 func (c *HTTP) Define(loader *config.Loader) {
 	loader.String(&c.Port, "http_port", "HTTP_PORT", "", "Exposed HTTP port").
 		Required().
-		Validate(validatePort)
+		Validate(IsPortString)
 	loader.Duration(&c.GracefulStopTimeout, "http_graceful_stop_timeout", "HTTP_GRACEFUL_STOP_TIMEOUT", 10*time.Second, "Maximum time for the server to shut down gracefully otherwise it will shut down abruptly")
 	loader.Bool(&c.Keepalive, "http_keep_alive", "HTTP_KEEPALIVE", true, "Enable HTTP persistent connections (Keep-Alive)")
 	loader.Duration(&c.IdleTimeout, "http_idle_timeout", "HTTP_IDLE_TIMEOUT", 0, "Maximum time a connection can remain inactive before being closed")
@@ -43,7 +41,7 @@ type GRPC struct {
 func (c *GRPC) Define(loader *config.Loader) {
 	loader.String(&c.Port, "grpc_port", "GRPC_PORT", "", "Exposed gRPC port").
 		Required().
-		Validate(validatePort)
+		Validate(IsPortString)
 	loader.Duration(&c.GracefulStopTimeout, "grpc_graceful_stop_timeout", "GRPC_GRACEFUL_STOP_TIMEOUT", 10*time.Second, "Maximum time for the server to shut down gracefully otherwise it will shut down abruptly")
 	loader.Duration(&c.IdleTimeout, "grpc_idle_timeout", "GRPC_IDLE_TIMEOUT", 0, "Maximum time a connection can remain idle before being closed")
 	loader.Duration(&c.MaxConnectionAge, "grpc_max_connection_age", "GRPC_MAX_CONNECTION_AGE", 0, "Maximum age of a connection before it is closed")
@@ -55,18 +53,4 @@ func (c *GRPC) Define(loader *config.Loader) {
 	loader.Uint32(&c.MaxConcurrentStreams, "grpc_max_concurrent_streams", "GRPC_MAX_CONCURRENT_STREAMS", 0, "Maximum number of concurrent streams per connection")
 	loader.Duration(&c.MinTimeBetweenPings, "grpc_min_time_between_pings", "GRPC_MIN_TIME_BETWEEN_PINGS", 0, "Minimum duration a client must wait before sending a keepalive ping")
 	loader.Bool(&c.AllowPingWithoutActiveRPCs, "grpc_allow_ping_without_active_rpcs", "GRPC_ALLOW_PING_WITHOUT_ACTIVE_RPCS", false, "Allow keepalive pings even when there are no active streams")
-}
-
-func validatePort(s string) error {
-	if s == "" {
-		return fmt.Errorf("port cannot be empty")
-	}
-	portNum, err := strconv.Atoi(s)
-	if err != nil {
-		return fmt.Errorf("port must be a number")
-	}
-	if portNum < 1 || portNum > 65535 {
-		return fmt.Errorf("port must be between 1 and 65535")
-	}
-	return nil
 }
